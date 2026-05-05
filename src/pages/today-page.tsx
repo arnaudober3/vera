@@ -212,7 +212,7 @@ const OutfitTemplate = (): React.JSX.Element => {
                         return (
                           <div className="flex flex-col items-center justify-center flex-1 h-full">
                             <span className="leading-tight text-black font-semibold text-center mt-1 text-sm">
-                              Pas d'accessoire
+                              No accessories
                             </span>
                           </div>
                         );
