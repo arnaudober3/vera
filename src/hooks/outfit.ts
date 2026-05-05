@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import type { Outfit } from "../models/outfit.ts";
-import { getSessionId, useCloset } from "./closet.ts";
+import { useCloset } from "./closet.ts";
+import { getSessionId } from "../storage/session.ts";
 import {
   isWashable,
   type ClothingItem,
 } from "../models/clothing-item.ts";
 import type { Color } from "../models/color.ts";
 import { differenceCiede2000 } from "culori";
-import { doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "../firebase.ts";
+import { lsGet, lsSet, outfitKey } from "../storage/local-store.ts";
 import { useOutfitHistory } from "./outfit-history.ts";
 
 // Private singleton state reused through the app
@@ -60,30 +60,17 @@ const findBestMatch = ({
   return bestItem as ClothingItem;
 };
 
-const initialize = async (): Promise<void> => {
+const initialize = (): void => {
   if (isInitialized) {
     return;
   }
 
-  try {
-    const sessionId = getSessionId();
-    const docRef = doc(db, "outfits", sessionId);
-    const docSnap = await getDoc(docRef);
-
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      state = data.outfit || null;
-    } else {
-      state = null;
-    }
-  } catch (error) {
-    console.error("Error loading outfit from Firestore:", error);
-    state = null;
-  }
+  const sessionId = getSessionId();
+  state = lsGet<Outfit | null>(outfitKey(sessionId), null);
 
   isInitialized = true;
 };
-await initialize();
+initialize();
 
 export const useOutfit = () => {
   // Subscribe to the singleton state
@@ -251,23 +238,9 @@ export const useOutfit = () => {
   };
 
   async function emitChange(newOutfit: Outfit | null): Promise<void> {
-    const sessionId = getSessionId();
-    const docRef = doc(db, "outfits", sessionId);
-
-    // Save to Firestore, removing undefined properties
-    const outfitToSave = newOutfit
-      ? JSON.parse(JSON.stringify(newOutfit))
-      : null;
-
-    await setDoc(docRef, {
-      outfit: outfitToSave,
-      sessionId: sessionId,
-      updatedAt: new Date(),
-    });
-
-    // Update local state
-    listeners.forEach((listener) => listener(newOutfit));
     state = newOutfit;
+    lsSet(outfitKey(getSessionId()), newOutfit);
+    listeners.forEach((listener) => listener(newOutfit));
   }
 
   return { outfit, generateOutfit, clearOutfit, canGenerateOutfit };
