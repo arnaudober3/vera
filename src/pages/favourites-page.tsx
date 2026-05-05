@@ -113,7 +113,7 @@ const FavouriteOutfitCard = ({
                 if (!hasAnyOptionalItems) {
                   return (
                     <span className="inline-block leading-none p-0 m-0 text-black font-semibold text-center text-xs whitespace-nowrap">
-                      Pas d'accessoire
+                      No accessories
                     </span>
                   );
                 }
