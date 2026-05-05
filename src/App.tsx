@@ -1,5 +1,4 @@
 import "./App.css";
-import "./firebase.ts";
 import { TodayPage } from "./pages/today-page.tsx";
 import { BrowserRouter, Route, Routes } from "react-router";
 import { ClosetPage } from "./pages/closet-page.tsx";

@@ -1,63 +1,30 @@
 import { useState, useEffect } from "react";
 import type { FavouriteOutfit } from "../models/favourite-outfit.ts";
-import { getSessionId } from "./closet.ts";
-import {
-  Timestamp,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  setDoc,
-  where,
-} from "firebase/firestore";
-import { db } from "../firebase.ts";
+import { getSessionId } from "../storage/session.ts";
+import { favouritesKey, lsGet, lsSet } from "../storage/local-store.ts";
+
+type StoredFavourite = Omit<FavouriteOutfit, "savedAt"> & { savedAt: string };
 
 // Private singleton state reused through the app
 let state: FavouriteOutfit[] = [];
 let isInitialized = false;
 const listeners = new Set<(entries: FavouriteOutfit[]) => void>();
 
-const initialize = async (): Promise<void> => {
+const initialize = (): void => {
   if (isInitialized) {
     return;
   }
 
-  try {
-    const sessionId = getSessionId();
-    const q = query(
-      collection(db, "favouriteOutfits"),
-      where("sessionId", "==", sessionId),
-      orderBy("savedAt", "desc"),
-    );
-    const querySnapshot = await getDocs(q);
-
-    state = querySnapshot.docs.map((d) => {
-      const data = d.data();
-      const savedAtRaw = data.savedAt;
-
-      return {
-        id: d.id,
-        topId: data.topId,
-        bottomId: data.bottomId,
-        outerwearId: data.outerwearId,
-        shoesId: data.shoesId,
-        accessoriesIds: data.accessoriesIds || (data.accessoriesId ? [data.accessoriesId] : []),
-        savedAt:
-          savedAtRaw?.toDate?.() ??
-          (savedAtRaw instanceof Date ? savedAtRaw : new Date(savedAtRaw)),
-        sessionId: data.sessionId,
-      };
-    });
-  } catch (error) {
-    console.error("Error loading favourite outfits:", error);
-    state = [];
-  }
+  const sessionId = getSessionId();
+  const raw = lsGet<StoredFavourite[]>(favouritesKey(sessionId), []);
+  state = raw.map((entry) => ({
+    ...entry,
+    savedAt: new Date(entry.savedAt),
+  }));
 
   isInitialized = true;
 };
-await initialize();
+initialize();
 
 export function useFavouriteOutfits() {
   const [favourites, setFavourites] = useState(state);
@@ -115,23 +82,10 @@ export function useFavouriteOutfits() {
       sessionId,
     };
 
-    const dataToSave = {
-      topId,
-      bottomId,
-      ...(outerwearId && { outerwearId }),
-      ...(shoesId && { shoesId }),
-      ...(sortedAccessories && sortedAccessories.length > 0 && { accessoriesIds: sortedAccessories }),
-      savedAt: Timestamp.fromDate(new Date()),
-      sessionId,
-    };
-
-    await setDoc(doc(db, "favouriteOutfits", entryId), dataToSave);
-
     emitChange([newEntry, ...state]);
   };
 
   const removeFavourite = async (id: string): Promise<void> => {
-    await deleteDoc(doc(db, "favouriteOutfits", id));
     emitChange(state.filter((f) => f.id !== id));
   };
 
@@ -157,23 +111,23 @@ export function useFavouriteOutfits() {
   };
 
   const removeFavouritesWithItem = async (itemId: string): Promise<void> => {
-    const toDelete = state.filter(
+    const newState = state.filter(
       (f) =>
-        f.topId === itemId ||
-        f.bottomId === itemId ||
-        f.outerwearId === itemId ||
-        f.shoesId === itemId ||
-        f.accessoriesIds?.includes(itemId),
+        f.topId !== itemId &&
+        f.bottomId !== itemId &&
+        f.outerwearId !== itemId &&
+        f.shoesId !== itemId &&
+        !f.accessoriesIds?.includes(itemId),
     );
-
-    for (const fav of toDelete) {
-      await removeFavourite(fav.id);
+    if (newState.length !== state.length) {
+      emitChange(newState);
     }
   };
 
   function emitChange(newEntries: FavouriteOutfit[]): void {
-    listeners.forEach((listener) => listener(newEntries));
     state = newEntries;
+    lsSet(favouritesKey(getSessionId()), newEntries);
+    listeners.forEach((listener) => listener(newEntries));
   }
 
   return {

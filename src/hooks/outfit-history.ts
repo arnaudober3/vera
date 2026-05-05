@@ -1,60 +1,33 @@
 import { useState, useEffect } from "react";
 import type { OutfitHistoryEntry } from "../models/outfit-history.ts";
-import { getSessionId } from "./closet.ts";
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  setDoc,
-  where,
-  writeBatch,
-} from "firebase/firestore";
-import { db } from "../firebase.ts";
+import { getSessionId } from "../storage/session.ts";
+import { historyKey, lsGet, lsSet } from "../storage/local-store.ts";
 
 const HISTORY_LIMIT = 10;
 const RECENCY_RECOVERY_DAYS = 14;
+
+type StoredEntry = Omit<OutfitHistoryEntry, "wornAt"> & { wornAt: string };
 
 // Private singleton state reused through the app
 let state: OutfitHistoryEntry[] = [];
 let isInitialized = false;
 const listeners = new Set<(entries: OutfitHistoryEntry[]) => void>();
 
-const initialize = async (): Promise<void> => {
+const initialize = (): void => {
   if (isInitialized) {
     return;
   }
 
-  try {
-    const sessionId = getSessionId();
-    const q = query(
-      collection(db, "outfitHistory"),
-      where("sessionId", "==", sessionId),
-      orderBy("wornAt", "desc"),
-      limit(HISTORY_LIMIT),
-    );
-    const querySnapshot = await getDocs(q);
-    state = querySnapshot.docs.map((d) => ({
-      id: d.id,
-      topId: d.data().topId,
-      bottomId: d.data().bottomId,
-      outerwearId: d.data().outerwearId,
-      shoesId: d.data().shoesId,
-      accessoriesIds: d.data().accessoriesIds || (d.data().accessoriesId ? [d.data().accessoriesId] : []),
-      wornAt: d.data().wornAt.toDate(),
-      sessionId: d.data().sessionId,
-    }));
-  } catch (error) {
-    console.error("Error loading outfit history:", error);
-    state = [];
-  }
+  const sessionId = getSessionId();
+  const raw = lsGet<StoredEntry[]>(historyKey(sessionId), []);
+  state = raw.map((entry) => ({
+    ...entry,
+    wornAt: new Date(entry.wornAt),
+  }));
 
   isInitialized = true;
 };
-await initialize();
+initialize();
 
 export function useOutfitHistory() {
   const [history, setHistory] = useState(state);
@@ -88,18 +61,7 @@ export function useOutfitHistory() {
       sessionId,
     };
 
-    await setDoc(doc(db, "outfitHistory", entryId), newEntry);
-
-    const updated = [newEntry, ...state];
-
-    // Prune oldest entries if over limit
-    if (updated.length > HISTORY_LIMIT) {
-      const toRemove = updated.splice(HISTORY_LIMIT);
-      for (const entry of toRemove) {
-        await deleteDoc(doc(db, "outfitHistory", entry.id));
-      }
-    }
-
+    const updated = [newEntry, ...state].slice(0, HISTORY_LIMIT);
     emitChange(updated);
   };
 
@@ -130,41 +92,27 @@ export function useOutfitHistory() {
   };
 
   const clearHistory = async (): Promise<void> => {
-    const batch = writeBatch(db);
-    for (const entry of state) {
-      batch.delete(doc(db, "outfitHistory", entry.id));
-    }
-    await batch.commit();
     emitChange([]);
   };
 
   const removeHistoryEntriesWithItem = async (itemId: string): Promise<void> => {
-    const entriesToDelete = state.filter(
-      (h) =>
-        h.topId === itemId ||
-        h.bottomId === itemId ||
-        h.outerwearId === itemId ||
-        h.shoesId === itemId ||
-        h.accessoriesIds?.includes(itemId),
-    );
-
-    if (entriesToDelete.length === 0) return;
-
-    const batch = writeBatch(db);
-    entriesToDelete.forEach((entry) => {
-      batch.delete(doc(db, "outfitHistory", entry.id));
-    });
-    await batch.commit();
-
     const newState = state.filter(
-      (h) => !entriesToDelete.some((td) => td.id === h.id),
+      (h) =>
+        h.topId !== itemId &&
+        h.bottomId !== itemId &&
+        h.outerwearId !== itemId &&
+        h.shoesId !== itemId &&
+        !h.accessoriesIds?.includes(itemId),
     );
-    emitChange(newState);
+    if (newState.length !== state.length) {
+      emitChange(newState);
+    }
   };
 
   function emitChange(newEntries: OutfitHistoryEntry[]): void {
-    listeners.forEach((listener) => listener(newEntries));
     state = newEntries;
+    lsSet(historyKey(getSessionId()), newEntries);
+    listeners.forEach((listener) => listener(newEntries));
   }
 
   return {
