@@ -14,9 +14,10 @@ Snap your closet, let Vera organize your clothes, and get fresh outfit ideas —
 - **React 19** + **TypeScript** — frontend SPA with React Router
 - **Vite** — build tooling
 - **Tailwind CSS 4** — styling
-- **Firebase** — authentication, Firestore database, storage
+- **Local-first** — `localStorage` + IndexedDB (no backend)
 - **TanStack React Query** — data fetching and cache
 - **PWA** — installable on mobile via `vite-plugin-pwa`
+- **Cloudflare Pages** — static hosting & deployment
 
 ## Getting Started
 
@@ -25,14 +26,7 @@ Snap your closet, let Vera organize your clothes, and get fresh outfit ideas —
 - [Doppler](https://www.doppler.com/) configured for environment variables
 
 ### Environment Variables
-The following `VITE_*` variables must be set (managed via Doppler):
-- `VITE_FIREBASE_API_KEY`
-- `VITE_FIREBASE_AUTH_DOMAIN`
-- `VITE_FIREBASE_PROJECT_ID`
-- `VITE_FIREBASE_STORAGE_BUCKET`
-- `VITE_FIREBASE_MESSAGING_SENDER_ID`
-- `VITE_FIREBASE_APP_ID`
-- `VITE_FIREBASE_MEASUREMENT_ID`
+The following `VITE_*` variables must be set (managed via Doppler for local dev, and via Cloudflare Pages env vars for production builds):
 - `VITE_HF_API_KEY` — HuggingFace (fashion classification)
 - `VITE_REMOVE_BG_API_KEY` — remove.bg (background removal)
 
