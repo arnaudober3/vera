@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "doppler run -- vite --host=127.0.0.1",
     "build": "tsc -b && vite build",
-    "postbuild": "rm -f dist/wrangler.json"
+    "postbuild": "rm -f dist/wrangler.json",
     "lint": "eslint .",
     "preview": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy"
