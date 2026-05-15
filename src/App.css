@@ -331,3 +331,95 @@ body {
 .z-300 {
   z-index: 300;
 }
+
+.vera-basket-strip {
+  position: fixed;
+  left: 16px;
+  right: 16px;
+  bottom: 116px;
+  max-width: 360px;
+  margin: 0 auto;
+  z-index: 150;
+  background: var(--vera-surface);
+  border: 1px solid var(--vera-surface-border);
+  border-radius: var(--vera-radius-lg);
+  box-shadow: var(--vera-shadow-nav);
+  padding: 8px 8px 8px 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 80px;
+  cursor: pointer;
+  text-align: left;
+  transition: opacity var(--vera-duration) var(--vera-ease);
+}
+
+.vera-basket-strip:hover {
+  opacity: 0.92;
+}
+
+.vera-basket-strip__media {
+  width: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.vera-basket-strip__text {
+  flex: 1;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.vera-basket-strip__title {
+  font-size: var(--vera-text-sm);
+  font-weight: 600;
+  color: var(--vera-fg-strong);
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vera-basket-strip__sub {
+  font-size: var(--vera-text-xs);
+  color: var(--vera-fg-muted);
+  margin-top: 1px;
+}
+
+.vera-basket-strip__wash {
+  padding: 8px 14px;
+  font-size: var(--vera-text-sm);
+  font-weight: 600;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.vera-basket-hero {
+  flex-shrink: 0;
+  padding: 10px 16px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.vera-basket-hero__title {
+  font-family: var(--vera-font-display);
+  font-style: italic;
+  font-size: var(--vera-text-xl);
+  letter-spacing: -0.01em;
+  color: var(--vera-fg-strong);
+  margin-top: 8px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.vera-basket-hero__sub {
+  font-size: var(--vera-text-xs);
+  color: var(--vera-fg-muted);
+  margin-top: 4px;
+}
