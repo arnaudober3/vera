@@ -286,9 +286,11 @@ export const ClosetPage = (): React.JSX.Element => {
         />
       </div>
 
-      <div className="shrink-0 w-full mx-auto max-w-4xl px-4 pt-2">
-        <LaundryButton />
-      </div>
+      {items.length > 0 && (
+        <div className="shrink-0 w-full mx-auto max-w-4xl px-4 pt-2">
+          <LaundryButton />
+        </div>
+      )}
 
       <div
         className="flex-1 min-h-0 overflow-y-auto flex flex-col relative"
@@ -312,7 +314,7 @@ export const ClosetPage = (): React.JSX.Element => {
                   ))}
               </div>
             ) : (
-              <div className="flex-1 flex items-center justify-center">
+              <div className="flex-1 flex items-center justify-center pb-20">
                 <EmptyMessageTemplate
                   title="No items found."
                   subtitle="Try selecting a different filter or add a new item!"
@@ -325,33 +327,41 @@ export const ClosetPage = (): React.JSX.Element => {
         </div>
       </div>
 
-      {/* Spacer for basket overflow */}
-      <div className="shrink-0 h-8" />
+      {items.length > 0 ? (
+        <>
+          {/* Spacer for basket overflow */}
+          <div className="shrink-0 h-8" />
 
-      {/* Basket */}
-      <div
-        className="shrink-0 mx-auto w-64 md:w-80 h-44 md:h-56 mb-16 flex items-center justify-center pointer-events-none"
-        aria-label="Wear basket"
-      >
-        <div
-          style={{
-            width: "100%",
-            aspectRatio: "1/2",
-            backgroundImage: "url(/assets/basket-grid.png)",
-            backgroundRepeat: "no-repeat",
-            backgroundSize: "200% 100%",
-            backgroundPosition: areAllItemsClean() ? "0 0" : "94% 0",
-            imageRendering: "auto",
-          }}
-          aria-label={areAllItemsClean() ? "Empty basket" : "Full basket"}
-        />
-      </div>
+          {/* Basket */}
+          <div
+            className="shrink-0 mx-auto w-64 md:w-80 h-44 md:h-56 mb-16 flex items-center justify-center pointer-events-none"
+            aria-label="Wear basket"
+          >
+            <div
+              style={{
+                width: "100%",
+                aspectRatio: "1/2",
+                backgroundImage: "url(/assets/basket-grid.png)",
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "200% 100%",
+                backgroundPosition: areAllItemsClean() ? "0 0" : "94% 0",
+                imageRendering: "auto",
+              }}
+              aria-label={areAllItemsClean() ? "Empty basket" : "Full basket"}
+            />
+          </div>
+        </>
+      ) : (
+        <div className="shrink-0 h-20" />
+      )}
 
       <NavigationBar activePage="closet" />
-      <AddItemButton
-        onClick={() => setShowUploadModal(true)}
-        disabled={isUploadLimitReached()}
-      />
+      {items.length > 0 && (
+        <AddItemButton
+          onClick={() => setShowUploadModal(true)}
+          disabled={isUploadLimitReached()}
+        />
+      )}
 
       {showUploadModal && (
         <UploadClothingItemModal

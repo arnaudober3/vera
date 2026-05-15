@@ -266,18 +266,16 @@ export const FavouritesPage = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <div className="mx-auto max-w-4xl p-4 pb-2 w-full shrink-0">
+      <div className="mx-auto max-w-4xl px-4 pt-4 pb-1 w-full shrink-0">
         <h2 className="vera-page-title">Your favourites</h2>
       </div>
 
-      {favourites.length > 0 && (
-        <div className="shrink-0">
-          <FavouritesFilterBar
-            readyToWearOnly={readyToWearOnly}
-            onFilterChange={setReadyToWearOnly}
-          />
-        </div>
-      )}
+      <div className="shrink-0">
+        <FavouritesFilterBar
+          readyToWearOnly={readyToWearOnly}
+          onFilterChange={setReadyToWearOnly}
+        />
+      </div>
 
       <div
         className="flex-1 min-h-0 overflow-y-auto flex flex-col"
@@ -331,7 +329,7 @@ export const FavouritesPage = (): React.JSX.Element => {
                 </div>
               )
             ) : (
-              <div className="flex-1 flex items-center justify-center">
+              <div className="flex-1 flex items-center justify-center pb-20">
                 <EmptyMessageTemplate
                   title="No favourites yet."
                   subtitle="Save outfits you love from the today page!"

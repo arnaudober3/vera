@@ -146,6 +146,14 @@ const OutfitTemplate = (): React.JSX.Element => {
 
             return (
               <div className="relative mx-auto w-full max-w-md flex flex-col h-full min-h-0 overflow-hidden">
+                <button
+                  onClick={handleConfirmWorn}
+                  disabled={isMarking}
+                  className={`vera-btn-primary mb-4 w-full py-3 flex items-center justify-center gap-2 text-base font-semibold shrink-0 transition-all ${isMarking ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <FaCheck />
+                  {isMarking ? "Marking as worn..." : "I'm wearing this"}
+                </button>
                 <div className="vera-card flex flex-col items-center relative min-h-0 gap-3 p-4">
                   <FavouriteButton />
                   {/* Top item */}
@@ -273,14 +281,6 @@ const OutfitTemplate = (): React.JSX.Element => {
                     })()}
                   </div>
                 </div>
-                <button
-                  onClick={handleConfirmWorn}
-                  disabled={isMarking}
-                  className={`vera-btn-primary mt-4 mb-2 w-full py-3 flex items-center justify-center gap-2 text-base font-semibold shrink-0 transition-all ${isMarking ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  <FaCheck />
-                  {isMarking ? "Marking as worn..." : "I'm wearing this"}
-                </button>
               </div>
             );
           })()}
@@ -298,6 +298,7 @@ const OutfitTemplate = (): React.JSX.Element => {
 };
 
 export const TodayPage = (): React.JSX.Element => {
+  const { items } = useCloset();
   return (
     <div className="flex flex-col flex-1 min-h-screen relative overflow-hidden">
       {/* Header */}
@@ -305,12 +306,12 @@ export const TodayPage = (): React.JSX.Element => {
         <h2 className="vera-page-title">Today's outfit</h2>
       </div>
 
-      <div className="w-full mx-auto max-w-4xl px-4 flex-1 flex flex-col items-center justify-center mb-20 overflow-hidden">
+      <div className="w-full mx-auto max-w-4xl px-4 flex-1 flex flex-col items-center justify-center mb-30 overflow-hidden">
         <OutfitTemplate />
       </div>
 
       <NavigationBar activePage="today" />
-      <RegenerateOutfitFab />
+      {items.length > 0 && <RegenerateOutfitFab />}
     </div>
   );
 };
