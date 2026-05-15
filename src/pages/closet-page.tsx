@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router";
 import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
@@ -14,7 +15,7 @@ import * as React from "react";
 import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
-import { FaPlus } from "react-icons/fa";
+import { FaCheck, FaPlus } from "react-icons/fa";
 import { MdLocalLaundryService } from "react-icons/md";
 import "./closet-page.css";
 
@@ -159,12 +160,74 @@ const LaundryButton = (): React.JSX.Element => {
   );
 };
 
+const OnboardingToast = ({
+  onDismiss,
+}: {
+  onDismiss: () => void;
+}): React.JSX.Element => (
+  <button
+    type="button"
+    onClick={onDismiss}
+    aria-label="Dismiss"
+    style={{
+      width: "100%",
+      textAlign: "left",
+      background: "#ffffff",
+      border: "1px solid #e3ebec",
+      borderRadius: 16,
+      padding: 14,
+      display: "flex",
+      gap: 12,
+      alignItems: "center",
+      boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+      cursor: "pointer",
+    }}
+  >
+    <div
+      style={{
+        width: 36,
+        height: 36,
+        borderRadius: 999,
+        background: "#65aaa7",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "#fff",
+        flexShrink: 0,
+      }}
+    >
+      <FaCheck size={14} />
+    </div>
+    <div style={{ flex: 1 }}>
+      <div style={{ fontSize: 14, fontWeight: 600, color: "#000" }}>
+        You're set up.
+      </div>
+      <div style={{ fontSize: 12, color: "#6a7282", marginTop: 2 }}>
+        Tap + any time to add more. Check Today tomorrow morning.
+      </div>
+    </div>
+  </button>
+);
+
 export const ClosetPage = (): React.JSX.Element => {
   const { items, addClothingItem, isUploadLimitReached, areAllItemsClean } = useCloset();
   const { saveImage } = useImage();
+  const location = useLocation();
+  const justOnboarded =
+    (location.state as { justOnboarded?: boolean } | null)?.justOnboarded ??
+    false;
   const [selectedCategory, setSelectedCategory] =
     useState<ClothingItemCategory | null>(null);
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
+  const [showOnboardingToast, setShowOnboardingToast] = useState<boolean>(
+    justOnboarded,
+  );
+
+  useEffect(() => {
+    if (!showOnboardingToast) return;
+    const timer = window.setTimeout(() => setShowOnboardingToast(false), 6000);
+    return () => window.clearTimeout(timer);
+  }, [showOnboardingToast]);
 
   const filteredItems = useMemo(
     () =>
@@ -191,6 +254,14 @@ export const ClosetPage = (): React.JSX.Element => {
       <div className="mx-auto max-w-4xl px-4 pt-4 pb-1 w-full shrink-0">
         <h2 className="page-title">Your closet</h2>
       </div>
+
+      {showOnboardingToast && (
+        <div className="mx-auto max-w-4xl px-4 pb-2 w-full shrink-0">
+          <OnboardingToast
+            onDismiss={() => setShowOnboardingToast(false)}
+          />
+        </div>
+      )}
 
       <div className="shrink-0">
         <CategoryDropdown
