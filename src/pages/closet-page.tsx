@@ -147,7 +147,7 @@ const BasketImage = ({
   full: boolean;
   width: number;
 }): React.JSX.Element => {
-  const src = full ? "/assets/basket-full.png" : "/assets/basket-empty.png";
+  const src = full ? "/assets/basket_full.png" : "/assets/basket_empty.png";
   return (
     <img
       src={src}
