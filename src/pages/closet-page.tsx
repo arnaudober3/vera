@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
@@ -15,33 +15,49 @@ import * as React from "react";
 import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
-import { FaCheck, FaPlus } from "react-icons/fa";
-import { MdLocalLaundryService } from "react-icons/md";
+import { FaCheck } from "react-icons/fa";
+import { MdAdd, MdLocalLaundryService } from "react-icons/md";
 import "./closet-page.css";
 
-const CategoryDropdown = ({
+const CategoryFilterBar = ({
   selectedCategory,
   onCategorySelected,
 }: {
   selectedCategory: ClothingItemCategory | null;
   onCategorySelected: (category: ClothingItemCategory | null) => void;
 }): React.JSX.Element => {
+  const activeRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({
+      inline: "center",
+      block: "nearest",
+      behavior: "smooth",
+    });
+  }, [selectedCategory]);
+
+  const chips: { value: ClothingItemCategory | null; label: string }[] = [
+    { value: null, label: "All" },
+    ...categoryOptions.map(({ value, label }) => ({ value, label })),
+  ];
+
   return (
-    <div className="mx-auto max-w-4xl px-4 py-1 flex justify-center w-full">
-      <select
-        value={selectedCategory || ""}
-        onChange={(e) =>
-          onCategorySelected((e.target.value as ClothingItemCategory) || null)
-        }
-        className="category-select select w-full text-base font-medium"
-      >
-        <option value="">All categories</option>
-        {categoryOptions.map(({ value, label }) => (
-          <option key={value} value={value}>
+    <div className="vera-chip-row mx-auto max-w-4xl w-full">
+      {chips.map(({ value, label }) => {
+        const isActive = selectedCategory === value;
+        return (
+          <button
+            key={value ?? "all"}
+            type="button"
+            ref={isActive ? activeRef : undefined}
+            onClick={() => onCategorySelected(value)}
+            className={`vera-chip ${isActive ? "active" : ""}`}
+            aria-pressed={isActive}
+          >
             {label}
-          </option>
-        ))}
-      </select>
+          </button>
+        );
+      })}
     </div>
   );
 };
@@ -68,11 +84,11 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
   return (
     <div className="flex flex-col gap-2 p-2 h-full">
       <div
-        className={`card flex flex-col items-center relative h-full ${!item.isClean && isWashable(item.category) ? "dirty-overlay" : ""}`}
+        className={`vera-card flex flex-col items-center relative h-full ${!item.isClean && isWashable(item.category) ? "vera-dirty-overlay" : ""}`}
       >
         <button
           onClick={() => remove(item.id)}
-          className="delete-button absolute top-2 right-2 flex items-center justify-center transition-all text-sm font-bold keep-opaque"
+          className="delete-button absolute top-2 right-2 flex items-center justify-center transition-all text-sm font-bold vera-keep-opaque"
           aria-label="Delete item"
         >
           <IoClose size={14} />
@@ -96,8 +112,8 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
         </div>
 
         {isWashable(item.category) && (
-          <div className="keep-opaque mt-1 flex-shrink-0">
-            <span className={item.isClean ? "clean-badge" : "dirty-badge"}>
+          <div className="vera-keep-opaque mt-1 flex-shrink-0">
+            <span className={`vera-badge ${item.isClean ? "vera-badge--clean" : "vera-badge--dirty"}`}>
               {item.isClean ? "clean" : "dirty"}
             </span>
           </div>
@@ -124,11 +140,11 @@ const AddItemButton = ({
             ? "The limit of uploaded items has been reached"
             : "Add a new item to your closet"
         }
-        className={`fixed bottom-12 right-5 z-200 shadow-lg primary-button transition-all ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-        style={{ width: 56, height: 56 }}
+        className={`fixed right-5 z-200 shadow-lg vera-btn-primary transition-all ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+        style={{ width: 56, height: 56, bottom: 116 }}
       >
-        <div className="flex items-center justify-center text-3xl">
-          <FaPlus />
+        <div className="flex items-center justify-center">
+          <MdAdd size={30} />
         </div>
       </button>
     </div>
@@ -148,7 +164,7 @@ const LaundryButton = (): React.JSX.Element => {
 
   return (
     <button
-      className="primary-button mb-4 w-full py-3 flex items-center justify-center gap-2 text-base font-semibold transition-all "
+      className="vera-btn-primary mb-4 w-full py-3 flex items-center justify-center gap-2 text-base font-semibold transition-all "
       aria-label="Mark all worn items as clean"
       title="Mark all worn items as clean"
       onClick={() => onDoLaundry()}
@@ -252,7 +268,7 @@ export const ClosetPage = (): React.JSX.Element => {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       <div className="mx-auto max-w-4xl px-4 pt-4 pb-1 w-full shrink-0">
-        <h2 className="page-title">Your closet</h2>
+        <h2 className="vera-page-title">Your closet</h2>
       </div>
 
       {showOnboardingToast && (
@@ -264,7 +280,7 @@ export const ClosetPage = (): React.JSX.Element => {
       )}
 
       <div className="shrink-0">
-        <CategoryDropdown
+        <CategoryFilterBar
           selectedCategory={selectedCategory}
           onCategorySelected={setSelectedCategory}
         />
@@ -288,6 +304,12 @@ export const ClosetPage = (): React.JSX.Element => {
                 {filteredItems.map((item) => (
                   <ItemCard key={item.id} item={item} />
                 ))}
+                {filteredItems.length < 4 &&
+                  Array.from({ length: 4 - filteredItems.length }).map((_, i) => (
+                    <div key={`placeholder-${i}`} className="flex flex-col gap-2 p-2 h-full">
+                      <div className="vera-empty-slot w-full h-full" aria-hidden />
+                    </div>
+                  ))}
               </div>
             ) : (
               <div className="flex-1 flex items-center justify-center">

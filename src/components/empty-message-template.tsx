@@ -25,7 +25,7 @@ const EmptyMessageTemplate = ({
         {buttonText && onButtonClick && (
           <button
             onClick={onButtonClick}
-            className="primary-button px-6 py-3 text-base font-semibold mt-2"
+            className="vera-btn-primary px-6 py-3 text-base font-semibold mt-2"
           >
             {buttonText}
           </button>

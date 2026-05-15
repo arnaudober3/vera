@@ -178,7 +178,7 @@ export default function UploadClothingItemModal({
                 type="file"
                 accept="image/*"
                 onChange={(e) => fileDragged(e.target.files?.[0])}
-                className="input border block w-full text-sm text-gray-400"
+                className="vera-input block w-full text-sm text-gray-400"
                 aria-label="Choose image"
                 disabled={isSaving}
               />
@@ -201,7 +201,7 @@ export default function UploadClothingItemModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., Navy tee"
-              className="input w-full border text-base"
+              className="vera-input w-full text-base"
               aria-required
               disabled={isSaving}
             />
@@ -217,7 +217,7 @@ export default function UploadClothingItemModal({
               </label>
               <select
                 id="subcategory-input"
-                className={`input select w-full border text-base ${
+                className={`vera-input vera-select w-full text-base ${
                   !subCategory ? "placeholder" : null
                 }`}
                 value={subCategory}
@@ -256,14 +256,14 @@ export default function UploadClothingItemModal({
 
         <div className="mt-5 flex gap-3">
           <button
-            className="secondary-button flex-1 text-base"
+            className="vera-btn-secondary flex-1 text-base"
             onClick={onClose}
             disabled={isSaving}
           >
             Cancel
           </button>
           <button
-            className="primary-button flex-1 text-base disabled:opacity-60"
+            className="vera-btn-primary flex-1 text-base disabled:opacity-60"
             onClick={save}
             disabled={
               !file ||

@@ -1,54 +1,166 @@
+/* ============================================================
+   Vera — Design System Foundations
+   Colors, typography, spacing, radii, shadows, and surfaces.
+   ============================================================ */
+
 :root {
-  /* Primary colors */
-  --primary-color: #65aaa7;
-  --primary-disabled-bg-color: #d1d5dc;
+  /* --- Brand --------------------------------------------------- */
+  --vera-primary: #65aaa7;
+  --vera-primary-hover: #5a9996;
+  --vera-disabled-bg: #d1d5dc;
+  --vera-leaf: #6b9c7c;
+  --vera-basket: #b07d3f;
 
-  /* Secondary colors */
-  --secondary-color: #ffffff;
-  --secondary-border-color: #e3ebec;
+  /* --- Surface ------------------------------------------------- */
+  --vera-surface: #ffffff;
+  --vera-surface-border: #e3ebec;
+  --vera-overlay: rgba(0, 0, 0, 0.4);
+
+  /* --- App background gradient (radial pastel) ----------------- */
+  --vera-bg-lavender: #efe6ff;
+  --vera-bg-skyteal: #bae5ea;
+  --vera-bg-mint: #e8f8f7;
+  --vera-bg-app:
+    radial-gradient(ellipse at 30% 20%, var(--vera-bg-lavender) 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 50%, var(--vera-bg-skyteal) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 90%, var(--vera-bg-mint) 0%, transparent 50%),
+    linear-gradient(135deg, var(--vera-bg-lavender) 0%, var(--vera-bg-mint) 100%);
+
+  /* --- Neutral scale ------------------------------------------ */
+  --vera-gray-50: #f9fafb;
+  --vera-gray-100: #f3f4f6;
+  --vera-gray-200: #e5e7eb;
+  --vera-gray-300: #d1d5dc;
+  --vera-gray-400: #99a1af;
+  --vera-gray-500: #6a7282;
+  --vera-gray-600: #4a5565;
+  --vera-gray-700: #364153;
+  --vera-gray-800: #1e2939;
+  --vera-gray-900: #101828;
+
+  /* --- Semantic foreground ------------------------------------- */
+  --vera-fg-strong: #000000;
+  --vera-fg-default: var(--vera-gray-700);
+  --vera-fg-muted: var(--vera-gray-500);
+  --vera-fg-subtle: var(--vera-gray-400);
+  --vera-fg-on-primary: #ffffff;
+
+  /* --- Status -------------------------------------------------- */
+  --vera-dirty: #374151;
+  --vera-danger: #fb2c36;
+  --vera-danger-strong: #e7000b;
+
+  /* --- Typography ---------------------------------------------- */
+  --vera-font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+    "Apple Color Emoji", "Segoe UI Emoji";
+  --vera-font-display: "Instrument Serif", "Newsreader", Georgia,
+    "Times New Roman", serif;
+  --vera-font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+
+  --vera-text-xs: 0.75rem;
+  --vera-text-sm: 0.875rem;
+  --vera-text-base: 1rem;
+  --vera-text-lg: 1.125rem;
+  --vera-text-xl: 1.25rem;
+  --vera-text-2xl: 1.5rem;
+  --vera-text-3xl: 1.875rem;
+  --vera-leading: 1.4;
+  --vera-leading-tight: 1.15;
+
+  /* --- Spacing ------------------------------------------------- */
+  --vera-space: 0.25rem;
+  --vera-space-1: 0.25rem;
+  --vera-space-2: 0.5rem;
+  --vera-space-3: 0.75rem;
+  --vera-space-4: 1rem;
+  --vera-space-6: 1.5rem;
+  --vera-space-8: 2rem;
+  --vera-space-12: 3rem;
+  --vera-space-16: 4rem;
+
+  /* --- Radii --------------------------------------------------- */
+  --vera-radius-sm: 0.25rem;
+  --vera-radius-md: 0.5rem;
+  --vera-radius-lg: 1rem;
+  --vera-radius-pill: 9999px;
+
+  /* --- Shadows ------------------------------------------------- */
+  --vera-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+  --vera-shadow-fab:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --vera-shadow-nav:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+
+  /* --- Motion -------------------------------------------------- */
+  --vera-ease: cubic-bezier(0.2, 0, 0, 1);
+  --vera-duration-fast: 120ms;
+  --vera-duration: 180ms;
 }
 
-.bg-app {
-  background:
-    radial-gradient(ellipse at 30% 20%, #efe6ff 0%, transparent 50%),
-    radial-gradient(ellipse at 70% 50%, #bae5ea 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 90%, #e8f8f7 0%, transparent 50%),
-    linear-gradient(135deg, #efe6ff 0%, #e8f8f7 100%);
+body {
+  font-family: var(--vera-font-sans);
+  color: var(--vera-fg-default);
+  font-size: var(--vera-text-base);
+  line-height: var(--vera-leading);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.page-title {
-  text-align: center;
+.vera-bg-app {
+  background: var(--vera-bg-app);
+}
+
+.vera-page-title {
+  text-align: left;
   font-weight: 600;
-  font-size: 24px;
-  padding: calc(var(--spacing) * 2);
+  font-size: var(--vera-text-2xl);
+  padding-block: var(--vera-space-2);
+  padding-inline: 0;
+  letter-spacing: -0.005em;
+  line-height: var(--vera-leading-tight);
+  color: var(--vera-fg-default);
 }
 
-.primary-button {
-  background-color: var(--primary-color);
-  color: var(--color-white);
-  border-color: var(--color-gray-200);
-  border-radius: calc(infinity * 1px);
+.vera-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--vera-primary);
+  color: var(--vera-fg-on-primary);
+  border: 1px solid var(--vera-gray-200);
+  border-radius: var(--vera-radius-pill);
   cursor: pointer;
+  transition: opacity var(--vera-duration) var(--vera-ease);
 
-  &:hover {
+  &:hover:not(:disabled) {
     opacity: 80%;
   }
 
   &:disabled {
-    border-color: var(--color-gray-200);
+    border-color: var(--vera-gray-200);
     opacity: 50%;
     cursor: not-allowed;
   }
 }
 
-.secondary-button {
-  border: 1px solid var(--color-gray-200);
-  border-radius: calc(infinity * 1px);
-  background-color: var(--secondary-color);
-  color: var(--color-black);
-  padding-inline: calc(var(--spacing) * 4);
-  padding-block: calc(var(--spacing) * 2);
+.vera-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border: 1px solid var(--vera-gray-200);
+  border-radius: var(--vera-radius-pill);
+  background-color: var(--vera-surface);
+  color: var(--vera-fg-strong);
+  padding-inline: calc(var(--vera-space) * 4);
+  padding-block: calc(var(--vera-space) * 2);
   cursor: pointer;
+  transition: opacity var(--vera-duration) var(--vera-ease);
 
   &:disabled {
     cursor: not-allowed;
@@ -60,18 +172,21 @@
   }
 }
 
-.input {
-  border-radius: var(--radius-lg);
-  border-color: var(--color-gray-200);
-  padding-inline: calc(var(--spacing) * 3);
-  padding-block: calc(var(--spacing) * 2);
+.vera-input {
+  background: var(--vera-surface);
+  border: 1px solid var(--vera-gray-200);
+  border-radius: var(--vera-radius-md);
+  padding-inline: calc(var(--vera-space) * 3);
+  padding-block: calc(var(--vera-space) * 2);
+  font-size: var(--vera-text-base);
+  color: var(--vera-fg-strong);
 
   &::placeholder {
-    color: var(--color-gray-400);
+    color: var(--vera-fg-subtle);
   }
 }
 
-.select {
+.vera-select {
   -moz-appearance: none;
   -webkit-appearance: none;
   appearance: none;
@@ -80,45 +195,104 @@
   padding-right: 2rem;
 
   &.placeholder {
-    color: var(--color-gray-400);
+    color: var(--vera-fg-subtle);
   }
 }
 
-.card {
-  background: var(--secondary-color);
-  color: var(--color-gray-600);
-  border: 1px solid var(--secondary-border-color);
-  border-radius: var(--radius-2xl);
-  padding: calc(var(--spacing) * 3);
+.vera-card {
+  background: var(--vera-surface);
+  color: var(--vera-fg-default);
+  border: 1px solid var(--vera-surface-border);
+  border-radius: var(--vera-radius-lg);
+  padding: calc(var(--vera-space) * 3);
   text-align: center;
 
   @media (width >= 64rem) {
-    padding: calc(var(--spacing) * 2);
+    padding: calc(var(--vera-space) * 2);
   }
 }
 
-.dirty-overlay {
+.vera-empty-slot {
+  aspect-ratio: 1 / 1.2;
+  border-radius: var(--vera-radius-lg);
+  border: 1px dashed var(--vera-gray-300);
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.vera-chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 4px 16px 4px;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 16px,
+    black calc(100% - 24px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    black 16px,
+    black calc(100% - 24px),
+    transparent 100%
+  );
+}
+
+.vera-chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.vera-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: var(--vera-radius-pill);
+  background: var(--vera-surface);
+  color: var(--vera-fg-default);
+  border: 1px solid var(--vera-surface-border);
+  font-size: var(--vera-text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition:
+    background var(--vera-duration) var(--vera-ease),
+    color var(--vera-duration) var(--vera-ease),
+    border-color var(--vera-duration) var(--vera-ease);
+
+  &.active {
+    background: var(--vera-primary);
+    color: var(--vera-fg-on-primary);
+    border-color: var(--vera-primary);
+  }
+}
+
+.vera-dirty-overlay {
   position: relative;
   overflow: hidden;
 }
 
-.dirty-overlay *:not(.keep-opaque):not(.keep-opaque *) {
+.vera-dirty-overlay *:not(.vera-keep-opaque):not(.vera-keep-opaque *) {
   opacity: 0.45;
 }
 
-.keep-opaque {
+.vera-keep-opaque {
   opacity: 1 !important;
 }
 
-.dirty-overlay::after {
+.vera-dirty-overlay::after {
   content: "";
   position: absolute;
   inset: 0;
   background: linear-gradient(
     to top right,
     transparent calc(50% - 1.5px),
-    var(--color-red-500) calc(50% - 1.5px),
-    var(--color-red-500) calc(50% + 1.5px),
+    var(--vera-danger) calc(50% - 1.5px),
+    var(--vera-danger) calc(50% + 1.5px),
     transparent calc(50% + 1.5px)
   );
   pointer-events: none;
@@ -126,22 +300,24 @@
   opacity: 0.45;
 }
 
-.clean-badge,
-.dirty-badge {
-  border-radius: calc(infinity * 1px);
-  padding-inline: calc(var(--spacing) * 3);
-  padding-block: calc(var(--spacing) * 1);
-  font-size: var(--text-xs);
+.vera-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: var(--vera-radius-pill);
+  padding-inline: calc(var(--vera-space) * 3);
+  padding-block: calc(var(--vera-space) * 1);
+  font-size: var(--vera-text-xs);
   font-weight: 500;
-  color: var(--color-white);
+  color: var(--vera-fg-on-primary);
 }
 
-.clean-badge {
-  background-color: var(--primary-color);
+.vera-badge--clean {
+  background-color: var(--vera-primary);
 }
 
-.dirty-badge {
-  background-color: #374151;
+.vera-badge--dirty {
+  background-color: var(--vera-dirty);
 }
 
 .z-100 {

@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { FaCalendarDay, FaHeart, FaTshirt } from "react-icons/fa";
 import "./navigation-bar.css";
 
 type Page = "today" | "closet" | "favourites";
@@ -10,44 +9,33 @@ interface NavigationBarData {
 
 export default function NavigationBar({ activePage }: NavigationBarData) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3 shadow-lg z-100">
-      <div className="flex items-center justify-center max-w-sm mx-auto">
-        <Link
-          to="/closet"
-          className={`link transition-colors ${activePage === "closet" ? "active" : null}`}
-          aria-current={activePage === "closet" ? "page" : undefined}
-          aria-label="Open closet page"
-        >
-          <div className="text-xl mb-1">
-            <FaTshirt className="text-xl" />
-          </div>
-          <span className="text-xs font-medium">Closet</span>
-        </Link>
+    <nav className="vera-nav-pill z-100">
+      <Link
+        to="/"
+        className={`vera-nav-item ${activePage === "today" ? "active" : ""}`}
+        aria-current={activePage === "today" ? "page" : undefined}
+        aria-label="Open home page - Today's outfit suggestions"
+      >
+        Today
+      </Link>
 
-        <Link
-          to="/"
-          className={`link transition-colors ${activePage === "today" ? "active" : null}`}
-          aria-current={activePage === "today" ? "page" : undefined}
-          aria-label="Open home page - Today's outfit suggestions"
-        >
-          <div className="text-xl mb-1">
-            <FaCalendarDay className="text-xl" />
-          </div>
-          <span className="text-xs font-medium">Today</span>
-        </Link>
+      <Link
+        to="/closet"
+        className={`vera-nav-item ${activePage === "closet" ? "active" : ""}`}
+        aria-current={activePage === "closet" ? "page" : undefined}
+        aria-label="Open closet page"
+      >
+        Closet
+      </Link>
 
-        <Link
-          to="/favourites"
-          className={`link transition-colors ${activePage === "favourites" ? "active" : null}`}
-          aria-current={activePage === "favourites" ? "page" : undefined}
-          aria-label="Open favourite outfits page"
-        >
-          <div className="text-xl mb-1">
-            <FaHeart className="text-xl" />
-          </div>
-          <span className="text-xs font-medium">Favourites</span>
-        </Link>
-      </div>
+      <Link
+        to="/favourites"
+        className={`vera-nav-item ${activePage === "favourites" ? "active" : ""}`}
+        aria-current={activePage === "favourites" ? "page" : undefined}
+        aria-label="Open favourite outfits page"
+      >
+        Favourites
+      </Link>
     </nav>
   );
 }
