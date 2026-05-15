@@ -58,21 +58,21 @@ const FavouriteOutfitCard = ({
   }
 
   return (
-    <div className="flex flex-col gap-2 p-2">
+    <div className="flex flex-col gap-2 p-2 h-full">
       <div
-        className={`card flex flex-col items-center relative overflow-hidden !pt-3 !px-0 !pb-0 ${
+        className={`vera-card flex flex-col items-center relative overflow-hidden !pt-3 !px-0 !pb-0 h-full ${
           (top && !top.isClean && isWashable(top.category)) ||
           (bottom && !bottom.isClean && isWashable(bottom.category)) ||
           (outerwear && !outerwear.isClean && isWashable(outerwear.category)) ||
           (shoes && !shoes.isClean && isWashable(shoes.category)) ||
           accessories.some((a) => a && !a.isClean && isWashable(a.category))
-            ? "dirty-overlay"
+            ? "vera-dirty-overlay"
             : ""
         }`}
       >
         <button
           onClick={() => remove()}
-          className="unfavourite-button absolute top-2 right-2 z-20 pointer-events-auto flex items-center justify-center transition-all text-sm font-bold keep-opaque"
+          className="unfavourite-button absolute top-2 right-2 z-20 pointer-events-auto flex items-center justify-center transition-all text-sm font-bold vera-keep-opaque"
           aria-label="Remove favourite"
         >
           <FaHeart size={10} />
@@ -189,7 +189,7 @@ const FavouriteOutfitCard = ({
             </button>
           ) : (
             <div className="w-full flex items-center justify-center z-10">
-              <span className="dirty-badge keep-opaque">dirty</span>
+              <span className="vera-badge vera-badge--dirty vera-keep-opaque">dirty</span>
             </div>
           )}
         </div>
@@ -206,21 +206,23 @@ const FavouritesFilterBar = ({
   onFilterChange: (readyToWear: boolean) => void;
 }): React.JSX.Element => {
   return (
-    <div className="pb-2">
-      <div className="flex justify-center">
-        <button
-          onClick={() => onFilterChange(false)}
-          className={`filter-bar-item font-medium transition-all ${!readyToWearOnly ? "active" : ""}`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => onFilterChange(true)}
-          className={`filter-bar-item font-medium transition-all ${readyToWearOnly ? "active" : ""}`}
-        >
-          Ready to wear
-        </button>
-      </div>
+    <div className="vera-chip-row mx-auto max-w-4xl w-full">
+      <button
+        type="button"
+        onClick={() => onFilterChange(false)}
+        className={`vera-chip ${!readyToWearOnly ? "active" : ""}`}
+        aria-pressed={!readyToWearOnly}
+      >
+        All
+      </button>
+      <button
+        type="button"
+        onClick={() => onFilterChange(true)}
+        className={`vera-chip ${readyToWearOnly ? "active" : ""}`}
+        aria-pressed={readyToWearOnly}
+      >
+        Ready to wear
+      </button>
     </div>
   );
 };
@@ -264,18 +266,16 @@ export const FavouritesPage = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <div className="mx-auto max-w-4xl p-4 pb-2 w-full shrink-0">
-        <h2 className="page-title">Your favourites</h2>
+      <div className="mx-auto max-w-4xl px-4 pt-4 pb-1 w-full shrink-0">
+        <h2 className="vera-page-title">Your favourites</h2>
       </div>
 
-      {favourites.length > 0 && (
-        <div className="mx-auto max-w-4xl px-4 shrink-0">
-          <FavouritesFilterBar
-            readyToWearOnly={readyToWearOnly}
-            onFilterChange={setReadyToWearOnly}
-          />
-        </div>
-      )}
+      <div className="shrink-0">
+        <FavouritesFilterBar
+          readyToWearOnly={readyToWearOnly}
+          onFilterChange={setReadyToWearOnly}
+        />
+      </div>
 
       <div
         className="flex-1 min-h-0 overflow-y-auto flex flex-col"
@@ -290,7 +290,7 @@ export const FavouritesPage = (): React.JSX.Element => {
           <div className={`rounded-2xl ${favourites.length === 0 ? "flex-1 flex flex-col justify-center" : ""}`}>
             {favourites.length > 0 ? (
               filteredFavourites.length > 0 ? (
-                <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+                <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr">
                   {filteredFavourites.map(
                     ({
                       favourite,
@@ -311,6 +311,12 @@ export const FavouritesPage = (): React.JSX.Element => {
                       />
                     ),
                   )}
+                  {filteredFavourites.length < 4 &&
+                    Array.from({ length: 4 - filteredFavourites.length }).map((_, i) => (
+                      <div key={`placeholder-${i}`} className="flex flex-col gap-2 p-2 h-full">
+                        <div className="vera-empty-slot w-full h-full" aria-hidden />
+                      </div>
+                    ))}
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -323,7 +329,7 @@ export const FavouritesPage = (): React.JSX.Element => {
                 </div>
               )
             ) : (
-              <div className="flex-1 flex items-center justify-center">
+              <div className="flex-1 flex items-center justify-center pb-20">
                 <EmptyMessageTemplate
                   title="No favourites yet."
                   subtitle="Save outfits you love from the today page!"

@@ -11,7 +11,7 @@ const RootRoute = () =>
 
 function App() {
   return (
-    <div className="bg-app min-h-screen flex flex-col">
+    <div className="vera-bg-app min-h-screen flex flex-col">
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<RootRoute />} />

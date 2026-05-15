@@ -1,14 +1,29 @@
-.link {
+.vera-nav-pill {
+  position: fixed;
+  bottom: 50px;
+  left: 16px;
+  right: 16px;
+  max-width: 360px;
+  margin: 0 auto;
   display: flex;
-  flex-direction: column;
+  justify-content: space-around;
   align-items: center;
-  justify-content: center;
-  color: var(--color-gray-700);
-  border-radius: var(--radius-lg);
-  padding-inline: calc(var(--spacing) * 6);
-  padding-block: calc(var(--spacing) * 2);
+  background: var(--vera-surface);
+  border: 1px solid var(--vera-surface-border);
+  border-radius: var(--vera-radius-pill);
+  padding: 10px 18px;
+  box-shadow: var(--vera-shadow-nav);
+}
+
+.vera-nav-item {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vera-fg-muted);
+  text-decoration: none;
+  transition: color var(--vera-duration) var(--vera-ease);
 
   &.active {
-    color: var(--primary-color);
+    color: var(--vera-primary);
+    font-weight: 600;
   }
 }

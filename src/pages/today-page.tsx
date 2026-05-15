@@ -74,8 +74,8 @@ const RegenerateOutfitFab = () => {
       aria-label="Regenerate the outfit"
       title="Regenerate the outfit"
       disabled={!canGenerateOutfit()}
-      className={`fixed bottom-12 right-5 z-200 shadow-lg primary-button transition-all ${!canGenerateOutfit() ? "opacity-50 cursor-not-allowed" : ""}`}
-      style={{ width: 56, height: 56 }}
+      className={`fixed right-5 z-200 shadow-lg vera-btn-primary transition-all ${!canGenerateOutfit() ? "opacity-50 cursor-not-allowed" : ""}`}
+      style={{ width: 56, height: 56, bottom: 116 }}
     >
       <div className="flex items-center justify-center text-2xl">
         <FaSyncAlt />
@@ -146,7 +146,15 @@ const OutfitTemplate = (): React.JSX.Element => {
 
             return (
               <div className="relative mx-auto w-full max-w-md flex flex-col h-full min-h-0 overflow-hidden">
-                <div className="card flex flex-col items-center relative min-h-0 gap-3 p-4">
+                <button
+                  onClick={handleConfirmWorn}
+                  disabled={isMarking}
+                  className={`vera-btn-primary mb-4 w-full py-3 flex items-center justify-center gap-2 text-base font-semibold shrink-0 transition-all ${isMarking ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                  <FaCheck />
+                  {isMarking ? "Marking as worn..." : "I'm wearing this"}
+                </button>
+                <div className="vera-card flex flex-col items-center relative min-h-0 gap-3 p-4">
                   <FavouriteButton />
                   {/* Top item */}
                   {outfit.top && isItemClean(outfit.top.id) && (
@@ -273,14 +281,6 @@ const OutfitTemplate = (): React.JSX.Element => {
                     })()}
                   </div>
                 </div>
-                <button
-                  onClick={handleConfirmWorn}
-                  disabled={isMarking}
-                  className={`primary-button mt-4 mb-2 w-full py-3 flex items-center justify-center gap-2 text-base font-semibold shrink-0 transition-all ${isMarking ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  <FaCheck />
-                  {isMarking ? "Marking as worn..." : "I'm wearing this"}
-                </button>
               </div>
             );
           })()}
@@ -298,19 +298,20 @@ const OutfitTemplate = (): React.JSX.Element => {
 };
 
 export const TodayPage = (): React.JSX.Element => {
+  const { items } = useCloset();
   return (
     <div className="flex flex-col flex-1 min-h-screen relative overflow-hidden">
       {/* Header */}
       <div className="w-full mx-auto max-w-4xl px-4 pt-4 shrink-0">
-        <h2 className="page-title">Today's outfit</h2>
+        <h2 className="vera-page-title">Today's outfit</h2>
       </div>
 
-      <div className="w-full mx-auto max-w-4xl px-4 flex-1 flex flex-col items-center justify-center mb-20 overflow-hidden">
+      <div className="w-full mx-auto max-w-4xl px-4 flex-1 flex flex-col items-center justify-center mb-30 overflow-hidden">
         <OutfitTemplate />
       </div>
 
       <NavigationBar activePage="today" />
-      <RegenerateOutfitFab />
+      {items.length > 0 && <RegenerateOutfitFab />}
     </div>
   );
 };
