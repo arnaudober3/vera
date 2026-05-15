@@ -1,0 +1,175 @@
+/* Onboarding-scoped design tokens.
+   Scoped under .vera-onboarding so the rest of the app (closet, today,
+   favourites, nav bar) is unaffected. No web fonts loaded: the sans stack
+   inherits from the app, and serif moments fall back to the platform serif. */
+
+.vera-onboarding {
+  --vera-primary: #65aaa7;
+  --vera-disabled-bg: #d1d5dc;
+  --vera-surface: #ffffff;
+  --vera-surface-border: #e3ebec;
+
+  --vera-bg-lavender: #efe6ff;
+  --vera-bg-skyteal: #bae5ea;
+  --vera-bg-mint: #e8f8f7;
+  --vera-bg-app: radial-gradient(
+      ellipse at 30% 20%,
+      var(--vera-bg-lavender) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 70% 50%,
+      var(--vera-bg-skyteal) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 50% 90%,
+      var(--vera-bg-mint) 0%,
+      transparent 50%
+    ),
+    linear-gradient(
+      135deg,
+      var(--vera-bg-lavender) 0%,
+      var(--vera-bg-mint) 100%
+    );
+
+  --vera-gray-50: #f9fafb;
+  --vera-gray-100: #f3f4f6;
+  --vera-gray-200: #e5e7eb;
+  --vera-gray-300: #d1d5dc;
+  --vera-gray-400: #99a1af;
+  --vera-gray-500: #6a7282;
+  --vera-gray-600: #4a5565;
+  --vera-gray-700: #364153;
+
+  --vera-fg-strong: #000000;
+  --vera-fg-default: var(--vera-gray-700);
+  --vera-fg-muted: var(--vera-gray-500);
+  --vera-fg-subtle: var(--vera-gray-400);
+  --vera-fg-on-primary: #ffffff;
+
+  --vera-font-sans: inherit;
+  --vera-font-display: Georgia, "Times New Roman", serif;
+
+  --vera-radius-md: 0.5rem;
+  --vera-radius-lg: 1rem;
+  --vera-radius-pill: 9999px;
+
+  --vera-shadow-card: 0 1px 2px rgba(15, 23, 42, 0.04);
+
+  --vera-ease: cubic-bezier(0.2, 0, 0, 1);
+  --vera-duration: 180ms;
+
+  background: var(--vera-bg-app);
+  color: var(--vera-fg-default);
+  font-family: var(--vera-font-sans);
+  min-height: 100vh;
+}
+
+.vera-onboarding .vera-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--vera-primary);
+  color: var(--vera-fg-on-primary);
+  border: 1px solid var(--vera-gray-200);
+  border-radius: var(--vera-radius-pill);
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  transition: opacity var(--vera-duration) var(--vera-ease);
+}
+.vera-onboarding .vera-btn-primary:hover:not(:disabled) {
+  opacity: 0.8;
+}
+.vera-onboarding .vera-btn-primary:disabled {
+  opacity: 0.5;
+  background-color: var(--vera-disabled-bg);
+  cursor: not-allowed;
+}
+
+.vera-onboarding .vera-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background-color: var(--vera-surface);
+  color: var(--vera-fg-strong);
+  border: 1px solid var(--vera-gray-200);
+  border-radius: var(--vera-radius-pill);
+  padding: 13px 20px;
+  font-size: 15px;
+  font-weight: 600;
+  width: 100%;
+  cursor: pointer;
+  transition: opacity var(--vera-duration) var(--vera-ease);
+}
+.vera-onboarding .vera-btn-secondary:hover:not(:disabled) {
+  opacity: 0.8;
+}
+.vera-onboarding .vera-btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.vera-onboarding .vera-card {
+  background: var(--vera-surface);
+  color: var(--vera-fg-default);
+  border: 1px solid var(--vera-surface-border);
+  border-radius: var(--vera-radius-lg);
+  padding: 12px;
+  text-align: center;
+}
+
+.vera-onboarding .vera-input {
+  background: var(--vera-surface);
+  border: 1px solid var(--vera-gray-200);
+  border-radius: var(--vera-radius-md);
+  padding: 10px 12px;
+  font-size: 16px;
+  color: var(--vera-fg-strong);
+  width: 100%;
+  font-family: inherit;
+}
+.vera-onboarding .vera-input::placeholder {
+  color: var(--vera-fg-subtle);
+}
+
+.vera-onboarding .vera-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.vera-onboarding .vera-skip-link {
+  background: transparent;
+  border: 0;
+  color: var(--vera-fg-muted);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 12px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vera-onboarding .vera-display {
+  font-family: var(--vera-font-display);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--vera-fg-strong);
+}
+
+.vera-onboarding-processing {
+  background: #0c0c0c;
+  color: #fff;
+  min-height: 100vh;
+}
