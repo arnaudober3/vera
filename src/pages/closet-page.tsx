@@ -16,7 +16,7 @@ import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
 import { FaCheck } from "react-icons/fa";
-import { MdAdd, MdLocalLaundryService } from "react-icons/md";
+import { MdAdd, MdChevronLeft, MdLocalLaundryService } from "react-icons/md";
 import "./closet-page.css";
 
 const CategoryFilterBar = ({
@@ -82,10 +82,8 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
   }
 
   return (
-    <div className="flex flex-col gap-2 p-2 h-full">
-      <div
-        className={`vera-card flex flex-col items-center relative h-full ${!item.isClean && isWashable(item.category) ? "vera-dirty-overlay" : ""}`}
-      >
+    <div className="flex flex-col gap-2 p-2 h-full" style={{ aspectRatio: "1 / 1.2" }}>
+      <div className="vera-card flex flex-col items-center relative h-full">
         <button
           onClick={() => remove(item.id)}
           className="delete-button absolute top-2 right-2 flex items-center justify-center transition-all text-sm font-bold vera-keep-opaque"
@@ -110,14 +108,6 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
             </div>
           </div>
         </div>
-
-        {isWashable(item.category) && (
-          <div className="vera-keep-opaque mt-1 flex-shrink-0">
-            <span className={`vera-badge ${item.isClean ? "vera-badge--clean" : "vera-badge--dirty"}`}>
-              {item.isClean ? "clean" : "dirty"}
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -141,7 +131,7 @@ const AddItemButton = ({
             : "Add a new item to your closet"
         }
         className={`fixed right-5 z-200 shadow-lg vera-btn-primary transition-all ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-        style={{ width: 56, height: 56, bottom: 116 }}
+        style={{ width: 56, height: 56, bottom: 212 }}
       >
         <div className="flex items-center justify-center">
           <MdAdd size={30} />
@@ -150,29 +140,108 @@ const AddItemButton = ({
     </div>
   );
 };
-const LaundryButton = (): React.JSX.Element => {
-  const { areAllItemsClean, markLaundryDone } = useCloset();
-  const { generateOutfit, outfit } = useOutfit();
+const BasketImage = ({
+  full,
+  width,
+}: {
+  full: boolean;
+  width: number;
+}): React.JSX.Element => {
+  const src = full ? "/assets/basket-full.png" : "/assets/basket-empty.png";
+  return (
+    <img
+      src={src}
+      alt={full ? "Full basket" : "Empty basket"}
+      style={{ width, height: "auto", display: "block", flexShrink: 0 }}
+    />
+  );
+};
 
-  async function onDoLaundry(): Promise<void> {
-    await markLaundryDone();
-
-    if (!outfit) {
-      await generateOutfit();
-    }
-  }
+const BasketStrip = ({
+  dirtyCount,
+  viewingBasket,
+  onTap,
+  onWash,
+}: {
+  dirtyCount: number;
+  viewingBasket: boolean;
+  onTap: () => void;
+  onWash: () => void;
+}): React.JSX.Element | null => {
+  if (dirtyCount === 0 && !viewingBasket) return null;
 
   return (
-    <button
-      className="vera-btn-primary mb-4 w-full py-3 flex items-center justify-center gap-2 text-base font-semibold transition-all "
-      aria-label="Mark all worn items as clean"
-      title="Mark all worn items as clean"
-      onClick={() => onDoLaundry()}
-      disabled={areAllItemsClean()}
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onTap}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onTap();
+        }
+      }}
+      className="vera-basket-strip"
+      aria-pressed={viewingBasket}
+      aria-label={
+        viewingBasket
+          ? "Showing the basket — tap to go back"
+          : `${dirtyCount} ${dirtyCount === 1 ? "item" : "items"} in the basket — tap to view`
+      }
     >
-      <MdLocalLaundryService size={20} />
-      Wash all items
-    </button>
+      <div className="vera-basket-strip__media">
+        <BasketImage full width={44} />
+      </div>
+
+      <div className="vera-basket-strip__text">
+        {viewingBasket ? (
+          <>
+            <div className="vera-basket-strip__title">
+              <MdChevronLeft size={16} aria-hidden />
+              Showing the basket
+            </div>
+            <div className="vera-basket-strip__sub">Tap to go back</div>
+          </>
+        ) : (
+          <>
+            <div className="vera-basket-strip__title">
+              {dirtyCount} {dirtyCount === 1 ? "item" : "items"} in the basket
+            </div>
+            <div className="vera-basket-strip__sub">
+              Tap to see what's worn
+            </div>
+          </>
+        )}
+      </div>
+
+      {dirtyCount > 0 && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onWash();
+          }}
+          className="vera-btn-primary vera-basket-strip__wash"
+          aria-label="Mark all worn items as clean"
+          title="Mark all worn items as clean"
+        >
+          <MdLocalLaundryService size={14} />
+          Wash
+        </button>
+      )}
+    </div>
+  );
+};
+
+const BasketHero = ({ count }: { count: number }): React.JSX.Element => {
+  return (
+    <div className="vera-basket-hero">
+      <BasketImage full={count > 0} width={110} />
+      <div className="vera-basket-hero__title">
+        {count} {count === 1 ? "item" : "items"} waiting
+      </div>
+      <div className="vera-basket-hero__sub">Worn since your last wash</div>
+    </div>
   );
 };
 
@@ -226,8 +295,14 @@ const OnboardingToast = ({
 );
 
 export const ClosetPage = (): React.JSX.Element => {
-  const { items, addClothingItem, isUploadLimitReached, areAllItemsClean } = useCloset();
+  const {
+    items,
+    addClothingItem,
+    isUploadLimitReached,
+    markLaundryDone,
+  } = useCloset();
   const { saveImage } = useImage();
+  const { generateOutfit, outfit } = useOutfit();
   const location = useLocation();
   const justOnboarded =
     (location.state as { justOnboarded?: boolean } | null)?.justOnboarded ??
@@ -238,6 +313,7 @@ export const ClosetPage = (): React.JSX.Element => {
   const [showOnboardingToast, setShowOnboardingToast] = useState<boolean>(
     justOnboarded,
   );
+  const [viewingBasket, setViewingBasket] = useState<boolean>(false);
 
   useEffect(() => {
     if (!showOnboardingToast) return;
@@ -245,14 +321,23 @@ export const ClosetPage = (): React.JSX.Element => {
     return () => window.clearTimeout(timer);
   }, [showOnboardingToast]);
 
-  const filteredItems = useMemo(
-    () =>
-      selectedCategory
-        ? items.filter((item) => item.category === selectedCategory)
-        : items,
-    [selectedCategory, items],
+  const dirtyItems = useMemo(
+    () => items.filter((i) => isWashable(i.category) && !i.isClean),
+    [items],
+  );
+  const dirtyCount = dirtyItems.length;
+
+  const cleanItems = useMemo(
+    () => items.filter((i) => !isWashable(i.category) || i.isClean),
+    [items],
   );
 
+  const displayedItems = useMemo(() => {
+    if (viewingBasket) return dirtyItems;
+    return selectedCategory
+      ? cleanItems.filter((item) => item.category === selectedCategory)
+      : cleanItems;
+  }, [viewingBasket, dirtyItems, cleanItems, selectedCategory]);
 
   async function addItem(item: CreateClothingItem): Promise<void> {
     const newItem = await addClothingItem(item);
@@ -264,6 +349,16 @@ export const ClosetPage = (): React.JSX.Element => {
       });
     }
   }
+
+  async function onWash(): Promise<void> {
+    await markLaundryDone();
+    setViewingBasket(false);
+    if (!outfit) {
+      await generateOutfit();
+    }
+  }
+
+  const showEmptyState = displayedItems.length === 0 && !viewingBasket;
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -279,16 +374,12 @@ export const ClosetPage = (): React.JSX.Element => {
         </div>
       )}
 
-      <div className="shrink-0">
-        <CategoryFilterBar
-          selectedCategory={selectedCategory}
-          onCategorySelected={setSelectedCategory}
-        />
-      </div>
-
-      {items.length > 0 && (
-        <div className="shrink-0 w-full mx-auto max-w-4xl px-4 pt-2">
-          <LaundryButton />
+      {!viewingBasket && (
+        <div className="shrink-0">
+          <CategoryFilterBar
+            selectedCategory={selectedCategory}
+            onCategorySelected={setSelectedCategory}
+          />
         </div>
       )}
 
@@ -299,61 +390,48 @@ export const ClosetPage = (): React.JSX.Element => {
           WebkitMaskImage: "linear-gradient(to bottom, transparent, black 1.5rem, black calc(100% - 3rem), transparent)",
         }}
       >
-        <div className={`w-full mx-auto max-w-4xl px-4 ${filteredItems.length === 0 ? "flex-1 flex flex-col justify-center" : "pb-8"}`}>
-          <div className={`rounded-2xl ${filteredItems.length === 0 ? "flex-1 flex flex-col justify-center" : ""}`}>
-            {filteredItems.length > 0 ? (
+        {viewingBasket && <BasketHero count={dirtyCount} />}
+
+        <div
+          className={`w-full mx-auto max-w-4xl px-4 ${showEmptyState ? "flex-1 flex flex-col justify-center" : "pb-56"}`}
+        >
+          <div
+            className={`rounded-2xl ${showEmptyState ? "flex-1 flex flex-col justify-center" : ""}`}
+          >
+            {displayedItems.length > 0 ? (
               <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr">
-                {filteredItems.map((item) => (
+                {displayedItems.map((item) => (
                   <ItemCard key={item.id} item={item} />
                 ))}
-                {filteredItems.length < 4 &&
-                  Array.from({ length: 4 - filteredItems.length }).map((_, i) => (
+                {displayedItems.length < 4 &&
+                  Array.from({ length: 4 - displayedItems.length }).map((_, i) => (
                     <div key={`placeholder-${i}`} className="flex flex-col gap-2 p-2 h-full">
                       <div className="vera-empty-slot w-full h-full" aria-hidden />
                     </div>
                   ))}
               </div>
             ) : (
-              <div className="flex-1 flex items-center justify-center pb-20">
-                <EmptyMessageTemplate
-                  title="No items found."
-                  subtitle="Try selecting a different filter or add a new item!"
-                  buttonText="Add an item"
-                  onButtonClick={() => setShowUploadModal(true)}
-                />
-              </div>
+              !viewingBasket && (
+                <div className="flex-1 flex items-center justify-center pb-20">
+                  <EmptyMessageTemplate
+                    title="No items found."
+                    subtitle="Try selecting a different filter or add a new item!"
+                    buttonText="Add an item"
+                    onButtonClick={() => setShowUploadModal(true)}
+                  />
+                </div>
+              )
             )}
           </div>
         </div>
       </div>
 
-      {items.length > 0 ? (
-        <>
-          {/* Spacer for basket overflow */}
-          <div className="shrink-0 h-8" />
-
-          {/* Basket */}
-          <div
-            className="shrink-0 mx-auto w-64 md:w-80 h-44 md:h-56 mb-16 flex items-center justify-center pointer-events-none"
-            aria-label="Wear basket"
-          >
-            <div
-              style={{
-                width: "100%",
-                aspectRatio: "1/2",
-                backgroundImage: "url(/assets/basket-grid.png)",
-                backgroundRepeat: "no-repeat",
-                backgroundSize: "200% 100%",
-                backgroundPosition: areAllItemsClean() ? "0 0" : "94% 0",
-                imageRendering: "auto",
-              }}
-              aria-label={areAllItemsClean() ? "Empty basket" : "Full basket"}
-            />
-          </div>
-        </>
-      ) : (
-        <div className="shrink-0 h-20" />
-      )}
+      <BasketStrip
+        dirtyCount={dirtyCount}
+        viewingBasket={viewingBasket}
+        onTap={() => setViewingBasket((v) => !v)}
+        onWash={() => void onWash()}
+      />
 
       <NavigationBar activePage="closet" />
       {items.length > 0 && (
