@@ -115,9 +115,11 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
 const AddItemButton = ({
   onClick,
   disabled,
+  stripVisible,
 }: {
   onClick: () => void;
   disabled: boolean;
+  stripVisible: boolean;
 }): React.JSX.Element => {
   return (
     <div className="flex justify-center">
@@ -131,7 +133,7 @@ const AddItemButton = ({
             : "Add a new item to your closet"
         }
         className={`fixed right-5 z-200 shadow-lg vera-btn-primary transition-all ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-        style={{ width: 56, height: 56, bottom: 212 }}
+        style={{ width: 56, height: 56, bottom: stripVisible ? 212 : 116 }}
       >
         <div className="flex items-center justify-center">
           <MdAdd size={30} />
@@ -426,6 +428,8 @@ export const ClosetPage = (): React.JSX.Element => {
         </div>
       </div>
 
+      <div className="shrink-0 h-20" />
+
       <BasketStrip
         dirtyCount={dirtyCount}
         viewingBasket={viewingBasket}
@@ -438,6 +442,7 @@ export const ClosetPage = (): React.JSX.Element => {
         <AddItemButton
           onClick={() => setShowUploadModal(true)}
           disabled={isUploadLimitReached()}
+          stripVisible={dirtyCount > 0 || viewingBasket}
         />
       )}
 
