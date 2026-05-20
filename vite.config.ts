@@ -2,8 +2,6 @@ import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 import {VitePWA} from "vite-plugin-pwa";
 
-import { cloudflare } from "@cloudflare/vite-plugin";
-
 // https://vite.dev/config/
 export default defineConfig({
     server: {
@@ -16,7 +14,11 @@ export default defineConfig({
         },
     },
     plugins: [react(), VitePWA({
-        registerType: 'autoUpdate', manifest: {
+        registerType: 'autoUpdate',
+        workbox: {
+            navigateFallback: '/index.html',
+        },
+        manifest: {
             name: 'Vera, your personal stylist',
             short_name: 'Vera',
             start_url: '.',
@@ -29,5 +31,5 @@ export default defineConfig({
                 src: '/icon-512.png', sizes: '512x512', type: 'image/png'
             }]
         }
-    }), cloudflare()]
+    })]
 })
