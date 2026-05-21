@@ -115,31 +115,24 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
 const AddItemButton = ({
   onClick,
   disabled,
-  stripVisible,
 }: {
   onClick: () => void;
   disabled: boolean;
-  stripVisible: boolean;
 }): React.JSX.Element => {
   return (
-    <div className="flex justify-center">
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        aria-label="Add a new item to your closet"
-        title={
-          disabled
-            ? "The limit of uploaded items has been reached"
-            : "Add a new item to your closet"
-        }
-        className={`fixed right-5 z-200 shadow-lg vera-btn-primary transition-all ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-        style={{ width: 56, height: 56, bottom: stripVisible ? 212 : 116 }}
-      >
-        <div className="flex items-center justify-center">
-          <MdAdd size={30} />
-        </div>
-      </button>
-    </div>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label="Add a new item to your closet"
+      title={
+        disabled
+          ? "The limit of uploaded items has been reached"
+          : "Add a new item to your closet"
+      }
+      className="vera-nav-fab"
+    >
+      <MdAdd size={26} />
+    </button>
   );
 };
 const BasketImage = ({
@@ -437,14 +430,17 @@ export const ClosetPage = (): React.JSX.Element => {
         onWash={() => void onWash()}
       />
 
-      <NavigationBar activePage="closet" />
-      {items.length > 0 && (
-        <AddItemButton
-          onClick={() => setShowUploadModal(true)}
-          disabled={isUploadLimitReached()}
-          stripVisible={dirtyCount > 0 || viewingBasket}
-        />
-      )}
+      <NavigationBar
+        activePage="closet"
+        action={
+          items.length > 0 ? (
+            <AddItemButton
+              onClick={() => setShowUploadModal(true)}
+              disabled={isUploadLimitReached()}
+            />
+          ) : undefined
+        }
+      />
 
       {showUploadModal && (
         <UploadClothingItemModal

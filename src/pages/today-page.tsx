@@ -416,14 +416,17 @@ const TodayOutfit = (): React.JSX.Element => {
 
   if (!hasVisibleOutfit) {
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "100px" }}>
-        <EmptyMessageTemplate
-          title="No outfit right now."
-          subtitle="All your clothes are in the basket — time to do laundry!"
-          buttonText="Go to closet"
-          onButtonClick={() => navigate("/closet")}
-        />
-      </div>
+      <>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "100px" }}>
+          <EmptyMessageTemplate
+            title="No outfit right now."
+            subtitle="All your clothes are in the basket — time to do laundry!"
+            buttonText="Go to closet"
+            onButtonClick={() => navigate("/closet")}
+          />
+        </div>
+        <NavigationBar activePage="today" />
+      </>
     );
   }
 
@@ -472,19 +475,24 @@ const TodayOutfit = (): React.JSX.Element => {
         <div style={{ height: 160 }} />
       </div>
 
-      <button
-        type="button"
-        onClick={() => void onRegenerate()}
-        aria-label="Regenerate the outfit"
-        disabled={!canGenerateOutfit()}
-        className="vera-fab today-fab"
-      >
-        <FaSyncAlt size={18} />
-      </button>
-
       <div className="today-swipe-wrap">
         <SwipeToWear onConfirm={() => void handleConfirmWorn()} />
       </div>
+
+      <NavigationBar
+        activePage="today"
+        action={
+          <button
+            type="button"
+            onClick={() => void onRegenerate()}
+            aria-label="Regenerate the outfit"
+            disabled={!canGenerateOutfit()}
+            className="vera-nav-fab"
+          >
+            <FaSyncAlt size={18} />
+          </button>
+        }
+      />
 
       <AccessorySheet
         open={pickerOpen}
@@ -511,8 +519,6 @@ export const TodayPage = (): React.JSX.Element => {
       </div>
 
       <TodayOutfit />
-
-      <NavigationBar activePage="today" />
     </div>
   );
 };

@@ -349,39 +349,6 @@
   cursor: default;
 }
 
-.today-fab {
-  position: fixed;
-  right: 18px;
-  bottom: 176px;
-  z-index: 200;
-  width: 56px;
-  height: 56px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--vera-primary);
-  color: var(--vera-fg-on-primary);
-  border: 1px solid var(--vera-gray-200);
-  border-radius: 9999px;
-  box-shadow:
-    0 10px 15px -3px rgba(0, 0, 0, 0.1),
-    0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  padding: 0;
-}
-
-@media (min-width: 480px) {
-  .today-fab {
-    right: calc(50% - 180px + 18px);
-  }
-}
-
-.today-fab:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-
 .today-sheet-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
