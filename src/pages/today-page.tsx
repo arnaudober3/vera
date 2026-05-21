@@ -19,17 +19,8 @@ import {
 } from "react-icons/fa";
 import { PiPantsFill, PiTShirtFill } from "react-icons/pi";
 import { useNavigate } from "react-router";
+import { isDarkColor } from "../utils/color.ts";
 import "../pages/today-page.css";
-
-const isDarkColor = (hex: string): boolean => {
-  const h = hex.replace("#", "");
-  if (h.length !== 6) return false;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return L < 0.35;
-};
 
 const formatDate = (d: Date): string =>
   d.toLocaleDateString("en-GB", {

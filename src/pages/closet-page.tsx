@@ -17,6 +17,7 @@ import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
 import { FaCheck } from "react-icons/fa";
 import { MdAdd, MdChevronLeft, MdLocalLaundryService } from "react-icons/md";
+import { isDarkColor } from "../utils/color.ts";
 import "./closet-page.css";
 
 const CategoryFilterBar = ({
@@ -81,13 +82,20 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
     }
   }
 
+  const dark = isDarkColor(item.color);
+  const fg = dark ? "#ffffff" : "#000000";
+
   return (
     <div className="flex flex-col gap-2 p-2 h-full" style={{ aspectRatio: "1 / 1.2" }}>
-      <div className="vera-card flex flex-col items-center relative h-full">
+      <div
+        className="vera-card flex flex-col items-center relative h-full"
+        style={{ backgroundColor: item.color, borderColor: "transparent" }}
+      >
         <button
           onClick={() => remove(item.id)}
           className="delete-button absolute top-2 right-2 flex items-center justify-center transition-all text-sm font-bold vera-keep-opaque"
           aria-label="Delete item"
+          style={{ color: fg }}
         >
           <IoClose size={14} />
         </button>
@@ -98,12 +106,15 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
               <img
                 src={getImage(item.imageId || item.id)} // Fallback to item.id for backwards compatibility
                 alt={item.name}
-                className="w-24 h-24 object-contain rounded-xl"
+                className="w-24 h-24 object-contain"
                 loading="lazy"
               />
             </div>
 
-            <div className="mt-2 text-sm text-black font-semibold whitespace-nowrap text-ellipsis overflow-hidden w-full text-center">
+            <div
+              className="mt-2 text-sm font-semibold whitespace-nowrap text-ellipsis overflow-hidden w-full text-center"
+              style={{ color: fg }}
+            >
               {item.name}
             </div>
           </div>
