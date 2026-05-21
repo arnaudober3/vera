@@ -16,8 +16,6 @@ let state: Outfit | null = null;
 let isInitialized = false;
 const listeners = new Set<(s: Outfit | null) => void>();
 
-const COLOR_MATCH_THRESHOLD = 0.75;
-
 const scoreColors = ({ a, b }: { a: Color; b: Color }): number | null => {
   if (!a || !b) {
     return null;
@@ -94,13 +92,6 @@ export const useOutfit = () => {
 
     const availableTops = availableItems.filter((i) => i.category === "top");
     const availableBottoms = availableItems.filter((i) => i.category === "bottom");
-    const availableOuterwear = availableItems.filter(
-      (i) => i.category === "outerwear",
-    );
-    const availableShoes = availableItems.filter((i) => i.category === "shoes");
-    const availableAccessories = availableItems.filter(
-      (i) => i.category === "accessories",
-    );
 
     if (availableTops.length === 0 || availableBottoms.length === 0) {
       return null;
@@ -110,7 +101,7 @@ export const useOutfit = () => {
     let bestOutfit: Outfit | null = null;
     let highestScore = -1;
 
-    // Try to find the best scoring outfit, but ensure it's different if possible
+    // Try to find the best scoring top + bottom duo, but ensure it's different if possible
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const pivots = [...availableTops, ...availableBottoms];
       const pivot = pivots[Math.floor(Math.random() * pivots.length)];
@@ -135,72 +126,16 @@ export const useOutfit = () => {
         continue;
       }
 
-      // Add optional layers based on threshold
-      const optionalCategories: {
-        key: keyof Outfit;
-        candidates: ClothingItem[];
-      }[] = [
-        { key: "outerwear", candidates: availableOuterwear },
-        { key: "shoes", candidates: availableShoes },
-      ];
-
-      for (const { key, candidates } of optionalCategories) {
-        if (candidates.length > 0) {
-          const bestMatch = findBestMatch({ candidates, anchor: pivot });
-          const matchScore = scoreColors({
-            a: pivot.color,
-            b: bestMatch.color,
-          });
-          if (matchScore !== null && matchScore >= COLOR_MATCH_THRESHOLD) {
-            (currentOutfit[key] as ClothingItem) = bestMatch;
-          }
-        }
-      }
-
-      // Add accessories (can be multiple)
-      if (availableAccessories.length > 0) {
-        const matchingAccessories = availableAccessories.filter((acc) => {
-          const matchScore = scoreColors({
-            a: pivot.color,
-            b: acc.color,
-          });
-          return matchScore !== null && matchScore >= COLOR_MATCH_THRESHOLD;
-        });
-
-        if (matchingAccessories.length > 0) {
-          // Take up to 3 random matching accessories for variety
-          currentOutfit.accessories = matchingAccessories
-            .sort(() => 0.5 - Math.random())
-            .slice(0, 3);
-        }
-      }
-
-      // Calculate average score of all items in outfit relative to pivot
-      const itemsInOutfit = [
-        currentOutfit.top,
-        currentOutfit.bottom,
-        currentOutfit.outerwear,
-        currentOutfit.shoes,
-        ...(currentOutfit.accessories || []),
-      ].filter(Boolean) as ClothingItem[];
-
-      let totalScore = 0;
-      let scoreCount = 0;
-
-      for (const item of itemsInOutfit) {
-        if (item.id !== pivot.id) {
-          const s = scoreColors({ a: pivot.color, b: item.color });
-          if (s !== null) {
-            totalScore += s;
-            scoreCount++;
-          }
-        }
-      }
-
-      const avgScore = scoreCount > 0 ? totalScore / scoreCount : 0;
-      const itemIds = itemsInOutfit.map((i) => i.id);
-      const recencyPenalty = getRecencyPenalty(itemIds);
-      const adjustedScore = avgScore * recencyPenalty;
+      const pairScore = scoreColors({
+        a: currentOutfit.top.color,
+        b: currentOutfit.bottom.color,
+      });
+      const baseScore = pairScore ?? 0;
+      const recencyPenalty = getRecencyPenalty([
+        currentOutfit.top.id,
+        currentOutfit.bottom.id,
+      ]);
+      const adjustedScore = baseScore * recencyPenalty;
 
       if (adjustedScore > highestScore) {
         highestScore = adjustedScore;
@@ -211,6 +146,35 @@ export const useOutfit = () => {
     const finalOutfit = bestOutfit ?? state;
     await emitChange(finalOutfit);
     return finalOutfit;
+  };
+
+  const addItemToOutfit = async (item: ClothingItem): Promise<void> => {
+    if (!state) return;
+    const next: Outfit = { ...state };
+    if (item.category === "outerwear") {
+      next.outerwear = item;
+    } else if (item.category === "shoes") {
+      next.shoes = item;
+    } else if (item.category === "accessories") {
+      const existing = next.accessories ?? [];
+      if (existing.some((a) => a.id === item.id)) return;
+      next.accessories = [...existing, item];
+    } else {
+      return;
+    }
+    await emitChange(next);
+  };
+
+  const removeItemFromOutfit = async (itemId: string): Promise<void> => {
+    if (!state) return;
+    const next: Outfit = { ...state };
+    if (next.outerwear?.id === itemId) delete next.outerwear;
+    if (next.shoes?.id === itemId) delete next.shoes;
+    if (next.accessories) {
+      next.accessories = next.accessories.filter((a) => a.id !== itemId);
+      if (next.accessories.length === 0) delete next.accessories;
+    }
+    await emitChange(next);
   };
 
   const clearOutfit = async (): Promise<void> => await emitChange(null);
@@ -243,5 +207,12 @@ export const useOutfit = () => {
     listeners.forEach((listener) => listener(newOutfit));
   }
 
-  return { outfit, generateOutfit, clearOutfit, canGenerateOutfit };
+  return {
+    outfit,
+    generateOutfit,
+    clearOutfit,
+    canGenerateOutfit,
+    addItemToOutfit,
+    removeItemFromOutfit,
+  };
 };
