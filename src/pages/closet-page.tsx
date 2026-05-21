@@ -356,7 +356,7 @@ export const ClosetPage = (): React.JSX.Element => {
   const showEmptyState = displayedItems.length === 0 && !viewingBasket;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
         <h2 className="vera-page-title">Your closet</h2>
       </div>
@@ -394,7 +394,7 @@ export const ClosetPage = (): React.JSX.Element => {
             className={`rounded-2xl ${showEmptyState ? "flex-1 flex flex-col justify-center" : ""}`}
           >
             {displayedItems.length > 0 ? (
-              <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr">
+              <div className="grid gap-2 grid-cols-2 auto-rows-fr">
                 {displayedItems.map((item) => (
                   <ItemCard key={item.id} item={item} />
                 ))}

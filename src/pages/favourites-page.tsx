@@ -265,7 +265,7 @@ export const FavouritesPage = (): React.JSX.Element => {
   }, [resolvedFavourites, readyToWearOnly]);
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
         <h2 className="vera-page-title">Your favourites</h2>
       </div>
@@ -290,7 +290,7 @@ export const FavouritesPage = (): React.JSX.Element => {
           <div className={`rounded-2xl ${favourites.length === 0 ? "flex-1 flex flex-col justify-center" : ""}`}>
             {favourites.length > 0 ? (
               filteredFavourites.length > 0 ? (
-                <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr">
+                <div className="grid gap-2 grid-cols-2 auto-rows-fr">
                   {filteredFavourites.map(
                     ({
                       favourite,

@@ -101,17 +101,36 @@
   --vera-duration: 180ms;
 }
 
+html,
+body {
+  margin: 0;
+  height: 100%;
+}
+
 body {
   font-family: var(--vera-font-sans);
   color: var(--vera-fg-default);
   font-size: var(--vera-text-base);
   line-height: var(--vera-leading);
+  background: #111;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 .vera-bg-app {
   background: var(--vera-bg-app);
+}
+
+.vera-phone-frame {
+  position: relative;
+  width: 100vw;
+  height: 100dvh;
+  max-width: calc(100dvh * 9 / 19.5);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translate(0);
 }
 
 .vera-page-title {

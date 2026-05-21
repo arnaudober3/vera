@@ -7,7 +7,9 @@
   background: var(--vera-bg-app);
   color: var(--vera-fg-default);
   font-family: var(--vera-font-sans);
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .vera-onboarding .vera-btn-primary {
@@ -67,7 +69,8 @@
 .vera-onboarding-processing {
   background: #0c0c0c;
   color: #fff;
-  min-height: 100vh;
+  flex: 1;
+  min-height: 0;
 }
 /* force */
 /* force */

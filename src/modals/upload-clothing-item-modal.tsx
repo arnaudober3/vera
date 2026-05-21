@@ -146,12 +146,12 @@ export default function UploadClothingItemModal({
   }
 
   return (
-    <div className="fixed inset-0 z-300 flex items-end sm:items-center justify-center">
+    <div className="fixed inset-0 z-300 flex items-end justify-center">
       <div
         className="absolute inset-0 bg-black/40"
         onClick={() => !isSaving && onClose()}
       />
-      <div className="relative w-full sm:max-w-md bg-white rounded-t-2xl sm:rounded-2xl p-4 sm:p-6 shadow-xl">
+      <div className="relative w-full bg-white rounded-t-2xl p-4 shadow-xl" style={{ maxHeight: "85%", overflowY: "auto" }}>
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Add item</h3>
           <button
