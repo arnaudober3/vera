@@ -356,15 +356,17 @@ const FavouriteHeart = () => {
 
 const TodayOutfit = (): React.JSX.Element => {
   const { getImage } = useImage();
-  const { items, isItemClean, markWorn } = useCloset();
+  const { items: _items, isItemClean, markWorn } = useCloset();
+  const items = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _items) : _items;
   const {
-    outfit,
+    outfit: _outfit,
     generateOutfit,
     clearOutfit,
     canGenerateOutfit,
     addItemToOutfit,
     removeItemFromOutfit,
   } = useOutfit();
+  const outfit = import.meta.env.VITE_ENABLE_DEBUG === "true" ? undefined : _outfit;
   const { recordOutfit } = useOutfitHistory();
   const [pickerOpen, setPickerOpen] = useState(false);
   const navigate = useNavigate();

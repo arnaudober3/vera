@@ -228,7 +228,8 @@ const FavouritesFilterBar = ({
 };
 
 export const FavouritesPage = (): React.JSX.Element => {
-  const { favourites } = useFavouriteOutfits();
+  const { favourites: _favourites } = useFavouriteOutfits();
+  const favourites = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _favourites) : _favourites;
   const { items } = useCloset();
   const navigate = useNavigate();
 
