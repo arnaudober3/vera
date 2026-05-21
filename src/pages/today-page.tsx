@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
 import { useOutfit } from "../hooks/outfit.ts";
@@ -7,18 +7,319 @@ import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
 import { useFavouriteOutfits } from "../hooks/favourite-outfits.ts";
-import { FaCheck, FaHeart, FaRegHeart, FaSyncAlt } from "react-icons/fa";
+import type { ClothingItem } from "../models/clothing-item.ts";
+import {
+  FaCheck,
+  FaChevronRight,
+  FaHeart,
+  FaPlus,
+  FaRegHeart,
+  FaSyncAlt,
+  FaTimes,
+} from "react-icons/fa";
+import { PiPantsFill, PiTShirtFill } from "react-icons/pi";
 import { useNavigate } from "react-router";
 import "../pages/today-page.css";
 
-const FavouriteButton = () => {
+const isDarkColor = (hex: string): boolean => {
+  const h = hex.replace("#", "");
+  if (h.length !== 6) return false;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return L < 0.35;
+};
+
+const formatDate = (d: Date): string =>
+  d.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+
+type RailProps = {
+  glyph: React.ReactNode;
+  topLine: boolean;
+  bottomLine: boolean;
+  muted?: boolean;
+};
+
+const RailColumn = ({ glyph, topLine, bottomLine, muted }: RailProps) => (
+  <div
+    className={[
+      "today-rail-col",
+      !topLine ? "no-top-line" : "",
+      !bottomLine ? "no-bottom-line" : "",
+    ].join(" ")}
+  >
+    <div className={`today-rail-dot ${muted ? "muted" : "solid"}`}>{glyph}</div>
+  </div>
+);
+
+const PieceRow = ({
+  piece,
+  label,
+  rail,
+  imageSrc,
+}: {
+  piece: ClothingItem;
+  label: string;
+  rail: { glyph: React.ReactNode; topLine: boolean; bottomLine: boolean };
+  imageSrc: string | undefined;
+}) => {
+  const dark = isDarkColor(piece.color);
+  const tint = dark
+    ? piece.color
+    : `color-mix(in oklab, ${piece.color} 22%, #ffffff)`;
+  const borderColor = dark
+    ? `color-mix(in oklab, ${piece.color} 60%, #ffffff)`
+    : `color-mix(in oklab, ${piece.color} 28%, #ffffff)`;
+  const nameColor = dark ? "#ffffff" : "var(--vera-fg-strong)";
+  const labelColor = dark ? "rgba(255,255,255,0.65)" : "var(--vera-fg-muted)";
+
+  return (
+    <div className="today-piece-row">
+      <RailColumn
+        glyph={rail.glyph}
+        topLine={rail.topLine}
+        bottomLine={rail.bottomLine}
+      />
+      <div
+        className="today-piece-card"
+        style={{ background: tint, border: `1px solid ${borderColor}` }}
+      >
+        <div className="today-piece-well">
+          {imageSrc && (
+            <img src={imageSrc} alt={piece.name} loading="lazy" />
+          )}
+        </div>
+        <div className="today-piece-text">
+          <div className="today-piece-name" style={{ color: nameColor }}>
+            {piece.name}
+          </div>
+          <div className="today-piece-label" style={{ color: labelColor }}>
+            {label}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AccessoryRow = ({
+  added,
+  onAddClick,
+  onRemove,
+  getImage,
+}: {
+  added: ClothingItem[];
+  onAddClick: () => void;
+  onRemove: (id: string) => void;
+  getImage: (id: string) => string | undefined;
+}) => {
+  const empty = added.length === 0;
+  return (
+    <div className="today-accessory-row">
+      <RailColumn
+        glyph={<FaPlus size={10} />}
+        topLine
+        bottomLine={false}
+        muted={empty}
+      />
+      <div style={{ flex: 1, display: "flex", alignItems: "center", marginBlock: 6 }}>
+        {empty ? (
+          <button
+            type="button"
+            onClick={onAddClick}
+            className="today-accessory-add"
+          >
+            <FaPlus size={10} />
+            Add an accessory
+          </button>
+        ) : (
+          <div className="today-accessory-list">
+            {added.map((it) => (
+              <div key={it.id} className="today-accessory-chip">
+                <div className="today-accessory-thumb">
+                  {getImage(it.id) && (
+                    <img src={getImage(it.id)} alt={it.name} loading="lazy" />
+                  )}
+                </div>
+                <span className="today-accessory-name">{it.name}</span>
+                <button
+                  type="button"
+                  onClick={() => onRemove(it.id)}
+                  aria-label={`Remove ${it.name}`}
+                  className="today-accessory-remove"
+                >
+                  <FaTimes />
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={onAddClick}
+              aria-label="Add another item"
+              className="today-accessory-add-more"
+            >
+              <FaPlus />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+const SwipeToWear = ({ onConfirm }: { onConfirm: () => void }) => {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [drag, setDrag] = useState(0);
+  const [maxDrag, setMaxDrag] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const thumbSize = 48;
+  const padding = 4;
+
+  useLayoutEffect(() => {
+    const update = (): void => {
+      if (!trackRef.current) return;
+      const w = trackRef.current.offsetWidth;
+      setMaxDrag(Math.max(0, w - thumbSize - padding * 2));
+    };
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, []);
+
+  const onPointerDown = (e: React.PointerEvent<HTMLDivElement>): void => {
+    setDragging(true);
+    e.currentTarget.setPointerCapture(e.pointerId);
+  };
+
+  const onPointerMove = (e: React.PointerEvent<HTMLDivElement>): void => {
+    if (!dragging || !trackRef.current) return;
+    const rect = trackRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left - padding - thumbSize / 2;
+    setDrag(Math.max(0, Math.min(maxDrag, x)));
+  };
+
+  const onPointerUp = (): void => {
+    if (!dragging) return;
+    setDragging(false);
+    setDrag(0);
+    if (drag > maxDrag * 0.7) {
+      onConfirm();
+    }
+  };
+
+  const progress = maxDrag === 0 ? 0 : drag / maxDrag;
+
+  return (
+    <div ref={trackRef} className="today-swipe-track">
+      <div className="today-swipe-label">
+        <span style={{ opacity: 1 - progress * 0.7 }}>Swipe to wear</span>
+      </div>
+      <div
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        className="today-swipe-thumb"
+        style={{
+          transform: `translateX(${drag}px)`,
+          transition: dragging ? "none" : "transform 220ms var(--vera-ease)",
+        }}
+      >
+        <FaChevronRight size={16} />
+      </div>
+    </div>
+  );
+};
+
+const AccessorySheet = ({
+  open,
+  onClose,
+  library,
+  selectedIds,
+  onPick,
+  getImage,
+}: {
+  open: boolean;
+  onClose: () => void;
+  library: ClothingItem[];
+  selectedIds: string[];
+  onPick: (it: ClothingItem) => void;
+  getImage: (id: string) => string | undefined;
+}) => {
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-300 flex items-end justify-center"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div
+        className="relative w-full sm:max-w-md bg-white rounded-t-2xl p-4 shadow-xl"
+        style={{ maxHeight: "70%", overflow: "auto" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold">Add an accessory</h3>
+          <button
+            className="p-2 text-gray-500"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        <div className="today-sheet-grid">
+          {library.length === 0 ? (
+            <div className="today-sheet-empty">
+              Nothing to add, your closet doesn't have any extra items yet.
+            </div>
+          ) : (
+            library.map((it) => {
+              const picked = selectedIds.includes(it.id);
+              return (
+                <button
+                  key={it.id}
+                  type="button"
+                  disabled={picked}
+                  onClick={() => onPick(it)}
+                  className="today-sheet-item"
+                >
+                  <div className="today-sheet-thumb">
+                    {getImage(it.id) && (
+                      <img
+                        src={getImage(it.id)}
+                        alt={it.name}
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
+                  <div className="today-sheet-name">{it.name}</div>
+                  <div className="today-sheet-added" style={{ visibility: picked ? "visible" : "hidden" }}>
+                    <FaCheck size={10} />
+                    added
+                  </div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const FavouriteHeart = () => {
   const { outfit } = useOutfit();
   const { addFavourite, removeFavouriteByOutfit, isFavourite } =
     useFavouriteOutfits();
 
-  if (!outfit) {
-    return null;
-  }
+  if (!outfit) return null;
 
   const favourited = isFavourite(
     outfit.top.id,
@@ -28,8 +329,7 @@ const FavouriteButton = () => {
     outfit.accessories?.map((a) => a.id),
   );
 
-  async function onToggle(): Promise<void> {
-    if (!outfit) return;
+  const onToggle = async (): Promise<void> => {
     if (favourited) {
       await removeFavouriteByOutfit(
         outfit.top.id,
@@ -47,271 +347,172 @@ const FavouriteButton = () => {
         outfit.accessories?.map((a) => a.id),
       );
     }
-  }
+  };
 
   return (
     <button
+      type="button"
       onClick={() => onToggle()}
-      aria-label={favourited ? "Remove from favourites" : "Add to favourites"}
-      title={favourited ? "Remove from favourites" : "Add to favourites"}
-      className="favourite-button absolute top-3 right-3 flex items-center justify-center transition-all text-sm font-bold"
+      aria-label={
+        favourited ? "Remove from favourites" : "Add to favourites"
+      }
+      className={`today-heart ${favourited ? "active" : ""}`}
     >
-      {favourited ? <FaHeart size={10} /> : <FaRegHeart size={10} />}
+      {favourited ? <FaHeart size={13} /> : <FaRegHeart size={13} />}
     </button>
   );
 };
 
-const RegenerateOutfitFab = () => {
-  const { generateOutfit, canGenerateOutfit } = useOutfit();
-
-  async function onRegenerate(): Promise<void> {
-    await generateOutfit();
-  }
-
-  return (
-    <button
-      onClick={() => onRegenerate()}
-      aria-label="Regenerate the outfit"
-      title="Regenerate the outfit"
-      disabled={!canGenerateOutfit()}
-      className={`fixed right-5 z-200 shadow-lg vera-btn-primary transition-all ${!canGenerateOutfit() ? "opacity-50 cursor-not-allowed" : ""}`}
-      style={{ width: 56, height: 56, bottom: 116 }}
-    >
-      <div className="flex items-center justify-center text-2xl">
-        <FaSyncAlt />
-      </div>
-    </button>
-  );
-};
-const OutfitTemplate = (): React.JSX.Element => {
+const TodayOutfit = (): React.JSX.Element => {
   const { getImage } = useImage();
-  const { isItemClean, markWorn } = useCloset();
-  const { outfit, clearOutfit, generateOutfit } = useOutfit();
+  const { items, isItemClean, markWorn } = useCloset();
+  const {
+    outfit,
+    generateOutfit,
+    clearOutfit,
+    canGenerateOutfit,
+    addItemToOutfit,
+    removeItemFromOutfit,
+  } = useOutfit();
   const { recordOutfit } = useOutfitHistory();
-  const [isMarking, setIsMarking] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     if (!outfit) {
       void generateOutfit();
+    } else if (!isItemClean(outfit.top.id) || !isItemClean(outfit.bottom.id)) {
+      void clearOutfit();
     }
-  }, [generateOutfit, outfit]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [outfit, items, generateOutfit, clearOutfit]);
 
   const handleConfirmWorn = async (): Promise<void> => {
     if (!outfit) return;
-    setIsMarking(true);
-    try {
-      await recordOutfit(
-        outfit.top.id,
-        outfit.bottom.id,
-        outfit.outerwear?.id,
-        outfit.shoes?.id,
-        outfit.accessories?.map((a) => a.id),
-      );
-      await markWorn(outfit.top);
-      await markWorn(outfit.bottom);
-      if (outfit.outerwear) await markWorn(outfit.outerwear);
-      if (outfit.shoes) await markWorn(outfit.shoes);
-      if (outfit.accessories) {
-        for (const accessory of outfit.accessories) {
-          await markWorn(accessory);
-        }
+    await recordOutfit(
+      outfit.top.id,
+      outfit.bottom.id,
+      outfit.outerwear?.id,
+      outfit.shoes?.id,
+      outfit.accessories?.map((a) => a.id),
+    );
+    await markWorn(outfit.top);
+    await markWorn(outfit.bottom);
+    if (outfit.outerwear) await markWorn(outfit.outerwear);
+    if (outfit.shoes) await markWorn(outfit.shoes);
+    if (outfit.accessories) {
+      for (const accessory of outfit.accessories) {
+        await markWorn(accessory);
       }
-      await clearOutfit();
-    } finally {
-      setIsMarking(false);
     }
+    await clearOutfit();
+    await generateOutfit();
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center h-full w-full">
-      {outfit ? (
-        <>
-          {(() => {
-            const hasVisibleItems =
-              outfit.top &&
-              isItemClean(outfit.top.id) &&
-              outfit.bottom &&
-              isItemClean(outfit.bottom.id);
-            if (!hasVisibleItems) {
-              return (
-                <EmptyMessageTemplate
-                  title="No outfit right now."
-                  subtitle="All your clothes are in the basket — time to do laundry!"
-                  buttonText="Go to closet"
-                  onButtonClick={() => navigate("/closet")}
-                />
-              );
-            }
+  const hasVisibleOutfit =
+    !!outfit &&
+    isItemClean(outfit.top.id) &&
+    isItemClean(outfit.bottom.id);
 
-            return (
-              <div className="relative mx-auto w-full max-w-md flex flex-col h-full min-h-0 overflow-hidden">
-                <button
-                  onClick={handleConfirmWorn}
-                  disabled={isMarking}
-                  className={`vera-btn-primary mb-4 w-full py-3 flex items-center justify-center gap-2 text-base font-semibold shrink-0 transition-all ${isMarking ? "opacity-50 cursor-not-allowed" : ""}`}
-                >
-                  <FaCheck />
-                  {isMarking ? "Marking as worn..." : "I'm wearing this"}
-                </button>
-                <div className="vera-card flex flex-col items-center relative min-h-0 gap-3 p-4">
-                  <FavouriteButton />
-                  {/* Top item */}
-                  {outfit.top && isItemClean(outfit.top.id) && (
-                    <div
-                      className="flex flex-col items-center w-full justify-center overflow-hidden"
-                      style={{ height: 200 }}
-                    >
-                      <img
-                        src={getImage(outfit.top.id)}
-                        alt={outfit.top.name}
-                        className="max-h-full w-auto object-contain rounded-xl shrink min-h-0"
-                        loading="lazy"
-                      />
-                      <div className="mt-1 text-sm text-black font-semibold whitespace-nowrap text-ellipsis w-full overflow-hidden text-center shrink-0">
-                        {outfit.top.name}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="w-full border-t border-gray-100 shrink-0" />
-
-                  {/* Bottom item */}
-                  {outfit.bottom && isItemClean(outfit.bottom.id) && (
-                    <div
-                      className="flex flex-col items-center w-full justify-center overflow-hidden"
-                      style={{ height: 200 }}
-                    >
-                      <img
-                        src={getImage(outfit.bottom.id)}
-                        alt={outfit.bottom.name}
-                        className="max-h-full w-auto object-contain rounded-xl shrink min-h-0"
-                        loading="lazy"
-                      />
-                      <div className="mt-1 text-sm text-black font-semibold whitespace-nowrap text-ellipsis w-full overflow-hidden text-center shrink-0">
-                        {outfit.bottom.name}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Optional items */}
-                  <div className="w-full border-t border-gray-100 shrink-0" />
-
-                  <div className="flex flex-nowrap justify-center gap-2 shrink-0 w-full px-2 overflow-hidden items-end h-24">
-                    {(() => {
-                      const visibleOuterwear =
-                        outfit.outerwear && isItemClean(outfit.outerwear.id)
-                          ? outfit.outerwear
-                          : null;
-                      const visibleShoes =
-                        outfit.shoes && isItemClean(outfit.shoes.id)
-                          ? outfit.shoes
-                          : null;
-                      const visibleAccessories =
-                        outfit.accessories?.filter((a) => isItemClean(a.id)) ||
-                        [];
-                      const hasAnyOptionalItems = !!(
-                        visibleOuterwear ||
-                        visibleShoes ||
-                        visibleAccessories.length > 0
-                      );
-
-                      if (!hasAnyOptionalItems) {
-                        return (
-                          <div className="flex flex-col items-center justify-center flex-1 h-full">
-                            <span className="leading-tight text-black font-semibold text-center mt-1 text-sm">
-                              No accessories
-                            </span>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <>
-                          {visibleOuterwear && (
-                            <div className="flex flex-col items-center flex-1 min-w-0 max-w-[5rem] h-full">
-                              <div className="flex-1 flex items-center justify-center w-full min-h-0">
-                                <img
-                                  src={getImage(visibleOuterwear.id)}
-                                  alt={visibleOuterwear.name}
-                                  className="w-full h-auto max-h-16 object-contain rounded-lg"
-                                  loading="lazy"
-                                />
-                              </div>
-                              <div className="mt-1 text-[10px] leading-tight text-black font-semibold whitespace-nowrap text-ellipsis w-full overflow-hidden text-center shrink-0">
-                                {visibleOuterwear.name}
-                              </div>
-                            </div>
-                          )}
-                          {visibleShoes && (
-                            <div className="flex flex-col items-center flex-1 min-w-0 max-w-[5rem] h-full">
-                              <div className="flex-1 flex items-center justify-center w-full min-h-0">
-                                <img
-                                  src={getImage(visibleShoes.id)}
-                                  alt={visibleShoes.name}
-                                  className="w-full h-auto max-h-16 object-contain rounded-lg"
-                                  loading="lazy"
-                                />
-                              </div>
-                              <div className="mt-1 text-[10px] leading-tight text-black font-semibold whitespace-nowrap text-ellipsis w-full overflow-hidden text-center shrink-0">
-                                {visibleShoes.name}
-                              </div>
-                            </div>
-                          )}
-                          {visibleAccessories.map((accessory) => (
-                            <div
-                              key={accessory.id}
-                              className="flex flex-col items-center flex-1 min-w-0 max-w-[5rem] h-full"
-                            >
-                              <div className="flex-1 flex items-center justify-center w-full min-h-0">
-                                <img
-                                  src={getImage(accessory.id)}
-                                  alt={accessory.name}
-                                  className="w-full h-auto max-h-16 object-contain rounded-lg"
-                                  loading="lazy"
-                                />
-                              </div>
-                              <div className="mt-1 text-[10px] leading-tight text-black font-semibold whitespace-nowrap text-ellipsis w-full overflow-hidden text-center shrink-0">
-                                {accessory.name}
-                              </div>
-                            </div>
-                          ))}
-                        </>
-                      );
-                    })()}
-                  </div>
-                </div>
-              </div>
-            );
-          })()}
-        </>
-      ) : (
+  if (!hasVisibleOutfit) {
+    return (
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "100px" }}>
         <EmptyMessageTemplate
           title="No outfit right now."
           subtitle="All your clothes are in the basket — time to do laundry!"
           buttonText="Go to closet"
           onButtonClick={() => navigate("/closet")}
         />
-      )}
-    </div>
+      </div>
+    );
+  }
+
+  const added: ClothingItem[] = [
+    outfit!.outerwear,
+    outfit!.shoes,
+    ...(outfit!.accessories ?? []),
+  ].filter((x): x is ClothingItem => Boolean(x));
+
+  const library = items.filter(
+    (i) => i.category !== "top" && i.category !== "bottom",
+  );
+
+  const onRegenerate = async (): Promise<void> => {
+    await generateOutfit();
+  };
+
+  return (
+    <>
+      <div className="today-rail-area">
+        <div className="today-rail-stack">
+          <FavouriteHeart />
+          <PieceRow
+            piece={outfit!.top}
+            label="Top"
+            rail={{ glyph: <PiTShirtFill size={10} />, topLine: false, bottomLine: true }}
+            imageSrc={getImage(outfit!.top.id)}
+          />
+          <PieceRow
+            piece={outfit!.bottom}
+            label="Bottom"
+            rail={{
+              glyph: <PiPantsFill size={10} />,
+              topLine: true,
+              bottomLine: true,
+            }}
+            imageSrc={getImage(outfit!.bottom.id)}
+          />
+          <AccessoryRow
+            added={added}
+            onAddClick={() => setPickerOpen(true)}
+            onRemove={(id) => void removeItemFromOutfit(id)}
+            getImage={getImage}
+          />
+        </div>
+        <div style={{ height: 160 }} />
+      </div>
+
+      <button
+        type="button"
+        onClick={() => void onRegenerate()}
+        aria-label="Regenerate the outfit"
+        disabled={!canGenerateOutfit()}
+        className="vera-fab today-fab"
+      >
+        <FaSyncAlt size={18} />
+      </button>
+
+      <div className="today-swipe-wrap">
+        <SwipeToWear onConfirm={() => void handleConfirmWorn()} />
+      </div>
+
+      <AccessorySheet
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        library={library}
+        selectedIds={added.map((a) => a.id)}
+        onPick={(it) => {
+          void addItemToOutfit(it);
+          setPickerOpen(false);
+        }}
+        getImage={getImage}
+      />
+    </>
   );
 };
 
 export const TodayPage = (): React.JSX.Element => {
-  const { items } = useCloset();
+  const today = formatDate(new Date());
+
   return (
-    <div className="flex flex-col flex-1 min-h-screen relative overflow-hidden">
-      {/* Header */}
-      <div className="w-full mx-auto max-w-4xl px-4 pt-4 shrink-0">
-        <h2 className="vera-page-title">Today's outfit</h2>
+    <div className="today-page">
+      <div className="today-header">
+        <h2 className="vera-page-title">{today}</h2>
       </div>
 
-      <div className="w-full mx-auto max-w-4xl px-4 flex-1 flex flex-col items-center justify-center mb-30 overflow-hidden">
-        <OutfitTemplate />
-      </div>
+      <TodayOutfit />
 
       <NavigationBar activePage="today" />
-      {items.length > 0 && <RegenerateOutfitFab />}
     </div>
   );
 };
