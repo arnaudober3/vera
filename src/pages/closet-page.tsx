@@ -302,11 +302,12 @@ const OnboardingToast = ({
 
 export const ClosetPage = (): React.JSX.Element => {
   const {
-    items,
+    items: _items,
     addClothingItem,
     isUploadLimitReached,
     markLaundryDone,
   } = useCloset();
+  const items = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _items) : _items;
   const { saveImage } = useImage();
   const { generateOutfit, outfit } = useOutfit();
   const location = useLocation();
