@@ -266,7 +266,7 @@ export const FavouritesPage = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <div className="mx-auto max-w-4xl px-4 pt-4 pb-1 w-full shrink-0">
+      <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
         <h2 className="vera-page-title">Your favourites</h2>
       </div>
 

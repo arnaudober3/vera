@@ -416,7 +416,7 @@ const TodayOutfit = (): React.JSX.Element => {
 
   if (!hasVisibleOutfit) {
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "100px" }}>
         <EmptyMessageTemplate
           title="No outfit right now."
           subtitle="All your clothes are in the basket — time to do laundry!"
@@ -507,7 +507,7 @@ export const TodayPage = (): React.JSX.Element => {
   return (
     <div className="today-page">
       <div className="today-header">
-        <h2 className="today-title">{today}</h2>
+        <h2 className="vera-page-title">{today}</h2>
       </div>
 
       <TodayOutfit />

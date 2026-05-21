@@ -364,7 +364,7 @@ export const ClosetPage = (): React.JSX.Element => {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <div className="mx-auto max-w-4xl px-4 pt-4 pb-1 w-full shrink-0">
+      <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
         <h2 className="vera-page-title">Your closet</h2>
       </div>
 
@@ -405,8 +405,8 @@ export const ClosetPage = (): React.JSX.Element => {
                 {displayedItems.map((item) => (
                   <ItemCard key={item.id} item={item} />
                 ))}
-                {displayedItems.length < 4 &&
-                  Array.from({ length: 4 - displayedItems.length }).map((_, i) => (
+                {displayedItems.length < 6 &&
+                  Array.from({ length: 6 - displayedItems.length }).map((_, i) => (
                     <div key={`placeholder-${i}`} className="flex flex-col gap-2 p-2 h-full">
                       <div className="vera-empty-slot w-full h-full" aria-hidden />
                     </div>

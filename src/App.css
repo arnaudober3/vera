@@ -115,14 +115,17 @@ body {
 }
 
 .vera-page-title {
-  text-align: left;
-  font-weight: 600;
-  font-size: var(--vera-text-2xl);
-  padding-block: var(--vera-space-2);
-  padding-inline: 0;
+  font-family: var(--vera-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 2rem;
+  line-height: 1.1;
   letter-spacing: -0.005em;
-  line-height: var(--vera-leading-tight);
-  color: var(--vera-fg-default);
+  color: var(--vera-fg-strong);
+  margin: 16px 0;
+  padding: 0;
+  text-box-trim: trim-end;
+  text-box-edge: cap alphabetic;
 }
 
 .vera-btn-primary {

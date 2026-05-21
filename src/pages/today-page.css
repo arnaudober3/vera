@@ -11,19 +11,6 @@
   flex-shrink: 0;
 }
 
-.today-title {
-  font-family: var(--vera-font-display);
-  font-style: italic;
-  font-weight: 400;
-  font-size: 2rem;
-  line-height: 1.1;
-  letter-spacing: -0.005em;
-  color: var(--vera-fg-strong);
-  margin: 16px 0;
-  padding: 0;
-  text-box-trim: trim-end;
-  text-box-edge: cap alphabetic;
-}
 
 .today-rail-area {
   flex: 1;
