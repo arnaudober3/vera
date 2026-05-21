@@ -398,12 +398,16 @@ export const ClosetPage = (): React.JSX.Element => {
                 {displayedItems.map((item) => (
                   <ItemCard key={item.id} item={item} />
                 ))}
-                {displayedItems.length < 6 &&
-                  Array.from({ length: 6 - displayedItems.length }).map((_, i) => (
-                    <div key={`placeholder-${i}`} className="flex flex-col gap-2 p-2 h-full">
-                      <div className="vera-empty-slot w-full h-full" aria-hidden />
-                    </div>
-                  ))}
+                {(() => {
+                  const slotCount = viewingBasket ? 4 : 6;
+                  return displayedItems.length < slotCount
+                    ? Array.from({ length: slotCount - displayedItems.length }).map((_, i) => (
+                        <div key={`placeholder-${i}`} className="flex flex-col gap-2 p-2 h-full">
+                          <div className="vera-empty-slot w-full h-full" aria-hidden />
+                        </div>
+                      ))
+                    : null;
+                })()}
               </div>
             ) : (
               !viewingBasket && (
