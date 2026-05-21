@@ -208,7 +208,7 @@ const Stage = ({
 }): React.JSX.Element => (
   <div
     style={{
-      minHeight: "100vh",
+      minHeight: "100%",
       display: "flex",
       flexDirection: "column",
       paddingTop: 60,
@@ -510,7 +510,7 @@ const ProcessingScreen = (): React.JSX.Element => (
   <div
     className="vera-onboarding vera-onboarding-processing"
     style={{
-      minHeight: "100vh",
+      minHeight: "100%",
       display: "flex",
       flexDirection: "column",
       alignItems: "center",

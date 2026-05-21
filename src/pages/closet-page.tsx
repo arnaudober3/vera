@@ -17,6 +17,7 @@ import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
 import { FaCheck } from "react-icons/fa";
 import { MdAdd, MdChevronLeft, MdLocalLaundryService } from "react-icons/md";
+import { isDarkColor } from "../utils/color.ts";
 import "./closet-page.css";
 
 const CategoryFilterBar = ({
@@ -81,13 +82,20 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
     }
   }
 
+  const dark = isDarkColor(item.color);
+  const fg = dark ? "#ffffff" : "#000000";
+
   return (
     <div className="flex flex-col gap-2 p-2 h-full" style={{ aspectRatio: "1 / 1.2" }}>
-      <div className="vera-card flex flex-col items-center relative h-full">
+      <div
+        className="vera-card flex flex-col items-center relative h-full"
+        style={{ backgroundColor: item.color, borderColor: "transparent" }}
+      >
         <button
           onClick={() => remove(item.id)}
           className="delete-button absolute top-2 right-2 flex items-center justify-center transition-all text-sm font-bold vera-keep-opaque"
           aria-label="Delete item"
+          style={{ color: fg }}
         >
           <IoClose size={14} />
         </button>
@@ -98,12 +106,15 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
               <img
                 src={getImage(item.imageId || item.id)} // Fallback to item.id for backwards compatibility
                 alt={item.name}
-                className="w-24 h-24 object-contain rounded-xl"
+                className="w-24 h-24 object-contain"
                 loading="lazy"
               />
             </div>
 
-            <div className="mt-2 text-sm text-black font-semibold whitespace-nowrap text-ellipsis overflow-hidden w-full text-center">
+            <div
+              className="mt-2 text-sm font-semibold whitespace-nowrap text-ellipsis overflow-hidden w-full text-center"
+              style={{ color: fg }}
+            >
               {item.name}
             </div>
           </div>
@@ -115,31 +126,24 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
 const AddItemButton = ({
   onClick,
   disabled,
-  stripVisible,
 }: {
   onClick: () => void;
   disabled: boolean;
-  stripVisible: boolean;
 }): React.JSX.Element => {
   return (
-    <div className="flex justify-center">
-      <button
-        onClick={onClick}
-        disabled={disabled}
-        aria-label="Add a new item to your closet"
-        title={
-          disabled
-            ? "The limit of uploaded items has been reached"
-            : "Add a new item to your closet"
-        }
-        className={`fixed right-5 z-200 shadow-lg vera-btn-primary transition-all ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
-        style={{ width: 56, height: 56, bottom: stripVisible ? 212 : 116 }}
-      >
-        <div className="flex items-center justify-center">
-          <MdAdd size={30} />
-        </div>
-      </button>
-    </div>
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      aria-label="Add a new item to your closet"
+      title={
+        disabled
+          ? "The limit of uploaded items has been reached"
+          : "Add a new item to your closet"
+      }
+      className="vera-nav-fab"
+    >
+      <MdAdd size={26} />
+    </button>
   );
 };
 const BasketImage = ({
@@ -298,11 +302,12 @@ const OnboardingToast = ({
 
 export const ClosetPage = (): React.JSX.Element => {
   const {
-    items,
+    items: _items,
     addClothingItem,
     isUploadLimitReached,
     markLaundryDone,
   } = useCloset();
+  const items = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _items) : _items;
   const { saveImage } = useImage();
   const { generateOutfit, outfit } = useOutfit();
   const location = useLocation();
@@ -363,7 +368,7 @@ export const ClosetPage = (): React.JSX.Element => {
   const showEmptyState = displayedItems.length === 0 && !viewingBasket;
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
         <h2 className="vera-page-title">Your closet</h2>
       </div>
@@ -401,16 +406,20 @@ export const ClosetPage = (): React.JSX.Element => {
             className={`rounded-2xl ${showEmptyState ? "flex-1 flex flex-col justify-center" : ""}`}
           >
             {displayedItems.length > 0 ? (
-              <div className="grid gap-2 grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 auto-rows-fr">
+              <div className="grid gap-2 grid-cols-2 auto-rows-fr">
                 {displayedItems.map((item) => (
                   <ItemCard key={item.id} item={item} />
                 ))}
-                {displayedItems.length < 6 &&
-                  Array.from({ length: 6 - displayedItems.length }).map((_, i) => (
-                    <div key={`placeholder-${i}`} className="flex flex-col gap-2 p-2 h-full">
-                      <div className="vera-empty-slot w-full h-full" aria-hidden />
-                    </div>
-                  ))}
+                {(() => {
+                  const slotCount = viewingBasket ? 4 : 6;
+                  return displayedItems.length < slotCount
+                    ? Array.from({ length: slotCount - displayedItems.length }).map((_, i) => (
+                        <div key={`placeholder-${i}`} className="flex flex-col gap-2 p-2 h-full">
+                          <div className="vera-empty-slot w-full h-full" aria-hidden />
+                        </div>
+                      ))
+                    : null;
+                })()}
               </div>
             ) : (
               !viewingBasket && (
@@ -437,14 +446,17 @@ export const ClosetPage = (): React.JSX.Element => {
         onWash={() => void onWash()}
       />
 
-      <NavigationBar activePage="closet" />
-      {items.length > 0 && (
-        <AddItemButton
-          onClick={() => setShowUploadModal(true)}
-          disabled={isUploadLimitReached()}
-          stripVisible={dirtyCount > 0 || viewingBasket}
-        />
-      )}
+      <NavigationBar
+        activePage="closet"
+        action={
+          items.length > 0 ? (
+            <AddItemButton
+              onClick={() => setShowUploadModal(true)}
+              disabled={isUploadLimitReached()}
+            />
+          ) : undefined
+        }
+      />
 
       {showUploadModal && (
         <UploadClothingItemModal

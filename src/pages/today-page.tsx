@@ -19,17 +19,8 @@ import {
 } from "react-icons/fa";
 import { PiPantsFill, PiTShirtFill } from "react-icons/pi";
 import { useNavigate } from "react-router";
+import { isDarkColor } from "../utils/color.ts";
 import "../pages/today-page.css";
-
-const isDarkColor = (hex: string): boolean => {
-  const h = hex.replace("#", "");
-  if (h.length !== 6) return false;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  const L = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  return L < 0.35;
-};
 
 const formatDate = (d: Date): string =>
   d.toLocaleDateString("en-GB", {
@@ -365,15 +356,17 @@ const FavouriteHeart = () => {
 
 const TodayOutfit = (): React.JSX.Element => {
   const { getImage } = useImage();
-  const { items, isItemClean, markWorn } = useCloset();
+  const { items: _items, isItemClean, markWorn } = useCloset();
+  const items = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _items) : _items;
   const {
-    outfit,
+    outfit: _outfit,
     generateOutfit,
     clearOutfit,
     canGenerateOutfit,
     addItemToOutfit,
     removeItemFromOutfit,
   } = useOutfit();
+  const outfit = import.meta.env.VITE_ENABLE_DEBUG === "true" ? undefined : _outfit;
   const { recordOutfit } = useOutfitHistory();
   const [pickerOpen, setPickerOpen] = useState(false);
   const navigate = useNavigate();
@@ -416,14 +409,17 @@ const TodayOutfit = (): React.JSX.Element => {
 
   if (!hasVisibleOutfit) {
     return (
-      <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "100px" }}>
-        <EmptyMessageTemplate
-          title="No outfit right now."
-          subtitle="All your clothes are in the basket — time to do laundry!"
-          buttonText="Go to closet"
-          onButtonClick={() => navigate("/closet")}
-        />
-      </div>
+      <>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "100px" }}>
+          <EmptyMessageTemplate
+            title="No outfit right now."
+            subtitle="All your clothes are in the basket — time to do laundry!"
+            buttonText="Go to closet"
+            onButtonClick={() => navigate("/closet")}
+          />
+        </div>
+        <NavigationBar activePage="today" />
+      </>
     );
   }
 
@@ -472,19 +468,24 @@ const TodayOutfit = (): React.JSX.Element => {
         <div style={{ height: 160 }} />
       </div>
 
-      <button
-        type="button"
-        onClick={() => void onRegenerate()}
-        aria-label="Regenerate the outfit"
-        disabled={!canGenerateOutfit()}
-        className="vera-fab today-fab"
-      >
-        <FaSyncAlt size={18} />
-      </button>
-
       <div className="today-swipe-wrap">
         <SwipeToWear onConfirm={() => void handleConfirmWorn()} />
       </div>
+
+      <NavigationBar
+        activePage="today"
+        action={
+          <button
+            type="button"
+            onClick={() => void onRegenerate()}
+            aria-label="Regenerate the outfit"
+            disabled={!canGenerateOutfit()}
+            className="vera-nav-fab"
+          >
+            <FaSyncAlt size={18} />
+          </button>
+        }
+      />
 
       <AccessorySheet
         open={pickerOpen}
@@ -511,8 +512,6 @@ export const TodayPage = (): React.JSX.Element => {
       </div>
 
       <TodayOutfit />
-
-      <NavigationBar activePage="today" />
     </div>
   );
 };
