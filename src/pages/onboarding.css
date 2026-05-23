@@ -1,0 +1,77 @@
+/* Onboarding-only styles. Design tokens now live globally in App.css.
+   This file holds: the onboarding screen wrapper, onboarding-only display
+   classes (eyebrow, skip-link, serif display), the dark camera screen,
+   and onboarding-specific button/card sizing. */
+
+.vera-onboarding {
+  background: var(--vera-bg-app);
+  color: var(--vera-fg-default);
+  font-family: var(--vera-font-sans);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.vera-onboarding .vera-btn-primary {
+  padding: 14px 20px;
+  font-size: var(--vera-text-base);
+  font-weight: 600;
+  width: 100%;
+}
+
+.vera-onboarding .vera-btn-secondary {
+  padding: 13px 20px;
+  font-size: var(--vera-text-sm);
+  font-weight: 600;
+  width: 100%;
+}
+
+.vera-onboarding .vera-card {
+  padding: var(--vera-space-3);
+}
+
+.vera-onboarding .vera-input {
+  width: 100%;
+  font-family: inherit;
+}
+
+.vera-eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: var(--vera-text-xs);
+  font-weight: 600;
+  color: var(--vera-fg-muted);
+}
+
+.vera-skip-link {
+  background: transparent;
+  border: 0;
+  color: var(--vera-fg-muted);
+  font-family: inherit;
+  font-size: var(--vera-text-sm);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 12px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.vera-display {
+  font-family: var(--vera-font-display);
+  font-style: italic;
+  font-weight: 400;
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  color: var(--vera-fg-strong);
+}
+
+.vera-onboarding-processing {
+  background: #0c0c0c;
+  color: #fff;
+  flex: 1;
+  min-height: 0;
+}
+/* force */
+/* force */
+:root { --force: 1; }

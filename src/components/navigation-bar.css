@@ -1,14 +1,59 @@
-.link {
+.vera-nav-dock {
+  position: fixed;
+  bottom: 50px;
+  left: 16px;
+  right: 16px;
+  max-width: 360px;
+  margin: 0 auto;
   display: flex;
-  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+  min-height: 52px;
+}
+
+.vera-nav-pill {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: space-around;
   align-items: center;
-  justify-content: center;
-  color: var(--color-gray-700);
-  border-radius: var(--radius-lg);
-  padding-inline: calc(var(--spacing) * 6);
-  padding-block: calc(var(--spacing) * 2);
+  background: var(--vera-surface);
+  border: 1px solid var(--vera-surface-border);
+  border-radius: var(--vera-radius-pill);
+  padding: 0 18px;
+  box-shadow: var(--vera-shadow-nav);
+}
+
+.vera-nav-item {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--vera-fg-muted);
+  text-decoration: none;
+  transition: color var(--vera-duration) var(--vera-ease);
 
   &.active {
-    color: var(--primary-color);
+    color: var(--vera-primary);
+    font-weight: 600;
   }
 }
+
+.vera-nav-fab {
+  flex: 0 0 52px;
+  width: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vera-primary);
+  color: var(--vera-fg-on-primary);
+  border: 1px solid var(--vera-surface-border);
+  border-radius: var(--vera-radius-pill);
+  box-shadow: var(--vera-shadow-nav);
+  cursor: pointer;
+  padding: 0;
+}
+
+.vera-nav-fab:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* force */
