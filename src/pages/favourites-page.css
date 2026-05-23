@@ -1,33 +1,185 @@
-.unfavourite-button {
-  opacity: 80%;
-  width: calc(var(--spacing) * 4);
-  height: calc(var(--spacing) * 4);
-  background-color: var(--vera-primary);
-  color: var(--color-white);
-  border-radius: calc(infinity * 1px);
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--vera-gray-500);
-  }
+.lookbook-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.wear-button {
-  height: 100%;
-  border-radius: 0;
-  background-color: var(--vera-primary);
-  color: var(--color-white);
-  cursor: pointer;
-  font-size: var(--vera-text-xs);
-
-  &:hover {
-    opacity: 0.9;
-  }
-
-  &:disabled {
-    background-color: var(--vera-disabled-bg);
-    cursor: not-allowed;
-  }
+.lookbook-card {
+  background: var(--vera-surface);
+  border: 1px solid var(--vera-surface-border);
+  border-radius: var(--vera-radius-lg);
+  padding: 12px 14px;
+  text-align: center;
+  position: relative;
 }
 
-/* force */
+.lookbook-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.lookbook-header-text {
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.lookbook-name {
+  font-family: var(--vera-font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 24px;
+  line-height: 1.05;
+  letter-spacing: -0.005em;
+  color: var(--vera-fg-default);
+  margin: 0;
+  background: none;
+  border: 0;
+  padding: 0;
+  text-align: center;
+  cursor: text;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lookbook-name:hover {
+  opacity: 0.7;
+}
+
+.lookbook-meta {
+  font-family: var(--vera-font-sans);
+  font-size: 12px;
+  color: var(--vera-fg-muted);
+  margin-top: 3px;
+  letter-spacing: 0.005em;
+}
+
+.lookbook-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 110px;
+  width: 100%;
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+
+.lookbook-row img {
+  object-fit: contain;
+  filter: drop-shadow(0 4px 8px rgba(30, 40, 60, 0.06));
+}
+
+.lookbook-row-piece {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.lookbook-row-piece--large img {
+  width: 78px;
+  height: 78px;
+}
+
+.lookbook-row-piece--small img {
+  width: 48px;
+  height: 48px;
+}
+
+.lookbook-footer {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.lookbook-heart-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 9999px;
+  border: 1px solid var(--vera-surface-border);
+  background: var(--vera-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity var(--vera-duration) var(--vera-ease);
+}
+
+.lookbook-heart-btn:hover {
+  opacity: 0.8;
+}
+
+.lookbook-cta {
+  flex: 1;
+  height: 44px;
+  border-radius: 9999px;
+  border: 0;
+  background: var(--vera-primary);
+  color: #fff;
+  font-family: var(--vera-font-sans);
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: opacity var(--vera-duration) var(--vera-ease);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.lookbook-cta:hover {
+  opacity: 0.8;
+}
+
+.lookbook-cta--dirty {
+  background: #fff;
+  border: 1px solid var(--vera-surface-border);
+  color: var(--vera-dirty);
+  cursor: default;
+}
+
+.lookbook-cta--dirty:hover {
+  opacity: 1;
+}
+
+.lookbook-section-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 8px;
+  font-family: var(--vera-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--vera-fg-muted);
+}
+
+.lookbook-section-head__rule {
+  flex: 1;
+  height: 1px;
+  background: var(--vera-surface-border);
+}
+
+.lookbook-dimmed {
+  opacity: 0.55;
+  transition: opacity var(--vera-duration) var(--vera-ease);
+}
+
+.lookbook-empty-slot {
+  border: 1px dashed var(--vera-gray-300);
+  border-radius: var(--vera-radius-lg);
+  background: rgba(255, 255, 255, 0.4);
+  min-height: 210px;
+}

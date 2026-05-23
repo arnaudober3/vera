@@ -3,7 +3,10 @@ import type { FavouriteOutfit } from "../models/favourite-outfit.ts";
 import { getSessionId } from "../storage/session.ts";
 import { favouritesKey, lsGet, lsSet } from "../storage/local-store.ts";
 
-type StoredFavourite = Omit<FavouriteOutfit, "savedAt"> & { savedAt: string };
+type StoredFavourite = Omit<FavouriteOutfit, "savedAt" | "lastWornAt"> & {
+  savedAt: string;
+  lastWornAt?: string;
+};
 
 // Private singleton state reused through the app
 let state: FavouriteOutfit[] = [];
@@ -20,6 +23,7 @@ const initialize = (): void => {
   state = raw.map((entry) => ({
     ...entry,
     savedAt: new Date(entry.savedAt),
+    lastWornAt: entry.lastWornAt ? new Date(entry.lastWornAt) : undefined,
   }));
 
   isInitialized = true;
@@ -61,6 +65,7 @@ export function useFavouriteOutfits() {
     outerwearId?: string,
     shoesId?: string,
     accessoriesIds?: string[],
+    name?: string,
   ): Promise<void> => {
     const sortedAccessories = accessoriesIds ? [...accessoriesIds].sort() : undefined;
 
@@ -73,6 +78,7 @@ export function useFavouriteOutfits() {
 
     const newEntry: FavouriteOutfit = {
       id: entryId,
+      name,
       topId,
       bottomId,
       outerwearId,
@@ -80,6 +86,7 @@ export function useFavouriteOutfits() {
       accessoriesIds: sortedAccessories,
       savedAt: new Date(),
       sessionId,
+      wornCount: 0,
     };
 
     emitChange([newEntry, ...state]);
@@ -124,6 +131,23 @@ export function useFavouriteOutfits() {
     }
   };
 
+  const renameFavourite = async (id: string, name: string): Promise<void> => {
+    const trimmed = name.trim();
+    const next = state.map((f) =>
+      f.id === id ? { ...f, name: trimmed || undefined } : f,
+    );
+    emitChange(next);
+  };
+
+  const recordWear = async (id: string): Promise<void> => {
+    const next = state.map((f) =>
+      f.id === id
+        ? { ...f, wornCount: (f.wornCount ?? 0) + 1, lastWornAt: new Date() }
+        : f,
+    );
+    emitChange(next);
+  };
+
   function emitChange(newEntries: FavouriteOutfit[]): void {
     state = newEntries;
     lsSet(favouritesKey(getSessionId()), newEntries);
@@ -136,6 +160,8 @@ export function useFavouriteOutfits() {
     removeFavourite,
     removeFavouriteByOutfit,
     removeFavouritesWithItem,
+    renameFavourite,
+    recordWear,
     isFavourite,
   };
 }

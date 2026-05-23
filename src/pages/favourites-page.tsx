@@ -6,32 +6,90 @@ import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
 import { useFavouriteOutfits } from "../hooks/favourite-outfits.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
-import type { FavouriteOutfit } from "../models/favourite-outfit.ts";
+import {
+  defaultFavouriteName,
+  type FavouriteOutfit,
+} from "../models/favourite-outfit.ts";
 import { isWashable, type ClothingItem } from "../models/clothing-item.ts";
-import { FaHeart, FaCheck } from "react-icons/fa";
+import { FaHeart } from "react-icons/fa";
+import { MdLocalLaundryService } from "react-icons/md";
 import { useNavigate } from "react-router";
+import { formatRelativeDate } from "../utils/date.ts";
 import "./favourites-page.css";
-import "../pages/closet-page.css";
 
-const FavouriteOutfitCard = ({
-  favourite,
-  top,
-  bottom,
-  outerwear,
-  shoes,
-  accessories,
-}: {
+type ResolvedFavourite = {
   favourite: FavouriteOutfit;
   top: ClothingItem;
   bottom: ClothingItem;
   outerwear: ClothingItem | undefined;
   shoes: ClothingItem | undefined;
   accessories: (ClothingItem | undefined)[];
-}): React.JSX.Element => {
+};
+
+type Filter = "all" | "ready" | "recent" | "worn";
+
+const isResolvedClean = (res: ResolvedFavourite): boolean => {
+  const { top, bottom, outerwear, shoes, accessories } = res;
+  if (isWashable(top.category) && !top.isClean) return false;
+  if (isWashable(bottom.category) && !bottom.isClean) return false;
+  if (outerwear && isWashable(outerwear.category) && !outerwear.isClean) return false;
+  if (shoes && isWashable(shoes.category) && !shoes.isClean) return false;
+  for (const a of accessories) {
+    if (a && isWashable(a.category) && !a.isClean) return false;
+  }
+  return true;
+};
+
+const collectPieces = (res: ResolvedFavourite): ClothingItem[] => {
+  const pieces: ClothingItem[] = [res.top, res.bottom];
+  if (res.outerwear) pieces.push(res.outerwear);
+  if (res.shoes) pieces.push(res.shoes);
+  for (const a of res.accessories) if (a) pieces.push(a);
+  return pieces;
+};
+
+const LookbookPieceRow = ({ pieces }: { pieces: ClothingItem[] }) => {
   const { getImage } = useImage();
-  const { removeFavourite } = useFavouriteOutfits();
+  const ordered = [...pieces].sort((a, b) => {
+    const priority = (c: ClothingItem["category"]) =>
+      c === "outerwear" ? 0 : c === "top" ? 1 : c === "bottom" ? 2 : c === "shoes" ? 3 : 4;
+    return priority(a.category) - priority(b.category);
+  });
+  return (
+    <div className="lookbook-row">
+      {ordered.slice(0, 4).map((p) => {
+        const small = p.category === "shoes" || p.category === "accessories";
+        return (
+          <div
+            key={p.id}
+            className={`lookbook-row-piece ${small ? "lookbook-row-piece--small" : "lookbook-row-piece--large"}`}
+          >
+            <img
+              src={getImage(p.imageId || p.id)}
+              alt={p.name}
+              loading="lazy"
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+const LookbookCard = ({ resolved }: { resolved: ResolvedFavourite }) => {
+  const { favourite } = resolved;
+  const { removeFavourite, renameFavourite, recordWear } = useFavouriteOutfits();
   const { markWorn } = useCloset();
   const { recordOutfit } = useOutfitHistory();
+
+  const clean = isResolvedClean(resolved);
+  const pieces = collectPieces(resolved);
+  const displayName = favourite.name ?? defaultFavouriteName(favourite.savedAt);
+  const wornCount = favourite.wornCount ?? 0;
+
+  const metaParts: string[] = [`${pieces.length} pieces`];
+  if (wornCount > 0) metaParts.push(`worn ${wornCount}×`);
+  if (favourite.lastWornAt) metaParts.push(formatRelativeDate(favourite.lastWornAt));
 
   async function remove(): Promise<void> {
     if (window.confirm("Are you sure you want to remove this favourite?")) {
@@ -39,8 +97,15 @@ const FavouriteOutfitCard = ({
     }
   }
 
-  async function wearOutfit(): Promise<void> {
-    if (!top || !bottom) return;
+  async function rename(): Promise<void> {
+    const next = window.prompt("Name this outfit", displayName);
+    if (next === null) return;
+    await renameFavourite(favourite.id, next);
+  }
+
+  async function wear(): Promise<void> {
+    const { top, bottom, outerwear, shoes, accessories } = resolved;
+    await recordWear(favourite.id);
     await recordOutfit(
       top.id,
       bottom.id,
@@ -58,172 +123,99 @@ const FavouriteOutfitCard = ({
   }
 
   return (
-    <div className="flex flex-col gap-2 p-2 h-full">
-      <div
-        className={`vera-card flex flex-col items-center relative overflow-hidden !pt-3 !px-0 !pb-0 h-full ${
-          (top && !top.isClean && isWashable(top.category)) ||
-          (bottom && !bottom.isClean && isWashable(bottom.category)) ||
-          (outerwear && !outerwear.isClean && isWashable(outerwear.category)) ||
-          (shoes && !shoes.isClean && isWashable(shoes.category)) ||
-          accessories.some((a) => a && !a.isClean && isWashable(a.category))
-            ? "vera-dirty-overlay"
-            : ""
-        }`}
-      >
+    <article className="lookbook-card">
+      <div className={clean ? undefined : "lookbook-dimmed"}>
+        <header className="lookbook-header">
+          <div className="lookbook-header-text">
+            <button
+              type="button"
+              className="lookbook-name"
+              onClick={rename}
+              aria-label="Rename outfit"
+              title="Rename outfit"
+            >
+              {displayName}
+            </button>
+            <div className="lookbook-meta">{metaParts.join(" · ")}</div>
+          </div>
+        </header>
+        <LookbookPieceRow pieces={pieces} />
+      </div>
+
+      <footer className="lookbook-footer">
         <button
-          onClick={() => remove()}
-          className="unfavourite-button absolute top-2 right-2 z-20 pointer-events-auto flex items-center justify-center transition-all text-sm font-bold vera-keep-opaque"
+          type="button"
+          className="lookbook-heart-btn"
+          onClick={remove}
           aria-label="Remove favourite"
         >
-          <FaHeart size={10} />
+          <FaHeart size={14} />
         </button>
-
-        <div className="flex flex-col items-center gap-3 w-full min-w-0 px-3">
-          <div className="flex flex-col items-center w-full min-w-0">
-            <img
-              src={getImage(top.imageId || top.id)}
-              alt={top.name}
-              className="w-20 h-20 object-contain rounded-xl"
-              loading="lazy"
-            />
-            <div className="mt-1 text-xs text-black font-semibold whitespace-nowrap text-ellipsis w-full overflow-hidden text-center">
-              {top.name}
-            </div>
+        {clean ? (
+          <button type="button" className="lookbook-cta" onClick={wear}>
+            I'm wearing this
+          </button>
+        ) : (
+          <div className="lookbook-cta lookbook-cta--dirty" aria-disabled>
+            <MdLocalLaundryService size={16} />
+            In the wash
           </div>
+        )}
+      </footer>
+    </article>
+  );
+};
 
-          <div className="w-full border-t border-gray-100" />
-
-          <div className="flex flex-col items-center w-full min-w-0">
-            <img
-              src={getImage(bottom.imageId || bottom.id)}
-              alt={bottom.name}
-              className="w-20 h-20 object-contain rounded-xl"
-              loading="lazy"
-            />
-            <div className="mt-1 text-xs text-black font-semibold whitespace-nowrap text-ellipsis w-full overflow-hidden text-center">
-              {bottom.name}
-            </div>
-          </div>
-
-          <div className="w-full border-t border-gray-100" />
-          <div className="flex flex-nowrap justify-center gap-2 h-10 items-center w-full px-2 mb-2 overflow-hidden">
-            <div className="flex items-center justify-center gap-2 h-full">
-              {(() => {
-                const hasAnyOptionalItems = !!(outerwear || shoes || accessories.filter(a => !!a).length > 0);
-                if (!hasAnyOptionalItems) {
-                  return (
-                    <span className="inline-block leading-none p-0 m-0 text-black font-semibold text-center text-xs whitespace-nowrap">
-                      No accessories
-                    </span>
-                  );
-                }
-                return (
-                  <>
-                    {outerwear && (
-                      <div className="flex flex-col items-center justify-center min-w-0 max-w-[2.5rem] h-full">
-                        <img
-                          src={getImage(outerwear.imageId || outerwear.id)}
-                          alt={outerwear.name}
-                          className="w-full h-auto max-h-8 object-contain rounded-lg"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    {shoes && (
-                      <div className="flex flex-col items-center justify-center min-w-0 max-w-[2.5rem] h-full">
-                        <img
-                          src={getImage(shoes.imageId || shoes.id)}
-                          alt={shoes.name}
-                          className="w-full h-auto max-h-8 object-contain rounded-lg"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                    {accessories.map(
-                      (accessory, index) =>
-                        accessory && (
-                          <div
-                            key={accessory.id || index}
-                            className="flex flex-col items-center justify-center min-w-0 max-w-[2.5rem] h-full"
-                          >
-                            <img
-                              src={getImage(accessory.imageId || accessory.id)}
-                              alt={accessory.name}
-                              className="w-full h-auto max-h-8 object-contain rounded-lg"
-                              loading="lazy"
-                            />
-                          </div>
-                        ),
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={`w-full h-12 flex items-stretch ${
-            !(
-              top?.isClean &&
-              bottom?.isClean &&
-              (!outerwear || outerwear.isClean) &&
-              (!shoes || shoes.isClean) &&
-              accessories.every((a) => !a || a.isClean)
-            )
-              ? "keep-opaque"
-              : ""
-          }`}
+const LookbookFilterBar = ({
+  filter,
+  onFilterChange,
+  counts,
+}: {
+  filter: Filter;
+  onFilterChange: (f: Filter) => void;
+  counts: { all: number; ready: number };
+}) => {
+  const chips: { id: Filter; label: string; count?: number }[] = [
+    { id: "all", label: "All", count: counts.all },
+    { id: "ready", label: "Ready", count: counts.ready },
+    { id: "recent", label: "Recent" },
+    { id: "worn", label: "Most worn" },
+  ];
+  return (
+    <div className="vera-chip-row mx-auto max-w-4xl w-full">
+      {chips.map(({ id, label, count }) => (
+        <button
+          key={id}
+          type="button"
+          onClick={() => onFilterChange(id)}
+          className={`vera-chip ${filter === id ? "active" : ""}`}
+          aria-pressed={filter === id}
         >
-          {top?.isClean &&
-          bottom?.isClean &&
-          (!outerwear || outerwear.isClean) &&
-          (!shoes || shoes.isClean) &&
-          accessories.every((a) => !a || a.isClean) ? (
-            <button
-              onClick={() => wearOutfit()}
-              className="wear-button w-full font-medium transition-all flex items-center justify-center gap-1.5"
-            >
-              <FaCheck size={10} />
-              Wear it
-            </button>
-          ) : (
-            <div className="w-full flex items-center justify-center z-10">
-              <span className="vera-badge vera-badge--dirty vera-keep-opaque">dirty</span>
-            </div>
-          )}
-        </div>
-      </div>
+          {label}
+          {count != null && ` · ${count}`}
+        </button>
+      ))}
     </div>
   );
 };
 
-const FavouritesFilterBar = ({
-  readyToWearOnly,
-  onFilterChange,
-}: {
-  readyToWearOnly: boolean;
-  onFilterChange: (readyToWear: boolean) => void;
-}): React.JSX.Element => {
+const LookbookSectionHead = ({ children }: { children: React.ReactNode }) => (
+  <div className="lookbook-section-head">
+    {children}
+    <span className="lookbook-section-head__rule" aria-hidden />
+  </div>
+);
+
+const MIN_VISIBLE_SLOTS = 3;
+
+const LookbookPlaceholders = ({ count }: { count: number }) => {
+  if (count <= 0) return null;
   return (
-    <div className="vera-chip-row mx-auto max-w-4xl w-full">
-      <button
-        type="button"
-        onClick={() => onFilterChange(false)}
-        className={`vera-chip ${!readyToWearOnly ? "active" : ""}`}
-        aria-pressed={!readyToWearOnly}
-      >
-        All
-      </button>
-      <button
-        type="button"
-        onClick={() => onFilterChange(true)}
-        className={`vera-chip ${readyToWearOnly ? "active" : ""}`}
-        aria-pressed={readyToWearOnly}
-      >
-        Ready to wear
-      </button>
-    </div>
+    <>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={`placeholder-${i}`} className="lookbook-empty-slot" aria-hidden />
+      ))}
+    </>
   );
 };
 
@@ -233,9 +225,9 @@ export const FavouritesPage = (): React.JSX.Element => {
   const { items } = useCloset();
   const navigate = useNavigate();
 
-  const [readyToWearOnly, setReadyToWearOnly] = useState(false);
+  const [filter, setFilter] = useState<Filter>("all");
 
-  const resolvedFavourites = useMemo(() => {
+  const resolvedFavourites = useMemo<ResolvedFavourite[]>(() => {
     return favourites
       .map((fav) => ({
         favourite: fav,
@@ -248,22 +240,42 @@ export const FavouritesPage = (): React.JSX.Element => {
         ),
       }))
       .filter(
-        (res): res is typeof res & { top: ClothingItem; bottom: ClothingItem } =>
-          !!res.top && !!res.bottom,
+        (res): res is ResolvedFavourite => !!res.top && !!res.bottom,
       );
   }, [favourites, items]);
 
-  const filteredFavourites = useMemo(() => {
-    if (!readyToWearOnly) return resolvedFavourites;
-    return resolvedFavourites.filter(
-      ({ top, bottom, outerwear, shoes, accessories }) =>
-        top?.isClean &&
-        bottom?.isClean &&
-        (!outerwear || outerwear.isClean) &&
-        (!shoes || shoes.isClean) &&
-        accessories.every((a) => !a || a.isClean),
-    );
-  }, [resolvedFavourites, readyToWearOnly]);
+  const cleanFavourites = useMemo(
+    () => resolvedFavourites.filter(isResolvedClean),
+    [resolvedFavourites],
+  );
+  const dirtyFavourites = useMemo(
+    () => resolvedFavourites.filter((r) => !isResolvedClean(r)),
+    [resolvedFavourites],
+  );
+
+  const sortedForFilter = useMemo<ResolvedFavourite[]>(() => {
+    if (filter === "ready") return cleanFavourites;
+    if (filter === "recent") {
+      return resolvedFavourites
+        .filter((r) => r.favourite.lastWornAt)
+        .sort(
+          (a, b) =>
+            (b.favourite.lastWornAt?.getTime() ?? 0) -
+            (a.favourite.lastWornAt?.getTime() ?? 0),
+        );
+    }
+    if (filter === "worn") {
+      return resolvedFavourites
+        .filter((r) => (r.favourite.wornCount ?? 0) > 0)
+        .sort(
+          (a, b) =>
+            (b.favourite.wornCount ?? 0) - (a.favourite.wornCount ?? 0),
+        );
+    }
+    return resolvedFavourites;
+  }, [filter, resolvedFavourites, cleanFavourites]);
+
+  const counts = { all: resolvedFavourites.length, ready: cleanFavourites.length };
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
@@ -271,12 +283,15 @@ export const FavouritesPage = (): React.JSX.Element => {
         <h2 className="vera-page-title">Your favourites</h2>
       </div>
 
-      <div className="shrink-0">
-        <FavouritesFilterBar
-          readyToWearOnly={readyToWearOnly}
-          onFilterChange={setReadyToWearOnly}
-        />
-      </div>
+      {favourites.length > 0 && (
+        <div className="shrink-0">
+          <LookbookFilterBar
+            filter={filter}
+            onFilterChange={setFilter}
+            counts={counts}
+          />
+        </div>
+      )}
 
       <div
         className="flex-1 min-h-0 overflow-y-auto flex flex-col"
@@ -287,59 +302,62 @@ export const FavouritesPage = (): React.JSX.Element => {
             "linear-gradient(to bottom, transparent, black 1.5rem, black calc(100% - 3rem), transparent)",
         }}
       >
-        <div className={`w-full mx-auto max-w-4xl px-4 ${favourites.length === 0 ? "flex-1 flex flex-col justify-center" : "p-4"}`}>
-          <div className={`rounded-2xl ${favourites.length === 0 ? "flex-1 flex flex-col justify-center" : ""}`}>
-            {favourites.length > 0 ? (
-              filteredFavourites.length > 0 ? (
-                <div className="grid gap-2 grid-cols-2 auto-rows-fr">
-                  {filteredFavourites.map(
-                    ({
-                      favourite,
-                      top,
-                      bottom,
-                      outerwear,
-                      shoes,
-                      accessories,
-                    }) => (
-                      <FavouriteOutfitCard
-                        key={favourite.id}
-                        favourite={favourite}
-                        top={top}
-                        bottom={bottom}
-                        outerwear={outerwear}
-                        shoes={shoes}
-                        accessories={accessories}
-                      />
-                    ),
-                  )}
-                  {filteredFavourites.length < 4 &&
-                    Array.from({ length: 4 - filteredFavourites.length }).map((_, i) => (
-                      <div key={`placeholder-${i}`} className="flex flex-col gap-2 p-2 h-full">
-                        <div className="vera-empty-slot w-full h-full" aria-hidden />
-                      </div>
+        <div
+          className={`w-full mx-auto max-w-4xl px-4 ${favourites.length === 0 ? "flex-1 flex flex-col justify-center" : "py-3"}`}
+        >
+          {favourites.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center pb-20">
+              <EmptyMessageTemplate
+                title="No favourites yet."
+                subtitle="Save outfits you love from the today page!"
+                buttonText="My today's outfit"
+                onButtonClick={() => navigate("/")}
+              />
+            </div>
+          ) : filter === "all" ? (
+            <>
+              {cleanFavourites.length > 0 && (
+                <>
+                  <LookbookSectionHead>
+                    Ready to wear · {cleanFavourites.length}
+                  </LookbookSectionHead>
+                  <div className="lookbook-feed">
+                    {cleanFavourites.map((r) => (
+                      <LookbookCard key={r.favourite.id} resolved={r} />
                     ))}
+                  </div>
+                </>
+              )}
+              {dirtyFavourites.length > 0 && (
+                <>
+                  <LookbookSectionHead>
+                    In the wash · {dirtyFavourites.length}
+                  </LookbookSectionHead>
+                  <div className="lookbook-feed">
+                    {dirtyFavourites.map((r) => (
+                      <LookbookCard key={r.favourite.id} resolved={r} />
+                    ))}
+                  </div>
+                </>
+              )}
+              {resolvedFavourites.length < MIN_VISIBLE_SLOTS && (
+                <div className="lookbook-feed" style={{ marginTop: 10 }}>
+                  <LookbookPlaceholders
+                    count={MIN_VISIBLE_SLOTS - resolvedFavourites.length}
+                  />
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <p className="text-gray-500 text-lg">
-                    No outfits match your filters.
-                  </p>
-                  <p className="text-gray-400 text-sm">
-                    Try adjusting your filters above.
-                  </p>
-                </div>
-              )
-            ) : (
-              <div className="flex-1 flex items-center justify-center pb-20">
-                <EmptyMessageTemplate
-                  title="No favourites yet."
-                  subtitle="Save outfits you love from the today page!"
-                  buttonText="My today's outfit"
-                  onButtonClick={() => navigate("/")}
-                />
-              </div>
-            )}
-          </div>
+              )}
+            </>
+          ) : (
+            <div className="lookbook-feed">
+              {sortedForFilter.map((r) => (
+                <LookbookCard key={r.favourite.id} resolved={r} />
+              ))}
+              <LookbookPlaceholders
+                count={MIN_VISIBLE_SLOTS - sortedForFilter.length}
+              />
+            </div>
+          )}
         </div>
       </div>
 
