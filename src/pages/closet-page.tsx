@@ -361,7 +361,7 @@ export const ClosetPage = (): React.JSX.Element => {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
-        <h2 className="vera-page-title">Your closet</h2>
+        <h2 className="vera-page-title">My closet</h2>
       </div>
 
       {showOnboardingToast && (

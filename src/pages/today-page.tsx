@@ -368,6 +368,7 @@ const TodayOutfit = (): React.JSX.Element => {
   } = useOutfit();
   const outfit = import.meta.env.VITE_ENABLE_DEBUG === "true" ? undefined : _outfit;
   const { recordOutfit } = useOutfitHistory();
+  const { lookbook, recordWear } = useLookbook();
   const [pickerOpen, setPickerOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -382,6 +383,19 @@ const TodayOutfit = (): React.JSX.Element => {
 
   const handleConfirmWorn = async (): Promise<void> => {
     if (!outfit) return;
+    const accessoryIds = (outfit.accessories?.map((a) => a.id) || [])
+      .slice()
+      .sort();
+    const matchingEntry = lookbook.find(
+      (entry) =>
+        entry.topId === outfit.top.id &&
+        entry.bottomId === outfit.bottom.id &&
+        entry.outerwearId === outfit.outerwear?.id &&
+        entry.shoesId === outfit.shoes?.id &&
+        JSON.stringify([...(entry.accessoriesIds || [])].sort()) ===
+          JSON.stringify(accessoryIds),
+    );
+    if (matchingEntry) await recordWear(matchingEntry.id);
     await recordOutfit(
       outfit.top.id,
       outfit.bottom.id,
