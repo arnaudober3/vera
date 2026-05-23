@@ -433,6 +433,7 @@ const TodayOutfit = (): React.JSX.Element => {
             onButtonClick={() => navigate("/closet")}
           />
         </div>
+        <BasketStrip />
         <NavigationBar activePage="today" />
       </>
     );
