@@ -40,16 +40,32 @@
   background: none;
   border: 0;
   padding: 0;
-  text-align: center;
-  cursor: text;
+  cursor: pointer;
   max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: color var(--vera-duration) var(--vera-ease);
+}
+
+.lookbook-name:hover {
+  color: var(--vera-primary);
+}
+
+.lookbook-name__text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.lookbook-name:hover {
-  opacity: 0.7;
+.lookbook-name__edit {
+  color: var(--vera-fg-muted);
+  flex-shrink: 0;
+  transition: color var(--vera-duration) var(--vera-ease);
+}
+
+.lookbook-name:hover .lookbook-name__edit {
+  color: var(--vera-primary);
 }
 
 .lookbook-meta {

@@ -13,7 +13,7 @@ import {
 } from "../models/lookbook-outfit.ts";
 import { isWashable, type ClothingItem } from "../models/clothing-item.ts";
 import { FaHeart } from "react-icons/fa";
-import { MdLocalLaundryService } from "react-icons/md";
+import { MdEdit, MdLocalLaundryService } from "react-icons/md";
 import { useNavigate } from "react-router";
 import { formatRelativeDate } from "../utils/date.ts";
 import "./lookbook-page.css";
@@ -135,7 +135,12 @@ const LookbookCard = ({ resolved }: { resolved: ResolvedLookbookOutfit }) => {
               aria-label="Rename outfit"
               title="Rename outfit"
             >
-              {displayName}
+              <span className="lookbook-name__text">{displayName}</span>
+              <MdEdit
+                size={14}
+                className="lookbook-name__edit"
+                aria-hidden
+              />
             </button>
             <div className="lookbook-meta">{metaParts.join(" · ")}</div>
           </div>
