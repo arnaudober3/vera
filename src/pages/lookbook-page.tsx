@@ -4,21 +4,21 @@ import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
 import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
-import { useFavouriteOutfits } from "../hooks/favourite-outfits.ts";
+import { useLookbook } from "../hooks/lookbook.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
 import {
-  defaultFavouriteName,
-  type FavouriteOutfit,
-} from "../models/favourite-outfit.ts";
+  defaultLookbookOutfitName,
+  type LookbookOutfit,
+} from "../models/lookbook-outfit.ts";
 import { isWashable, type ClothingItem } from "../models/clothing-item.ts";
 import { FaHeart } from "react-icons/fa";
 import { MdLocalLaundryService } from "react-icons/md";
 import { useNavigate } from "react-router";
 import { formatRelativeDate } from "../utils/date.ts";
-import "./favourites-page.css";
+import "./lookbook-page.css";
 
-type ResolvedFavourite = {
-  favourite: FavouriteOutfit;
+type ResolvedLookbookOutfit = {
+  outfit: LookbookOutfit;
   top: ClothingItem;
   bottom: ClothingItem;
   outerwear: ClothingItem | undefined;
@@ -28,7 +28,7 @@ type ResolvedFavourite = {
 
 type Filter = "all" | "ready" | "recent" | "worn";
 
-const isResolvedClean = (res: ResolvedFavourite): boolean => {
+const isResolvedClean = (res: ResolvedLookbookOutfit): boolean => {
   const { top, bottom, outerwear, shoes, accessories } = res;
   if (isWashable(top.category) && !top.isClean) return false;
   if (isWashable(bottom.category) && !bottom.isClean) return false;
@@ -40,7 +40,7 @@ const isResolvedClean = (res: ResolvedFavourite): boolean => {
   return true;
 };
 
-const collectPieces = (res: ResolvedFavourite): ClothingItem[] => {
+const collectPieces = (res: ResolvedLookbookOutfit): ClothingItem[] => {
   const pieces: ClothingItem[] = [res.top, res.bottom];
   if (res.outerwear) pieces.push(res.outerwear);
   if (res.shoes) pieces.push(res.shoes);
@@ -76,36 +76,36 @@ const LookbookPieceRow = ({ pieces }: { pieces: ClothingItem[] }) => {
   );
 };
 
-const LookbookCard = ({ resolved }: { resolved: ResolvedFavourite }) => {
-  const { favourite } = resolved;
-  const { removeFavourite, renameFavourite, recordWear } = useFavouriteOutfits();
+const LookbookCard = ({ resolved }: { resolved: ResolvedLookbookOutfit }) => {
+  const { outfit } = resolved;
+  const { removeFromLookbook, renameLookbookOutfit, recordWear } = useLookbook();
   const { markWorn } = useCloset();
   const { recordOutfit } = useOutfitHistory();
 
   const clean = isResolvedClean(resolved);
   const pieces = collectPieces(resolved);
-  const displayName = favourite.name ?? defaultFavouriteName(favourite.savedAt);
-  const wornCount = favourite.wornCount ?? 0;
+  const displayName = outfit.name ?? defaultLookbookOutfitName(outfit.savedAt);
+  const wornCount = outfit.wornCount ?? 0;
 
   const metaParts: string[] = [`${pieces.length} pieces`];
   if (wornCount > 0) metaParts.push(`worn ${wornCount}×`);
-  if (favourite.lastWornAt) metaParts.push(formatRelativeDate(favourite.lastWornAt));
+  if (outfit.lastWornAt) metaParts.push(formatRelativeDate(outfit.lastWornAt));
 
   async function remove(): Promise<void> {
-    if (window.confirm("Are you sure you want to remove this favourite?")) {
-      await removeFavourite(favourite.id);
+    if (window.confirm("Remove this outfit from your lookbook?")) {
+      await removeFromLookbook(outfit.id);
     }
   }
 
   async function rename(): Promise<void> {
     const next = window.prompt("Name this outfit", displayName);
     if (next === null) return;
-    await renameFavourite(favourite.id, next);
+    await renameLookbookOutfit(outfit.id, next);
   }
 
   async function wear(): Promise<void> {
     const { top, bottom, outerwear, shoes, accessories } = resolved;
-    await recordWear(favourite.id);
+    await recordWear(outfit.id);
     await recordOutfit(
       top.id,
       bottom.id,
@@ -147,7 +147,7 @@ const LookbookCard = ({ resolved }: { resolved: ResolvedFavourite }) => {
           type="button"
           className="lookbook-heart-btn"
           onClick={remove}
-          aria-label="Remove favourite"
+          aria-label="Remove from lookbook"
         >
           <FaHeart size={14} />
         </button>
@@ -219,71 +219,71 @@ const LookbookPlaceholders = ({ count }: { count: number }) => {
   );
 };
 
-export const FavouritesPage = (): React.JSX.Element => {
-  const { favourites: _favourites } = useFavouriteOutfits();
-  const favourites = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _favourites) : _favourites;
+export const LookbookPage = (): React.JSX.Element => {
+  const { lookbook: _lookbook } = useLookbook();
+  const lookbook = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _lookbook) : _lookbook;
   const { items } = useCloset();
   const navigate = useNavigate();
 
   const [filter, setFilter] = useState<Filter>("all");
 
-  const resolvedFavourites = useMemo<ResolvedFavourite[]>(() => {
-    return favourites
-      .map((fav) => ({
-        favourite: fav,
-        top: items.find((i) => i.id === fav.topId),
-        bottom: items.find((i) => i.id === fav.bottomId),
-        outerwear: items.find((i) => i.id === fav.outerwearId),
-        shoes: items.find((i) => i.id === fav.shoesId),
-        accessories: (fav.accessoriesIds || []).map((id) =>
+  const resolvedOutfits = useMemo<ResolvedLookbookOutfit[]>(() => {
+    return lookbook
+      .map((entry) => ({
+        outfit: entry,
+        top: items.find((i) => i.id === entry.topId),
+        bottom: items.find((i) => i.id === entry.bottomId),
+        outerwear: items.find((i) => i.id === entry.outerwearId),
+        shoes: items.find((i) => i.id === entry.shoesId),
+        accessories: (entry.accessoriesIds || []).map((id) =>
           items.find((i) => i.id === id),
         ),
       }))
       .filter(
-        (res): res is ResolvedFavourite => !!res.top && !!res.bottom,
+        (res): res is ResolvedLookbookOutfit => !!res.top && !!res.bottom,
       );
-  }, [favourites, items]);
+  }, [lookbook, items]);
 
-  const cleanFavourites = useMemo(
-    () => resolvedFavourites.filter(isResolvedClean),
-    [resolvedFavourites],
+  const cleanOutfits = useMemo(
+    () => resolvedOutfits.filter(isResolvedClean),
+    [resolvedOutfits],
   );
-  const dirtyFavourites = useMemo(
-    () => resolvedFavourites.filter((r) => !isResolvedClean(r)),
-    [resolvedFavourites],
+  const dirtyOutfits = useMemo(
+    () => resolvedOutfits.filter((r) => !isResolvedClean(r)),
+    [resolvedOutfits],
   );
 
-  const sortedForFilter = useMemo<ResolvedFavourite[]>(() => {
-    if (filter === "ready") return cleanFavourites;
+  const sortedForFilter = useMemo<ResolvedLookbookOutfit[]>(() => {
+    if (filter === "ready") return cleanOutfits;
     if (filter === "recent") {
-      return resolvedFavourites
-        .filter((r) => r.favourite.lastWornAt)
+      return resolvedOutfits
+        .filter((r) => r.outfit.lastWornAt)
         .sort(
           (a, b) =>
-            (b.favourite.lastWornAt?.getTime() ?? 0) -
-            (a.favourite.lastWornAt?.getTime() ?? 0),
+            (b.outfit.lastWornAt?.getTime() ?? 0) -
+            (a.outfit.lastWornAt?.getTime() ?? 0),
         );
     }
     if (filter === "worn") {
-      return resolvedFavourites
-        .filter((r) => (r.favourite.wornCount ?? 0) > 0)
+      return resolvedOutfits
+        .filter((r) => (r.outfit.wornCount ?? 0) > 0)
         .sort(
           (a, b) =>
-            (b.favourite.wornCount ?? 0) - (a.favourite.wornCount ?? 0),
+            (b.outfit.wornCount ?? 0) - (a.outfit.wornCount ?? 0),
         );
     }
-    return resolvedFavourites;
-  }, [filter, resolvedFavourites, cleanFavourites]);
+    return resolvedOutfits;
+  }, [filter, resolvedOutfits, cleanOutfits]);
 
-  const counts = { all: resolvedFavourites.length, ready: cleanFavourites.length };
+  const counts = { all: resolvedOutfits.length, ready: cleanOutfits.length };
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
-        <h2 className="vera-page-title">Your favourites</h2>
+        <h2 className="vera-page-title">Your lookbook</h2>
       </div>
 
-      {favourites.length > 0 && (
+      {lookbook.length > 0 && (
         <div className="shrink-0">
           <LookbookFilterBar
             filter={filter}
@@ -303,12 +303,12 @@ export const FavouritesPage = (): React.JSX.Element => {
         }}
       >
         <div
-          className={`w-full mx-auto max-w-4xl px-4 ${favourites.length === 0 ? "flex-1 flex flex-col justify-center" : "py-3"}`}
+          className={`w-full mx-auto max-w-4xl px-4 ${lookbook.length === 0 ? "flex-1 flex flex-col justify-center" : "py-3"}`}
         >
-          {favourites.length === 0 ? (
+          {lookbook.length === 0 ? (
             <div className="flex-1 flex items-center justify-center pb-20">
               <EmptyMessageTemplate
-                title="No favourites yet."
+                title="Your lookbook is empty."
                 subtitle="Save outfits you love from the today page!"
                 buttonText="My today's outfit"
                 onButtonClick={() => navigate("/")}
@@ -316,34 +316,34 @@ export const FavouritesPage = (): React.JSX.Element => {
             </div>
           ) : filter === "all" ? (
             <>
-              {cleanFavourites.length > 0 && (
+              {cleanOutfits.length > 0 && (
                 <>
                   <LookbookSectionHead>
-                    Ready to wear · {cleanFavourites.length}
+                    Ready to wear · {cleanOutfits.length}
                   </LookbookSectionHead>
                   <div className="lookbook-feed">
-                    {cleanFavourites.map((r) => (
-                      <LookbookCard key={r.favourite.id} resolved={r} />
+                    {cleanOutfits.map((r) => (
+                      <LookbookCard key={r.outfit.id} resolved={r} />
                     ))}
                   </div>
                 </>
               )}
-              {dirtyFavourites.length > 0 && (
+              {dirtyOutfits.length > 0 && (
                 <>
                   <LookbookSectionHead>
-                    In the wash · {dirtyFavourites.length}
+                    In the wash · {dirtyOutfits.length}
                   </LookbookSectionHead>
                   <div className="lookbook-feed">
-                    {dirtyFavourites.map((r) => (
-                      <LookbookCard key={r.favourite.id} resolved={r} />
+                    {dirtyOutfits.map((r) => (
+                      <LookbookCard key={r.outfit.id} resolved={r} />
                     ))}
                   </div>
                 </>
               )}
-              {resolvedFavourites.length < MIN_VISIBLE_SLOTS && (
+              {resolvedOutfits.length < MIN_VISIBLE_SLOTS && (
                 <div className="lookbook-feed" style={{ marginTop: 10 }}>
                   <LookbookPlaceholders
-                    count={MIN_VISIBLE_SLOTS - resolvedFavourites.length}
+                    count={MIN_VISIBLE_SLOTS - resolvedOutfits.length}
                   />
                 </div>
               )}
@@ -351,7 +351,7 @@ export const FavouritesPage = (): React.JSX.Element => {
           ) : (
             <div className="lookbook-feed">
               {sortedForFilter.map((r) => (
-                <LookbookCard key={r.favourite.id} resolved={r} />
+                <LookbookCard key={r.outfit.id} resolved={r} />
               ))}
               <LookbookPlaceholders
                 count={MIN_VISIBLE_SLOTS - sortedForFilter.length}
@@ -363,7 +363,7 @@ export const FavouritesPage = (): React.JSX.Element => {
 
       <div className="shrink-0 h-20" />
 
-      <NavigationBar activePage="favourites" />
+      <NavigationBar activePage="lookbook" />
     </div>
   );
 };

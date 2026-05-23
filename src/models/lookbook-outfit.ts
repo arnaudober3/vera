@@ -1,4 +1,4 @@
-export interface FavouriteOutfit {
+export interface LookbookOutfit {
   id: string;
   name?: string;
   topId: string;
@@ -17,5 +17,5 @@ const NAME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
   day: "numeric",
 });
 
-export const defaultFavouriteName = (savedAt: Date): string =>
+export const defaultLookbookOutfitName = (savedAt: Date): string =>
   `Outfit · ${NAME_FORMATTER.format(savedAt)}`;

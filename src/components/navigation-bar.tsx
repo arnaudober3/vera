@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
 import "./navigation-bar.css";
 
-type Page = "today" | "closet" | "favourites";
+type Page = "today" | "closet" | "lookbook";
 
 interface NavigationBarData {
   activePage: Page;
@@ -32,12 +32,12 @@ export default function NavigationBar({ activePage, action }: NavigationBarData)
         </Link>
 
         <Link
-          to="/favourites"
-          className={`vera-nav-item ${activePage === "favourites" ? "active" : ""}`}
-          aria-current={activePage === "favourites" ? "page" : undefined}
-          aria-label="Open favourite outfits page"
+          to="/lookbook"
+          className={`vera-nav-item ${activePage === "lookbook" ? "active" : ""}`}
+          aria-current={activePage === "lookbook" ? "page" : undefined}
+          aria-label="Open lookbook page"
         >
-          Favourites
+          Lookbook
         </Link>
       </nav>
       {action}

@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
-import type { FavouriteOutfit } from "../models/favourite-outfit.ts";
+import type { LookbookOutfit } from "../models/lookbook-outfit.ts";
 import { getSessionId } from "../storage/session.ts";
-import { favouritesKey, lsGet, lsSet } from "../storage/local-store.ts";
+import { lookbookKey, lsGet, lsSet } from "../storage/local-store.ts";
 
-type StoredFavourite = Omit<FavouriteOutfit, "savedAt" | "lastWornAt"> & {
+type StoredLookbookOutfit = Omit<LookbookOutfit, "savedAt" | "lastWornAt"> & {
   savedAt: string;
   lastWornAt?: string;
 };
 
 // Private singleton state reused through the app
-let state: FavouriteOutfit[] = [];
+let state: LookbookOutfit[] = [];
 let isInitialized = false;
-const listeners = new Set<(entries: FavouriteOutfit[]) => void>();
+const listeners = new Set<(entries: LookbookOutfit[]) => void>();
 
 const initialize = (): void => {
   if (isInitialized) {
@@ -19,7 +19,7 @@ const initialize = (): void => {
   }
 
   const sessionId = getSessionId();
-  const raw = lsGet<StoredFavourite[]>(favouritesKey(sessionId), []);
+  const raw = lsGet<StoredLookbookOutfit[]>(lookbookKey(sessionId), []);
   state = raw.map((entry) => ({
     ...entry,
     savedAt: new Date(entry.savedAt),
@@ -30,18 +30,18 @@ const initialize = (): void => {
 };
 initialize();
 
-export function useFavouriteOutfits() {
-  const [favourites, setFavourites] = useState(state);
+export function useLookbook() {
+  const [lookbook, setLookbook] = useState(state);
 
   useEffect(() => {
-    const listener = (entries: FavouriteOutfit[]) => setFavourites(entries);
+    const listener = (entries: LookbookOutfit[]) => setLookbook(entries);
     listeners.add(listener);
     return () => {
       listeners.delete(listener);
     };
   }, []);
 
-  const isFavourite = (
+  const isInLookbook = (
     topId: string,
     bottomId: string,
     outerwearId?: string,
@@ -59,7 +59,7 @@ export function useFavouriteOutfits() {
     );
   };
 
-  const addFavourite = async (
+  const addToLookbook = async (
     topId: string,
     bottomId: string,
     outerwearId?: string,
@@ -69,14 +69,14 @@ export function useFavouriteOutfits() {
   ): Promise<void> => {
     const sortedAccessories = accessoriesIds ? [...accessoriesIds].sort() : undefined;
 
-    if (isFavourite(topId, bottomId, outerwearId, shoesId, sortedAccessories)) {
+    if (isInLookbook(topId, bottomId, outerwearId, shoesId, sortedAccessories)) {
       return;
     }
 
     const sessionId = getSessionId();
     const entryId = `${sessionId}_${Date.now()}`;
 
-    const newEntry: FavouriteOutfit = {
+    const newEntry: LookbookOutfit = {
       id: entryId,
       name,
       topId,
@@ -92,11 +92,11 @@ export function useFavouriteOutfits() {
     emitChange([newEntry, ...state]);
   };
 
-  const removeFavourite = async (id: string): Promise<void> => {
+  const removeFromLookbook = async (id: string): Promise<void> => {
     emitChange(state.filter((f) => f.id !== id));
   };
 
-  const removeFavouriteByOutfit = async (
+  const removeFromLookbookByOutfit = async (
     topId: string,
     bottomId: string,
     outerwearId?: string,
@@ -113,11 +113,11 @@ export function useFavouriteOutfits() {
           JSON.stringify([...(accessoriesIds || [])].sort()),
     );
     if (match) {
-      await removeFavourite(match.id);
+      await removeFromLookbook(match.id);
     }
   };
 
-  const removeFavouritesWithItem = async (itemId: string): Promise<void> => {
+  const removeLookbookEntriesWithItem = async (itemId: string): Promise<void> => {
     const newState = state.filter(
       (f) =>
         f.topId !== itemId &&
@@ -131,7 +131,7 @@ export function useFavouriteOutfits() {
     }
   };
 
-  const renameFavourite = async (id: string, name: string): Promise<void> => {
+  const renameLookbookOutfit = async (id: string, name: string): Promise<void> => {
     const trimmed = name.trim();
     const next = state.map((f) =>
       f.id === id ? { ...f, name: trimmed || undefined } : f,
@@ -148,20 +148,20 @@ export function useFavouriteOutfits() {
     emitChange(next);
   };
 
-  function emitChange(newEntries: FavouriteOutfit[]): void {
+  function emitChange(newEntries: LookbookOutfit[]): void {
     state = newEntries;
-    lsSet(favouritesKey(getSessionId()), newEntries);
+    lsSet(lookbookKey(getSessionId()), newEntries);
     listeners.forEach((listener) => listener(newEntries));
   }
 
   return {
-    favourites,
-    addFavourite,
-    removeFavourite,
-    removeFavouriteByOutfit,
-    removeFavouritesWithItem,
-    renameFavourite,
+    lookbook,
+    addToLookbook,
+    removeFromLookbook,
+    removeFromLookbookByOutfit,
+    removeLookbookEntriesWithItem,
+    renameLookbookOutfit,
     recordWear,
-    isFavourite,
+    isInLookbook,
   };
 }

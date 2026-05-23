@@ -6,7 +6,7 @@ import { useOutfit } from "../hooks/outfit.ts";
 import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
-import { useFavouriteOutfits } from "../hooks/favourite-outfits.ts";
+import { useLookbook } from "../hooks/lookbook.ts";
 import type { ClothingItem } from "../models/clothing-item.ts";
 import {
   FaCheck,
@@ -305,14 +305,14 @@ const AccessorySheet = ({
   );
 };
 
-const FavouriteHeart = () => {
+const LookbookHeart = () => {
   const { outfit } = useOutfit();
-  const { addFavourite, removeFavouriteByOutfit, isFavourite } =
-    useFavouriteOutfits();
+  const { addToLookbook, removeFromLookbookByOutfit, isInLookbook } =
+    useLookbook();
 
   if (!outfit) return null;
 
-  const favourited = isFavourite(
+  const saved = isInLookbook(
     outfit.top.id,
     outfit.bottom.id,
     outfit.outerwear?.id,
@@ -321,8 +321,8 @@ const FavouriteHeart = () => {
   );
 
   const onToggle = async (): Promise<void> => {
-    if (favourited) {
-      await removeFavouriteByOutfit(
+    if (saved) {
+      await removeFromLookbookByOutfit(
         outfit.top.id,
         outfit.bottom.id,
         outfit.outerwear?.id,
@@ -330,7 +330,7 @@ const FavouriteHeart = () => {
         outfit.accessories?.map((a) => a.id),
       );
     } else {
-      await addFavourite(
+      await addToLookbook(
         outfit.top.id,
         outfit.bottom.id,
         outfit.outerwear?.id,
@@ -345,11 +345,11 @@ const FavouriteHeart = () => {
       type="button"
       onClick={() => onToggle()}
       aria-label={
-        favourited ? "Remove from favourites" : "Add to favourites"
+        saved ? "Remove from lookbook" : "Add to lookbook"
       }
-      className={`today-heart ${favourited ? "active" : ""}`}
+      className={`today-heart ${saved ? "active" : ""}`}
     >
-      {favourited ? <FaHeart size={13} /> : <FaRegHeart size={13} />}
+      {saved ? <FaHeart size={13} /> : <FaRegHeart size={13} />}
     </button>
   );
 };
@@ -441,7 +441,7 @@ const TodayOutfit = (): React.JSX.Element => {
     <>
       <div className="today-rail-area">
         <div className="today-rail-stack">
-          <FavouriteHeart />
+          <LookbookHeart />
           <PieceRow
             piece={outfit!.top}
             label="Top"
