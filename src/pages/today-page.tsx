@@ -2,11 +2,12 @@ import * as React from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
+import { BasketStrip } from "../components/basket-strip.tsx";
 import { useOutfit } from "../hooks/outfit.ts";
 import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
-import { useFavouriteOutfits } from "../hooks/favourite-outfits.ts";
+import { useLookbook } from "../hooks/lookbook.ts";
 import type { ClothingItem } from "../models/clothing-item.ts";
 import {
   FaCheck,
@@ -305,14 +306,14 @@ const AccessorySheet = ({
   );
 };
 
-const FavouriteHeart = () => {
+const LookbookHeart = () => {
   const { outfit } = useOutfit();
-  const { addFavourite, removeFavouriteByOutfit, isFavourite } =
-    useFavouriteOutfits();
+  const { addToLookbook, removeFromLookbookByOutfit, isInLookbook } =
+    useLookbook();
 
   if (!outfit) return null;
 
-  const favourited = isFavourite(
+  const saved = isInLookbook(
     outfit.top.id,
     outfit.bottom.id,
     outfit.outerwear?.id,
@@ -321,8 +322,8 @@ const FavouriteHeart = () => {
   );
 
   const onToggle = async (): Promise<void> => {
-    if (favourited) {
-      await removeFavouriteByOutfit(
+    if (saved) {
+      await removeFromLookbookByOutfit(
         outfit.top.id,
         outfit.bottom.id,
         outfit.outerwear?.id,
@@ -330,7 +331,7 @@ const FavouriteHeart = () => {
         outfit.accessories?.map((a) => a.id),
       );
     } else {
-      await addFavourite(
+      await addToLookbook(
         outfit.top.id,
         outfit.bottom.id,
         outfit.outerwear?.id,
@@ -345,11 +346,11 @@ const FavouriteHeart = () => {
       type="button"
       onClick={() => onToggle()}
       aria-label={
-        favourited ? "Remove from favourites" : "Add to favourites"
+        saved ? "Remove from lookbook" : "Add to lookbook"
       }
-      className={`today-heart ${favourited ? "active" : ""}`}
+      className={`today-heart ${saved ? "active" : ""}`}
     >
-      {favourited ? <FaHeart size={13} /> : <FaRegHeart size={13} />}
+      {saved ? <FaHeart size={13} /> : <FaRegHeart size={13} />}
     </button>
   );
 };
@@ -368,6 +369,7 @@ const TodayOutfit = (): React.JSX.Element => {
   } = useOutfit();
   const outfit = import.meta.env.VITE_ENABLE_DEBUG === "true" ? undefined : _outfit;
   const { recordOutfit } = useOutfitHistory();
+  const { lookbook, recordWear } = useLookbook();
   const [pickerOpen, setPickerOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -382,6 +384,19 @@ const TodayOutfit = (): React.JSX.Element => {
 
   const handleConfirmWorn = async (): Promise<void> => {
     if (!outfit) return;
+    const accessoryIds = (outfit.accessories?.map((a) => a.id) || [])
+      .slice()
+      .sort();
+    const matchingEntry = lookbook.find(
+      (entry) =>
+        entry.topId === outfit.top.id &&
+        entry.bottomId === outfit.bottom.id &&
+        entry.outerwearId === outfit.outerwear?.id &&
+        entry.shoesId === outfit.shoes?.id &&
+        JSON.stringify([...(entry.accessoriesIds || [])].sort()) ===
+          JSON.stringify(accessoryIds),
+    );
+    if (matchingEntry) await recordWear(matchingEntry.id);
     await recordOutfit(
       outfit.top.id,
       outfit.bottom.id,
@@ -441,7 +456,7 @@ const TodayOutfit = (): React.JSX.Element => {
     <>
       <div className="today-rail-area">
         <div className="today-rail-stack">
-          <FavouriteHeart />
+          <LookbookHeart />
           <PieceRow
             piece={outfit!.top}
             label="Top"
@@ -464,13 +479,14 @@ const TodayOutfit = (): React.JSX.Element => {
             onRemove={(id) => void removeItemFromOutfit(id)}
             getImage={getImage}
           />
+          <div className="today-swipe-inline">
+            <SwipeToWear onConfirm={() => void handleConfirmWorn()} />
+          </div>
         </div>
-        <div style={{ height: 160 }} />
+        <div style={{ height: 120 }} />
       </div>
 
-      <div className="today-swipe-wrap">
-        <SwipeToWear onConfirm={() => void handleConfirmWorn()} />
-      </div>
+      <BasketStrip />
 
       <NavigationBar
         activePage="today"

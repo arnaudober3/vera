@@ -2,7 +2,7 @@ import "./App.css";
 import { TodayPage } from "./pages/today-page.tsx";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { ClosetPage } from "./pages/closet-page.tsx";
-import { FavouritesPage } from "./pages/favourites-page.tsx";
+import { LookbookPage } from "./pages/lookbook-page.tsx";
 import { WelcomePage } from "./pages/onboarding.tsx";
 import { isOnboardingComplete } from "./storage/onboarding.ts";
 
@@ -17,7 +17,8 @@ function App() {
           <Route path="/" element={<RootRoute />} />
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/closet" element={<ClosetPage />} />
-          <Route path="/favourites" element={<FavouritesPage />} />
+          <Route path="/closet/basket" element={<ClosetPage />} />
+          <Route path="/lookbook" element={<LookbookPage />} />
         </Routes>
       </BrowserRouter>
     </div>
