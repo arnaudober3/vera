@@ -2,6 +2,7 @@ import * as React from "react";
 import { useMemo, useState } from "react";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
+import { BasketStrip } from "../components/basket-strip.tsx";
 import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
 import { useLookbook } from "../hooks/lookbook.ts";
@@ -303,7 +304,7 @@ export const LookbookPage = (): React.JSX.Element => {
         }}
       >
         <div
-          className={`w-full mx-auto max-w-4xl px-4 ${lookbook.length === 0 ? "flex-1 flex flex-col justify-center" : "py-3"}`}
+          className={`w-full mx-auto max-w-4xl px-4 ${lookbook.length === 0 ? "flex-1 flex flex-col justify-center" : "pb-3"}`}
         >
           {lookbook.length === 0 ? (
             <div className="flex-1 flex items-center justify-center pb-20">
@@ -362,6 +363,8 @@ export const LookbookPage = (): React.JSX.Element => {
       </div>
 
       <div className="shrink-0 h-20" />
+
+      <BasketStrip />
 
       <NavigationBar activePage="lookbook" />
     </div>

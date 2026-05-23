@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
+import { BasketImage, BasketStrip } from "../components/basket-strip.tsx";
 import {
   categoryOptions,
   isWashable,
@@ -16,7 +17,7 @@ import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
 import { FaCheck } from "react-icons/fa";
-import { MdAdd, MdChevronLeft, MdLocalLaundryService } from "react-icons/md";
+import { MdAdd } from "react-icons/md";
 import "./closet-page.css";
 
 const CategoryFilterBar = ({
@@ -82,9 +83,9 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
   }
 
   return (
-    <div className="flex flex-col gap-2 p-2 h-full" style={{ aspectRatio: "1 / 1.2" }}>
+    <div className="flex flex-col gap-2 p-2 h-full min-w-0" style={{ aspectRatio: "1 / 1.2" }}>
       <div
-        className="vera-card flex flex-col items-center relative h-full"
+        className="vera-card flex flex-col items-center relative h-full min-w-0 overflow-hidden"
       >
         <button
           onClick={() => remove(item.id)}
@@ -137,99 +138,6 @@ const AddItemButton = ({
     </button>
   );
 };
-const BasketImage = ({
-  full,
-  width,
-}: {
-  full: boolean;
-  width: number;
-}): React.JSX.Element => {
-  const src = full ? "/assets/basket_full.png" : "/assets/basket_empty.png";
-  return (
-    <img
-      src={src}
-      alt={full ? "Full basket" : "Empty basket"}
-      style={{ width, height: "auto", display: "block", flexShrink: 0 }}
-    />
-  );
-};
-
-const BasketStrip = ({
-  dirtyCount,
-  viewingBasket,
-  onTap,
-  onWash,
-}: {
-  dirtyCount: number;
-  viewingBasket: boolean;
-  onTap: () => void;
-  onWash: () => void;
-}): React.JSX.Element | null => {
-  if (dirtyCount === 0 && !viewingBasket) return null;
-
-  return (
-    <div
-      role="button"
-      tabIndex={0}
-      onClick={onTap}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault();
-          onTap();
-        }
-      }}
-      className="vera-basket-strip"
-      aria-pressed={viewingBasket}
-      aria-label={
-        viewingBasket
-          ? "Showing the basket — tap to go back"
-          : `${dirtyCount} ${dirtyCount === 1 ? "item" : "items"} in the basket — tap to view`
-      }
-    >
-      <div className="vera-basket-strip__media">
-        <BasketImage full width={44} />
-      </div>
-
-      <div className="vera-basket-strip__text">
-        {viewingBasket ? (
-          <>
-            <div className="vera-basket-strip__title">
-              <MdChevronLeft size={16} aria-hidden />
-              Showing the basket
-            </div>
-            <div className="vera-basket-strip__sub">Tap to go back</div>
-          </>
-        ) : (
-          <>
-            <div className="vera-basket-strip__title">
-              {dirtyCount} {dirtyCount === 1 ? "item" : "items"} in the basket
-            </div>
-            <div className="vera-basket-strip__sub">
-              Tap to see what's worn
-            </div>
-          </>
-        )}
-      </div>
-
-      {dirtyCount > 0 && (
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onWash();
-          }}
-          className="vera-btn-primary vera-basket-strip__wash"
-          aria-label="Mark all worn items as clean"
-          title="Mark all worn items as clean"
-        >
-          <MdLocalLaundryService size={14} />
-          Wash
-        </button>
-      )}
-    </div>
-  );
-};
-
 const BasketHero = ({ count }: { count: number }): React.JSX.Element => {
   return (
     <div className="vera-basket-hero">
@@ -302,6 +210,7 @@ export const ClosetPage = (): React.JSX.Element => {
   const { saveImage } = useImage();
   const { generateOutfit, outfit } = useOutfit();
   const location = useLocation();
+  const navigate = useNavigate();
   const justOnboarded =
     (location.state as { justOnboarded?: boolean } | null)?.justOnboarded ??
     false;
@@ -311,7 +220,14 @@ export const ClosetPage = (): React.JSX.Element => {
   const [showOnboardingToast, setShowOnboardingToast] = useState<boolean>(
     justOnboarded,
   );
-  const [viewingBasket, setViewingBasket] = useState<boolean>(false);
+  const viewingBasket = location.pathname === "/closet/basket";
+  const toggleBasketView = (): void => {
+    if (viewingBasket) {
+      navigate(-1);
+    } else {
+      navigate("/closet/basket");
+    }
+  };
 
   useEffect(() => {
     if (!showOnboardingToast) return;
@@ -350,7 +266,7 @@ export const ClosetPage = (): React.JSX.Element => {
 
   async function onWash(): Promise<void> {
     await markLaundryDone();
-    setViewingBasket(false);
+    if (viewingBasket) navigate(-1);
     if (!outfit) {
       await generateOutfit();
     }
@@ -433,7 +349,7 @@ export const ClosetPage = (): React.JSX.Element => {
       <BasketStrip
         dirtyCount={dirtyCount}
         viewingBasket={viewingBasket}
-        onTap={() => setViewingBasket((v) => !v)}
+        onTap={toggleBasketView}
         onWash={() => void onWash()}
       />
 

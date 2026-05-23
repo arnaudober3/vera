@@ -141,6 +141,7 @@
 
 .today-piece-card {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 40px;
@@ -229,6 +230,8 @@
   border: 1px solid var(--vera-surface-border);
   border-radius: var(--vera-radius-pill);
   padding: 4px 12px 4px 4px;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .today-accessory-thumb {
@@ -255,6 +258,10 @@
   font-size: 13px;
   font-weight: 500;
   color: var(--vera-fg-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .today-accessory-remove {
@@ -287,14 +294,11 @@
   justify-content: center;
 }
 
-.today-swipe-wrap {
-  position: fixed;
-  left: 16px;
-  right: 16px;
-  bottom: 128px;
+.today-swipe-inline {
+  margin-block: 6px;
   max-width: 360px;
-  margin: 0 auto;
-  z-index: 150;
+  width: 100%;
+  margin-inline: auto;
 }
 
 .today-swipe-track {

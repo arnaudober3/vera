@@ -17,6 +17,7 @@ function App() {
           <Route path="/" element={<RootRoute />} />
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/closet" element={<ClosetPage />} />
+          <Route path="/closet/basket" element={<ClosetPage />} />
           <Route path="/lookbook" element={<LookbookPage />} />
         </Routes>
       </BrowserRouter>

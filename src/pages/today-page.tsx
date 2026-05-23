@@ -2,6 +2,7 @@ import * as React from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
+import { BasketStrip } from "../components/basket-strip.tsx";
 import { useOutfit } from "../hooks/outfit.ts";
 import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
@@ -478,13 +479,14 @@ const TodayOutfit = (): React.JSX.Element => {
             onRemove={(id) => void removeItemFromOutfit(id)}
             getImage={getImage}
           />
+          <div className="today-swipe-inline">
+            <SwipeToWear onConfirm={() => void handleConfirmWorn()} />
+          </div>
         </div>
-        <div style={{ height: 160 }} />
+        <div style={{ height: 120 }} />
       </div>
 
-      <div className="today-swipe-wrap">
-        <SwipeToWear onConfirm={() => void handleConfirmWorn()} />
-      </div>
+      <BasketStrip />
 
       <NavigationBar
         activePage="today"
