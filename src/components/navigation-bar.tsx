@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import "./navigation-bar.css";
 
 type Page = "today" | "closet" | "lookbook";
@@ -10,6 +11,7 @@ interface NavigationBarData {
 }
 
 export default function NavigationBar({ activePage, action }: NavigationBarData) {
+  const { t } = useTranslation();
   return (
     <div className="vera-nav-dock z-100">
       <nav className="vera-nav-pill">
@@ -17,27 +19,27 @@ export default function NavigationBar({ activePage, action }: NavigationBarData)
           to="/"
           className={`vera-nav-item ${activePage === "today" ? "active" : ""}`}
           aria-current={activePage === "today" ? "page" : undefined}
-          aria-label="Open home page - Today's outfit suggestions"
+          aria-label={t("nav.todayAria")}
         >
-          Today
+          {t("nav.today")}
         </Link>
 
         <Link
           to="/closet"
           className={`vera-nav-item ${activePage === "closet" ? "active" : ""}`}
           aria-current={activePage === "closet" ? "page" : undefined}
-          aria-label="Open closet page"
+          aria-label={t("nav.closetAria")}
         >
-          Closet
+          {t("nav.closet")}
         </Link>
 
         <Link
           to="/lookbook"
           className={`vera-nav-item ${activePage === "lookbook" ? "active" : ""}`}
           aria-current={activePage === "lookbook" ? "page" : undefined}
-          aria-label="Open lookbook page"
+          aria-label={t("nav.lookbookAria")}
         >
-          Lookbook
+          {t("nav.lookbook")}
         </Link>
       </nav>
       {action}

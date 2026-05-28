@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
 import { BasketImage, BasketStrip } from "../components/basket-strip.tsx";
 import {
-  categoryOptions,
+  ALL_CATEGORIES,
   isWashable,
   type ClothingItem,
   type ClothingItemCategory,
@@ -27,6 +28,7 @@ const CategoryFilterBar = ({
   selectedCategory: ClothingItemCategory | null;
   onCategorySelected: (category: ClothingItemCategory | null) => void;
 }): React.JSX.Element => {
+  const { t } = useTranslation();
   const activeRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
@@ -38,8 +40,11 @@ const CategoryFilterBar = ({
   }, [selectedCategory]);
 
   const chips: { value: ClothingItemCategory | null; label: string }[] = [
-    { value: null, label: "All" },
-    ...categoryOptions.map(({ value, label }) => ({ value, label })),
+    { value: null, label: t("categories.all") },
+    ...ALL_CATEGORIES.map((c) => ({
+      value: c,
+      label: t(`categories.${c}` as const),
+    })),
   ];
 
   return (
@@ -63,12 +68,13 @@ const CategoryFilterBar = ({
   );
 };
 const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
+  const { t } = useTranslation();
   const { getImage, removeImage } = useImage();
   const { removeClothingItem } = useCloset();
   const { outfit, clearOutfit } = useOutfit();
 
   async function remove(id: string): Promise<void> {
-    if (window.confirm(`Are you sure you want to delete this item?`)) {
+    if (window.confirm(t("closet.deleteConfirm"))) {
       await removeClothingItem(id);
 
       // Also remove the associated image
@@ -90,7 +96,7 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
         <button
           onClick={() => remove(item.id)}
           className="delete-button absolute top-2 right-2 flex items-center justify-center transition-all text-sm font-bold vera-keep-opaque"
-          aria-label="Delete item"
+          aria-label={t("closet.deleteAria")}
         >
           <IoClose size={14} />
         </button>
@@ -122,15 +128,14 @@ const AddItemButton = ({
   onClick: () => void;
   disabled: boolean;
 }): React.JSX.Element => {
+  const { t } = useTranslation();
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      aria-label="Add a new item to your closet"
+      aria-label={t("closet.addItemAria")}
       title={
-        disabled
-          ? "The limit of uploaded items has been reached"
-          : "Add a new item to your closet"
+        disabled ? t("closet.addItemLimitTitle") : t("closet.addItemTitle")
       }
       className="vera-nav-fab"
     >
@@ -139,13 +144,14 @@ const AddItemButton = ({
   );
 };
 const BasketHero = ({ count }: { count: number }): React.JSX.Element => {
+  const { t } = useTranslation();
   return (
     <div className="vera-basket-hero">
       <BasketImage full={count > 0} width={110} />
       <div className="vera-basket-hero__title">
-        {count} {count === 1 ? "item" : "items"} waiting
+        {t("closet.basketHeroItems", { count })}
       </div>
-      <div className="vera-basket-hero__sub">Worn since your last wash</div>
+      <div className="vera-basket-hero__sub">{t("closet.basketHeroSub")}</div>
     </div>
   );
 };
@@ -154,11 +160,13 @@ const OnboardingToast = ({
   onDismiss,
 }: {
   onDismiss: () => void;
-}): React.JSX.Element => (
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
   <button
     type="button"
     onClick={onDismiss}
-    aria-label="Dismiss"
+    aria-label={t("closet.onboardingToastDismissAria")}
     style={{
       width: "100%",
       textAlign: "left",
@@ -190,16 +198,18 @@ const OnboardingToast = ({
     </div>
     <div style={{ flex: 1 }}>
       <div style={{ fontSize: 14, fontWeight: 600, color: "#000" }}>
-        You're set up.
+        {t("closet.onboardingToastTitle")}
       </div>
       <div style={{ fontSize: 12, color: "#6a7282", marginTop: 2 }}>
-        Tap + any time to add more. Check Today tomorrow morning.
+        {t("closet.onboardingToastSub")}
       </div>
     </div>
   </button>
-);
+  );
+};
 
 export const ClosetPage = (): React.JSX.Element => {
+  const { t } = useTranslation();
   const {
     items: _items,
     addClothingItem,
@@ -277,7 +287,7 @@ export const ClosetPage = (): React.JSX.Element => {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
-        <h2 className="vera-page-title">My closet</h2>
+        <h2 className="vera-page-title">{t("closet.title")}</h2>
       </div>
 
       {showOnboardingToast && (
@@ -332,9 +342,9 @@ export const ClosetPage = (): React.JSX.Element => {
               !viewingBasket && (
                 <div className="flex-1 flex items-center justify-center pb-20">
                   <EmptyMessageTemplate
-                    title="No items found."
-                    subtitle="Try selecting a different filter or add a new item!"
-                    buttonText="Add an item"
+                    title={t("closet.emptyTitle")}
+                    subtitle={t("closet.emptySubtitle")}
+                    buttonText={t("closet.emptyButton")}
                     onButtonClick={() => setShowUploadModal(true)}
                   />
                 </div>

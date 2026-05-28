@@ -1,8 +1,8 @@
 import {
+  ALL_SUBCATEGORIES,
   type ClothingItemCategory,
   type ClothingItemSubCategory,
   subCategoryToCategory,
-  subCategoryLabels,
 } from "../models/clothing-item.ts";
 
 export interface ClassificationResult {
@@ -10,9 +10,7 @@ export interface ClassificationResult {
   category: ClothingItemCategory;
 }
 
-const validSubCategories = Object.keys(
-  subCategoryLabels,
-) as ClothingItemSubCategory[];
+const validSubCategories = ALL_SUBCATEGORIES;
 
 const HF_BASE_URL = import.meta.env.DEV
   ? "/api/huggingface"

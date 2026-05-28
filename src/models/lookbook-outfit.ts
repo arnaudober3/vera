@@ -12,10 +12,5 @@ export interface LookbookOutfit {
   lastWornAt?: Date;
 }
 
-const NAME_FORMATTER = new Intl.DateTimeFormat("en-GB", {
-  month: "short",
-  day: "numeric",
-});
-
-export const defaultLookbookOutfitName = (savedAt: Date): string =>
-  `Outfit · ${NAME_FORMATTER.format(savedAt)}`;
+export const formatLookbookOutfitDate = (savedAt: Date, locale: string): string =>
+  new Intl.DateTimeFormat(locale, { month: "short", day: "numeric" }).format(savedAt);
