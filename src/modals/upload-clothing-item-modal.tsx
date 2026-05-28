@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
-  categoryOptions,
+  ALL_CATEGORIES,
+  ALL_SUBCATEGORIES,
   type ClothingItemCategory,
   type ClothingItemSubCategory,
   type CreateClothingItem,
-  subCategoryLabels,
   subCategoryToCategory,
 } from "../models/clothing-item.ts";
 import { useCloset } from "../hooks/closet.ts";
@@ -28,7 +29,9 @@ export default function UploadClothingItemModal({
   onClose,
   onSave,
 }: ModalData) {
+  const { t } = useTranslation();
   const { isUploadLimitReached } = useCloset();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -50,7 +53,7 @@ export default function UploadClothingItemModal({
 
     const isImage = file.type.startsWith("image/");
     if (!isImage) {
-      setError("Only images are supported.");
+      setError(t("upload.errorImagesOnly"));
       setFile(null);
       setPreview(null);
 
@@ -67,25 +70,23 @@ export default function UploadClothingItemModal({
       setError(null);
 
       if (isUploadLimitReached()) {
-        setError(
-          "You've hit our current MVP limit of 10 items. We're working on expanding this soon!",
-        );
+        setError(t("upload.errorLimitReached"));
         setIsSaving(false);
         return;
       }
 
       if (!file) {
-        setError("Please choose an image.");
+        setError(t("upload.errorChooseImage"));
         setIsSaving(false);
         return;
       }
       if (!name.trim()) {
-        setError("Please enter a name.");
+        setError(t("upload.errorEnterName"));
         setIsSaving(false);
         return;
       }
       if (classificationFailed && !subCategory) {
-        setError("Please select a category.");
+        setError(t("upload.errorSelectCategory"));
         setIsSaving(false);
         return;
       }
@@ -106,17 +107,15 @@ export default function UploadClothingItemModal({
 
         imageData = await processImageToBase64(noBgFile);
       } catch {
-        setError("Failed to remove the background from the image.");
+        setError(t("upload.errorRemoveBg"));
         return;
       }
 
-      // Classify the clothing item
       let classification: ClassificationResult | null = null;
       if (!classificationFailed) {
         try {
           classification = await fashionClassifier.classifyClothing(noBgBlob);
         } catch {
-          // Classification failed — fall back to manual selection
           setClassificationFailed(true);
           setIsSaving(false);
           return;
@@ -153,11 +152,11 @@ export default function UploadClothingItemModal({
       />
       <div className="relative w-full bg-white rounded-t-2xl p-4 shadow-xl" style={{ maxHeight: "85%", overflowY: "auto" }}>
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Add item</h3>
+          <h3 className="text-lg font-semibold">{t("upload.title")}</h3>
           <button
             className="p-2 text-gray-500"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("common.close")}
             disabled={isSaving}
           >
             ✕
@@ -170,24 +169,37 @@ export default function UploadClothingItemModal({
               className="block text-sm font-medium mb-1"
               htmlFor="photo-input"
             >
-              Photo
+              {t("upload.photoLabel")}
             </label>
+            <input
+              id="photo-input"
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={(e) => fileDragged(e.target.files?.[0])}
+              className="hidden"
+              aria-label={t("upload.chooseImageAria")}
+              disabled={isSaving}
+            />
             <div className="flex items-center gap-3">
-              <input
-                id="photo-input"
-                type="file"
-                accept="image/*"
-                onChange={(e) => fileDragged(e.target.files?.[0])}
-                className="vera-input block w-full text-sm text-gray-400"
-                aria-label="Choose image"
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="vera-btn-secondary text-sm whitespace-nowrap"
+                style={{ borderRadius: "var(--vera-radius-md)" }}
                 disabled={isSaving}
-              />
+              >
+                {t("upload.chooseFile")}
+              </button>
+              <span className="text-sm text-gray-500 truncate min-w-0">
+                {file ? file.name : t("upload.noFileChosen")}
+              </span>
             </div>
             {preview && (
               <div className="mt-2">
                 <img
                   src={preview}
-                  alt="Preview"
+                  alt={t("upload.previewAlt")}
                   className="w-full max-h-40 object-contain rounded-lg border border-gray-200"
                 />
               </div>
@@ -195,12 +207,12 @@ export default function UploadClothingItemModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Name</label>
+            <label className="block text-sm font-medium mb-1">{t("common.name")}</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Navy tee"
+              placeholder={t("common.namePlaceholder")}
               className="vera-input w-full text-base"
               aria-required
               disabled={isSaving}
@@ -213,7 +225,7 @@ export default function UploadClothingItemModal({
                 className="block text-sm font-medium mb-1"
                 htmlFor="subcategory-input"
               >
-                Category (auto-detection failed)
+                {t("upload.categoryFallbackLabel")}
               </label>
               <select
                 id="subcategory-input"
@@ -229,22 +241,17 @@ export default function UploadClothingItemModal({
                 disabled={isSaving}
               >
                 <option disabled value="">
-                  Select…
+                  {t("common.select")}
                 </option>
-                {categoryOptions.map((cat) => (
-                  <optgroup key={cat.value} label={cat.label}>
-                    {Object.entries(subCategoryLabels)
-                      .filter(
-                        ([subCat]) =>
-                          subCategoryToCategory[
-                            subCat as ClothingItemSubCategory
-                          ] === cat.value,
-                      )
-                      .map(([value, label]) => (
-                        <option key={value} value={value}>
-                          {label}
-                        </option>
-                      ))}
+                {ALL_CATEGORIES.map((cat) => (
+                  <optgroup key={cat} label={t(`categories.${cat}` as const)}>
+                    {ALL_SUBCATEGORIES.filter(
+                      (sub) => subCategoryToCategory[sub] === cat,
+                    ).map((sub) => (
+                      <option key={sub} value={sub}>
+                        {t(`subcategories.${sub}` as const)}
+                      </option>
+                    ))}
                   </optgroup>
                 ))}
               </select>
@@ -260,7 +267,7 @@ export default function UploadClothingItemModal({
             onClick={onClose}
             disabled={isSaving}
           >
-            Cancel
+            {t("common.cancel")}
           </button>
           <button
             className="vera-btn-primary flex-1 text-base disabled:opacity-60"
@@ -272,7 +279,7 @@ export default function UploadClothingItemModal({
               isSaving
             }
           >
-            {isSaving ? "Saving…" : "Save"}
+            {isSaving ? t("common.saving") : t("common.save")}
           </button>
         </div>
       </div>

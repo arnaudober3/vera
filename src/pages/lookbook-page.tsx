@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
 import { BasketStrip } from "../components/basket-strip.tsx";
@@ -8,7 +9,7 @@ import { useImage } from "../hooks/image.ts";
 import { useLookbook } from "../hooks/lookbook.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
 import {
-  defaultLookbookOutfitName,
+  formatLookbookOutfitDate,
   type LookbookOutfit,
 } from "../models/lookbook-outfit.ts";
 import { isWashable, type ClothingItem } from "../models/clothing-item.ts";
@@ -78,6 +79,7 @@ const LookbookPieceRow = ({ pieces }: { pieces: ClothingItem[] }) => {
 };
 
 const LookbookCard = ({ resolved }: { resolved: ResolvedLookbookOutfit }) => {
+  const { t, i18n } = useTranslation();
   const { outfit } = resolved;
   const { removeFromLookbook, renameLookbookOutfit, recordWear } = useLookbook();
   const { markWorn } = useCloset();
@@ -85,21 +87,27 @@ const LookbookCard = ({ resolved }: { resolved: ResolvedLookbookOutfit }) => {
 
   const clean = isResolvedClean(resolved);
   const pieces = collectPieces(resolved);
-  const displayName = outfit.name ?? defaultLookbookOutfitName(outfit.savedAt);
+  const displayName =
+    outfit.name ??
+    t("lookbook.defaultName", {
+      date: formatLookbookOutfitDate(outfit.savedAt, i18n.language || "en"),
+    });
   const wornCount = outfit.wornCount ?? 0;
 
-  const metaParts: string[] = [`${pieces.length} pieces`];
-  if (wornCount > 0) metaParts.push(`worn ${wornCount}×`);
-  if (outfit.lastWornAt) metaParts.push(formatRelativeDate(outfit.lastWornAt));
+  const metaParts: string[] = [t("lookbook.pieces", { count: pieces.length })];
+  if (wornCount > 0)
+    metaParts.push(t("lookbook.wornCount", { count: wornCount }));
+  if (outfit.lastWornAt)
+    metaParts.push(formatRelativeDate(outfit.lastWornAt, t));
 
   async function remove(): Promise<void> {
-    if (window.confirm("Remove this outfit from your lookbook?")) {
+    if (window.confirm(t("lookbook.removeConfirm"))) {
       await removeFromLookbook(outfit.id);
     }
   }
 
   async function rename(): Promise<void> {
-    const next = window.prompt("Name this outfit", displayName);
+    const next = window.prompt(t("lookbook.renamePrompt"), displayName);
     if (next === null) return;
     await renameLookbookOutfit(outfit.id, next);
   }
@@ -132,8 +140,8 @@ const LookbookCard = ({ resolved }: { resolved: ResolvedLookbookOutfit }) => {
               type="button"
               className="lookbook-name"
               onClick={rename}
-              aria-label="Rename outfit"
-              title="Rename outfit"
+              aria-label={t("lookbook.renameAria")}
+              title={t("lookbook.renameTitle")}
             >
               <span className="lookbook-name__text">{displayName}</span>
               <MdEdit
@@ -153,18 +161,18 @@ const LookbookCard = ({ resolved }: { resolved: ResolvedLookbookOutfit }) => {
           type="button"
           className="lookbook-heart-btn"
           onClick={remove}
-          aria-label="Remove from lookbook"
+          aria-label={t("lookbook.removeAria")}
         >
           <FaHeart size={14} />
         </button>
         {clean ? (
           <button type="button" className="lookbook-cta" onClick={wear}>
-            I'm wearing this
+            {t("lookbook.wearCta")}
           </button>
         ) : (
           <div className="lookbook-cta lookbook-cta--dirty" aria-disabled>
             <MdLocalLaundryService size={16} />
-            In the wash
+            {t("lookbook.inWash")}
           </div>
         )}
       </footer>
@@ -181,11 +189,12 @@ const LookbookFilterBar = ({
   onFilterChange: (f: Filter) => void;
   counts: { all: number; ready: number };
 }) => {
+  const { t } = useTranslation();
   const chips: { id: Filter; label: string; count?: number }[] = [
-    { id: "all", label: "All", count: counts.all },
-    { id: "ready", label: "Ready", count: counts.ready },
-    { id: "recent", label: "Recent" },
-    { id: "worn", label: "Most worn" },
+    { id: "all", label: t("lookbook.filter.all"), count: counts.all },
+    { id: "ready", label: t("lookbook.filter.ready"), count: counts.ready },
+    { id: "recent", label: t("lookbook.filter.recent") },
+    { id: "worn", label: t("lookbook.filter.worn") },
   ];
   return (
     <div className="vera-chip-row mx-auto max-w-4xl w-full">
@@ -226,6 +235,7 @@ const LookbookPlaceholders = ({ count }: { count: number }) => {
 };
 
 export const LookbookPage = (): React.JSX.Element => {
+  const { t } = useTranslation();
   const { lookbook: _lookbook } = useLookbook();
   const lookbook = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _lookbook) : _lookbook;
   const { items } = useCloset();
@@ -286,7 +296,7 @@ export const LookbookPage = (): React.JSX.Element => {
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
       <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
-        <h2 className="vera-page-title">My lookbook</h2>
+        <h2 className="vera-page-title">{t("lookbook.title")}</h2>
       </div>
 
       {lookbook.length > 0 && (
@@ -314,9 +324,9 @@ export const LookbookPage = (): React.JSX.Element => {
           {lookbook.length === 0 ? (
             <div className="flex-1 flex items-center justify-center pb-20">
               <EmptyMessageTemplate
-                title="Your lookbook is empty."
-                subtitle="Save outfits you love from the today page!"
-                buttonText="My today's outfit"
+                title={t("lookbook.empty.title")}
+                subtitle={t("lookbook.empty.subtitle")}
+                buttonText={t("lookbook.empty.button")}
                 onButtonClick={() => navigate("/")}
               />
             </div>
@@ -325,7 +335,7 @@ export const LookbookPage = (): React.JSX.Element => {
               {cleanOutfits.length > 0 && (
                 <>
                   <LookbookSectionHead>
-                    Ready to wear · {cleanOutfits.length}
+                    {t("lookbook.sectionReady")} · {cleanOutfits.length}
                   </LookbookSectionHead>
                   <div className="lookbook-feed">
                     {cleanOutfits.map((r) => (
@@ -337,7 +347,7 @@ export const LookbookPage = (): React.JSX.Element => {
               {dirtyOutfits.length > 0 && (
                 <>
                   <LookbookSectionHead>
-                    In the wash · {dirtyOutfits.length}
+                    {t("lookbook.sectionDirty")} · {dirtyOutfits.length}
                   </LookbookSectionHead>
                   <div className="lookbook-feed">
                     {dirtyOutfits.map((r) => (
