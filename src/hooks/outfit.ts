@@ -7,6 +7,8 @@ import {
   type ClothingItem,
 } from "../models/clothing-item.ts";
 import type { Color } from "../models/color.ts";
+import { getSeasonScore, type Season } from "../models/season.ts";
+import { getCurrentSeason } from "../services/season.ts";
 import { differenceCiede2000 } from "culori";
 import { lsGet, lsSet, outfitKey } from "../storage/local-store.ts";
 import { useOutfitHistory } from "./outfit-history.ts";
@@ -90,6 +92,7 @@ export const useOutfit = () => {
     anchor: ClothingItem,
     candidates: ClothingItem[],
     currentPartnerId: string | undefined,
+    currentSeason: Season,
   ): ClothingItem => {
     const hasAlternative = candidates.some((c) => c.id !== currentPartnerId);
     let best: ClothingItem | null = null;
@@ -97,8 +100,11 @@ export const useOutfit = () => {
     for (const candidate of candidates) {
       if (hasAlternative && candidate.id === currentPartnerId) continue;
       const baseScore = scoreColors({ a: anchor.color, b: candidate.color }) ?? 0;
+      // Only the candidate's season is scored — never penalise the pinned anchor.
       const adjustedScore =
-        baseScore * getRecencyPenalty([anchor.id, candidate.id]);
+        baseScore *
+        getRecencyPenalty([anchor.id, candidate.id]) *
+        getSeasonScore(candidate, currentSeason);
       if (adjustedScore > bestScore) {
         bestScore = adjustedScore;
         best = candidate;
@@ -112,6 +118,7 @@ export const useOutfit = () => {
   const pickBestDuo = (
     availableTops: ClothingItem[],
     availableBottoms: ClothingItem[],
+    currentSeason: Season,
   ): { top: ClothingItem; bottom: ClothingItem } | null => {
     const maxAttempts = availableTops.length + availableBottoms.length;
     let bestDuo: { top: ClothingItem; bottom: ClothingItem } | null = null;
@@ -145,9 +152,13 @@ export const useOutfit = () => {
         a: candidate.top.color,
         b: candidate.bottom.color,
       });
+      const seasonScore =
+        getSeasonScore(candidate.top, currentSeason) *
+        getSeasonScore(candidate.bottom, currentSeason);
       const adjustedScore =
         (pairScore ?? 0) *
-        getRecencyPenalty([candidate.top.id, candidate.bottom.id]);
+        getRecencyPenalty([candidate.top.id, candidate.bottom.id]) *
+        seasonScore;
 
       if (adjustedScore > highestScore) {
         highestScore = adjustedScore;
@@ -178,19 +189,31 @@ export const useOutfit = () => {
       ? availableItems.find((i) => i.id === effectivePinnedId)
       : undefined;
 
+    const currentSeason = getCurrentSeason();
+
     let duo: { top: ClothingItem; bottom: ClothingItem } | null;
     if (pinned?.category === "top") {
       duo = {
         top: pinned,
-        bottom: pickPartner(pinned, availableBottoms, outfit?.bottom?.id),
+        bottom: pickPartner(
+          pinned,
+          availableBottoms,
+          outfit?.bottom?.id,
+          currentSeason,
+        ),
       };
     } else if (pinned?.category === "bottom") {
       duo = {
-        top: pickPartner(pinned, availableTops, outfit?.top?.id),
+        top: pickPartner(
+          pinned,
+          availableTops,
+          outfit?.top?.id,
+          currentSeason,
+        ),
         bottom: pinned,
       };
     } else {
-      duo = pickBestDuo(availableTops, availableBottoms);
+      duo = pickBestDuo(availableTops, availableBottoms, currentSeason);
     }
 
     // Fall back to the current top/bottom if no new duo could be formed.
