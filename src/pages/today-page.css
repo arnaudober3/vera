@@ -140,6 +140,7 @@
 }
 
 .today-piece-card {
+  position: relative;
   flex: 1;
   min-width: 0;
   display: flex;
@@ -148,6 +149,30 @@
   padding: 14px 16px;
   margin-block: 6px;
   border-radius: var(--vera-radius-lg);
+}
+
+.today-pin {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  width: 28px;
+  height: 28px;
+  border-radius: 9999px;
+  background: var(--vera-primary);
+  border: 1px solid transparent;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+.today-accessory-pin {
+  flex-shrink: 0;
+  margin-right: 2px;
+  color: var(--vera-primary);
 }
 
 .today-piece-well {

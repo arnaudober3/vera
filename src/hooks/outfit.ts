@@ -84,29 +84,44 @@ export const useOutfit = () => {
     };
   }, []);
 
-  const generateOutfit = async (): Promise<Outfit | null> => {
-    const availableItems = items.filter((i) => i.isClean || !isWashable(i.category));
-    if (!availableItems || availableItems.length === 0) {
-      return null;
+  // Pick the best recency-adjusted colour match for a fixed anchor, preferring a
+  // partner different from the current one whenever an alternative exists.
+  const pickPartner = (
+    anchor: ClothingItem,
+    candidates: ClothingItem[],
+    currentPartnerId: string | undefined,
+  ): ClothingItem => {
+    const hasAlternative = candidates.some((c) => c.id !== currentPartnerId);
+    let best: ClothingItem | null = null;
+    let bestScore = -1;
+    for (const candidate of candidates) {
+      if (hasAlternative && candidate.id === currentPartnerId) continue;
+      const baseScore = scoreColors({ a: anchor.color, b: candidate.color }) ?? 0;
+      const adjustedScore =
+        baseScore * getRecencyPenalty([anchor.id, candidate.id]);
+      if (adjustedScore > bestScore) {
+        bestScore = adjustedScore;
+        best = candidate;
+      }
     }
+    return best ?? candidates[0];
+  };
 
-    const availableTops = availableItems.filter((i) => i.category === "top");
-    const availableBottoms = availableItems.filter((i) => i.category === "bottom");
-
-    if (availableTops.length === 0 || availableBottoms.length === 0) {
-      return null;
-    }
-
-    const maxAttempts = availableItems.length;
-    let bestOutfit: Outfit | null = null;
+  // Existing strategy: try random pivots to find the best scoring top + bottom
+  // duo, skipping the exact current duo so regeneration produces something new.
+  const pickBestDuo = (
+    availableTops: ClothingItem[],
+    availableBottoms: ClothingItem[],
+  ): { top: ClothingItem; bottom: ClothingItem } | null => {
+    const maxAttempts = availableTops.length + availableBottoms.length;
+    let bestDuo: { top: ClothingItem; bottom: ClothingItem } | null = null;
     let highestScore = -1;
 
-    // Try to find the best scoring top + bottom duo, but ensure it's different if possible
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const pivots = [...availableTops, ...availableBottoms];
       const pivot = pivots[Math.floor(Math.random() * pivots.length)];
 
-      const currentOutfit: Outfit = {
+      const candidate = {
         top:
           pivot.category === "top"
             ? pivot
@@ -120,32 +135,100 @@ export const useOutfit = () => {
       // If we have an existing outfit, skip this candidate if it's the exact same duo
       if (
         outfit &&
-        currentOutfit.top.id === outfit.top.id &&
-        currentOutfit.bottom.id === outfit.bottom.id
+        candidate.top.id === outfit.top.id &&
+        candidate.bottom.id === outfit.bottom.id
       ) {
         continue;
       }
 
       const pairScore = scoreColors({
-        a: currentOutfit.top.color,
-        b: currentOutfit.bottom.color,
+        a: candidate.top.color,
+        b: candidate.bottom.color,
       });
-      const baseScore = pairScore ?? 0;
-      const recencyPenalty = getRecencyPenalty([
-        currentOutfit.top.id,
-        currentOutfit.bottom.id,
-      ]);
-      const adjustedScore = baseScore * recencyPenalty;
+      const adjustedScore =
+        (pairScore ?? 0) *
+        getRecencyPenalty([candidate.top.id, candidate.bottom.id]);
 
       if (adjustedScore > highestScore) {
         highestScore = adjustedScore;
-        bestOutfit = currentOutfit;
+        bestDuo = candidate;
       }
     }
 
-    const finalOutfit = bestOutfit ?? state;
+    return bestDuo;
+  };
+
+  const generateOutfit = async (pinnedId?: string): Promise<Outfit | null> => {
+    const availableItems = items.filter((i) => i.isClean || !isWashable(i.category));
+    if (!availableItems || availableItems.length === 0) {
+      return null;
+    }
+
+    const availableTops = availableItems.filter((i) => i.category === "top");
+    const availableBottoms = availableItems.filter((i) => i.category === "bottom");
+
+    if (availableTops.length === 0 || availableBottoms.length === 0) {
+      return null;
+    }
+
+    // Resolve the effective pin: an explicit id wins, otherwise reuse the persisted
+    // one. Drop the pin silently if the item is no longer available (deleted/dirty).
+    const effectivePinnedId = pinnedId ?? state?.pinnedItemId;
+    const pinned = effectivePinnedId
+      ? availableItems.find((i) => i.id === effectivePinnedId)
+      : undefined;
+
+    let duo: { top: ClothingItem; bottom: ClothingItem } | null;
+    if (pinned?.category === "top") {
+      duo = {
+        top: pinned,
+        bottom: pickPartner(pinned, availableBottoms, outfit?.bottom?.id),
+      };
+    } else if (pinned?.category === "bottom") {
+      duo = {
+        top: pickPartner(pinned, availableTops, outfit?.top?.id),
+        bottom: pinned,
+      };
+    } else {
+      duo = pickBestDuo(availableTops, availableBottoms);
+    }
+
+    // Fall back to the current top/bottom if no new duo could be formed.
+    if (!duo && state) {
+      duo = { top: state.top, bottom: state.bottom };
+    }
+    if (!duo) {
+      return null;
+    }
+
+    const finalOutfit: Outfit = { top: duo.top, bottom: duo.bottom };
+
+    // Re-attach the pinned add-on into its slot so the lock survives regeneration.
+    if (pinned && pinned.category !== "top" && pinned.category !== "bottom") {
+      if (pinned.category === "outerwear") finalOutfit.outerwear = pinned;
+      else if (pinned.category === "shoes") finalOutfit.shoes = pinned;
+      else if (pinned.category === "accessories")
+        finalOutfit.accessories = [pinned];
+    }
+
+    if (pinned) {
+      finalOutfit.pinnedItemId = pinned.id;
+    }
+
     await emitChange(finalOutfit);
     return finalOutfit;
+  };
+
+  // Lock an item into today's outfit and rebuild the rest around it.
+  const pinItem = async (item: ClothingItem): Promise<Outfit | null> =>
+    generateOutfit(item.id);
+
+  // Release the lock without regenerating the current outfit.
+  const unpinItem = async (): Promise<void> => {
+    if (!state?.pinnedItemId) return;
+    const next: Outfit = { ...state };
+    delete next.pinnedItemId;
+    await emitChange(next);
   };
 
   const addItemToOutfit = async (item: ClothingItem): Promise<void> => {
@@ -174,6 +257,8 @@ export const useOutfit = () => {
       next.accessories = next.accessories.filter((a) => a.id !== itemId);
       if (next.accessories.length === 0) delete next.accessories;
     }
+    // Removing the pinned item also releases the lock so it isn't re-attached.
+    if (next.pinnedItemId === itemId) delete next.pinnedItemId;
     await emitChange(next);
   };
 
@@ -192,7 +277,19 @@ export const useOutfit = () => {
       return true;
     }
 
-    // Only if there is another available outfit.
+    const pinned = outfit.pinnedItemId
+      ? availableItems.find((i) => i.id === outfit.pinnedItemId)
+      : undefined;
+
+    // With a pinned slot, regeneration only varies the complementary slot.
+    if (pinned?.category === "top") {
+      return availableBottoms.some((b) => b.id !== outfit.bottom.id);
+    }
+    if (pinned?.category === "bottom") {
+      return availableTops.some((t) => t.id !== outfit.top.id);
+    }
+
+    // No pin (or a pinned add-on): possible if another top/bottom duo exists.
     return availableTops.some((topItem) =>
       availableBottoms.some(
         (bottomItem) =>
@@ -214,5 +311,7 @@ export const useOutfit = () => {
     canGenerateOutfit,
     addItemToOutfit,
     removeItemFromOutfit,
+    pinItem,
+    unpinItem,
   };
 };

@@ -17,7 +17,7 @@ import * as React from "react";
 import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
-import { FaCheck } from "react-icons/fa";
+import { FaCheck, FaThumbtack } from "react-icons/fa";
 import { MdAdd } from "react-icons/md";
 import "./closet-page.css";
 
@@ -71,7 +71,10 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
   const { t } = useTranslation();
   const { getImage, removeImage } = useImage();
   const { removeClothingItem } = useCloset();
-  const { outfit, clearOutfit } = useOutfit();
+  const { outfit, clearOutfit, pinItem } = useOutfit();
+  const navigate = useNavigate();
+
+  const isPinned = outfit?.pinnedItemId === item.id;
 
   async function remove(id: string): Promise<void> {
     if (window.confirm(t("closet.deleteConfirm"))) {
@@ -82,9 +85,22 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
         await removeImage(item.imageId);
       }
 
-      if (item.id === outfit?.top.id || item.id === outfit?.bottom.id) {
+      if (
+        item.id === outfit?.top.id ||
+        item.id === outfit?.bottom.id ||
+        item.id === outfit?.pinnedItemId
+      ) {
         await clearOutfit();
       }
+    }
+  }
+
+  async function pin(): Promise<void> {
+    const result = await pinItem(item);
+    if (result) {
+      navigate("/");
+    } else {
+      window.alert(t("closet.pinNoMatch"));
     }
   }
 
@@ -93,6 +109,13 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
       <div
         className="vera-card flex flex-col items-center relative h-full min-w-0 overflow-hidden"
       >
+        <button
+          onClick={() => pin()}
+          className={`pin-button absolute top-2 left-2 flex items-center justify-center transition-all vera-keep-opaque ${isPinned ? "active" : ""}`}
+          aria-label={t("closet.pinAria")}
+        >
+          <FaThumbtack size={12} />
+        </button>
         <button
           onClick={() => remove(item.id)}
           className="delete-button absolute top-2 right-2 flex items-center justify-center transition-all text-sm font-bold vera-keep-opaque"
