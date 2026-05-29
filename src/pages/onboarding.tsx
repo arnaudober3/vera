@@ -1,13 +1,14 @@
 import * as React from "react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { FaCamera, FaCheck, FaRegImage, FaTshirt } from "react-icons/fa";
 import {
-  categoryOptions,
+  ALL_CATEGORIES,
+  ALL_SUBCATEGORIES,
   type ClothingItemCategory,
   type ClothingItemSubCategory,
   type CreateClothingItem,
-  subCategoryLabels,
   subCategoryToCategory,
 } from "../models/clothing-item.ts";
 import { useCloset } from "../hooks/closet.ts";
@@ -36,6 +37,7 @@ const stepIndex: Record<Step, number> = {
 
 export const WelcomePage = (): React.JSX.Element => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { addClothingItem } = useCloset();
   const { saveImage } = useImage();
 
@@ -102,9 +104,7 @@ export const WelcomePage = (): React.JSX.Element => {
 
       setStep("reveal");
     } catch {
-      setProcessingError(
-        "We couldn't process that photo. Try a different one.",
-      );
+      setProcessingError(t("onboarding.snap.processError"));
       setStep("snap");
     }
   }
@@ -360,48 +360,50 @@ const WelcomeScreen = ({
 }: {
   onNext: () => void;
   onSkip: () => void;
-}): React.JSX.Element => (
-  <Stage padding={28}>
-    <div style={{ flex: 1 }} />
-    <div style={{ textAlign: "center", padding: "0 4px" }}>
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <Stage padding={28}>
+      <div style={{ flex: 1 }} />
+      <div style={{ textAlign: "center", padding: "0 4px" }}>
+        <div
+          className="vera-display"
+          style={{
+            fontSize: 44,
+          }}
+        >
+          {t("onboarding.welcome.title")}
+        </div>
+      </div>
       <div
-        className="vera-display"
         style={{
-          fontSize: 44,
+          textAlign: "center",
+          color: "var(--vera-fg-muted)",
+          fontSize: 16,
+          lineHeight: 1.5,
+          padding: "0 18px",
         }}
       >
-        A fresh outfit every morning.
+        {t("onboarding.welcome.subtitle")}
       </div>
-    </div>
-    <div
-      style={{
-        textAlign: "center",
-        color: "var(--vera-fg-muted)",
-        fontSize: 16,
-        lineHeight: 1.5,
-        padding: "0 18px",
-      }}
-    >
-      Snap your closet — Vera organises it, picks an outfit for tomorrow, and
-      tracks what's clean.
-    </div>
-    <div style={{ flex: 1 }} />
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 14,
-        paddingBottom: 4,
-      }}
-    >
-      <button type="button" className="vera-btn-primary" onClick={onNext}>
-        Get started
-      </button>
-      <SkipLink onClick={onSkip} label="I'll do it later" />
-      <StepDots active={stepIndex.welcome} />
-    </div>
-  </Stage>
-);
+      <div style={{ flex: 1 }} />
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+          paddingBottom: 4,
+        }}
+      >
+        <button type="button" className="vera-btn-primary" onClick={onNext}>
+          {t("onboarding.welcome.cta")}
+        </button>
+        <SkipLink onClick={onSkip} label={t("onboarding.welcome.skip")} />
+        <StepDots active={stepIndex.welcome} />
+      </div>
+    </Stage>
+  );
+};
 
 const SnapScreen = ({
   onOpenCamera,
@@ -413,162 +415,167 @@ const SnapScreen = ({
   onChooseFromPhotos: () => void;
   onSkip: () => void;
   error: string | null;
-}): React.JSX.Element => (
-  <Stage>
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
-      <div className="vera-eyebrow" style={{ color: "var(--vera-primary)" }}>
-        Step 1
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <Stage>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
+        <div className="vera-eyebrow" style={{ color: "var(--vera-primary)" }}>
+          {t("onboarding.snap.step")}
+        </div>
+        <div className="vera-display" style={{ fontSize: 34 }}>
+          {t("onboarding.snap.title")}
+        </div>
+        <div
+          style={{
+            color: "var(--vera-fg-muted)",
+            fontSize: 15,
+            lineHeight: 1.5,
+            marginTop: 2,
+          }}
+        >
+          {t("onboarding.snap.subtitle")}
+        </div>
       </div>
-      <div className="vera-display" style={{ fontSize: 34 }}>
-        Snap your first item.
-      </div>
+
       <div
+        className="vera-card"
         style={{
-          color: "var(--vera-fg-muted)",
-          fontSize: 15,
-          lineHeight: 1.5,
-          marginTop: 2,
+          background: "var(--vera-surface)",
+          padding: 18,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 14,
+          marginTop: 4,
         }}
       >
-        Lay a top flat on a plain surface. Vera removes the background
-        automatically.
+        <div
+          style={{
+            width: "100%",
+            aspectRatio: "4 / 3",
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <CornerBrackets />
+          <FaTshirt size={72} color="var(--vera-gray-300)" />
+        </div>
       </div>
-    </div>
 
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <Tip>{t("onboarding.snap.tipLight")}</Tip>
+        <Tip>{t("onboarding.snap.tipOne")}</Tip>
+      </div>
+
+      {error ? (
+        <div
+          style={{
+            color: "#b91c1c",
+            fontSize: 13,
+            textAlign: "center",
+          }}
+        >
+          {error}
+        </div>
+      ) : null}
+
+      <div
+        style={{
+          marginTop: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          paddingBottom: 4,
+        }}
+      >
+        <button type="button" className="vera-btn-primary" onClick={onOpenCamera}>
+          <FaCamera />
+          {t("onboarding.snap.openCamera")}
+        </button>
+        <button
+          type="button"
+          className="vera-btn-secondary"
+          onClick={onChooseFromPhotos}
+        >
+          <FaRegImage />
+          {t("onboarding.snap.chooseFromPhotos")}
+        </button>
+        <SkipLink onClick={onSkip} label={t("onboarding.snap.skip")} />
+        <StepDots active={stepIndex.snap} />
+      </div>
+    </Stage>
+  );
+};
+
+const ProcessingScreen = (): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
     <div
-      className="vera-card"
+      className="vera-onboarding vera-onboarding-processing"
       style={{
-        background: "var(--vera-surface)",
-        padding: 18,
+        minHeight: "100%",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 14,
-        marginTop: 4,
+        justifyContent: "center",
+        gap: 18,
+        padding: 24,
       }}
     >
       <div
         style={{
-          width: "100%",
-          aspectRatio: "4 / 3",
           position: "relative",
+          width: 96,
+          height: 96,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
-        <CornerBrackets />
-        <FaTshirt size={72} color="var(--vera-gray-300)" />
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            borderRadius: 999,
+            border: "2px solid rgba(255,255,255,0.12)",
+            borderTopColor: "#65aaa7",
+            animation: "vera-spin 900ms linear infinite",
+          }}
+        />
+        <FaTshirt size={40} color="rgba(255,255,255,0.6)" />
       </div>
-    </div>
-
-    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-      <Tip>Good light, plain background</Tip>
-      <Tip>One item per photo</Tip>
-    </div>
-
-    {error ? (
       <div
         style={{
-          color: "#b91c1c",
-          fontSize: 13,
+          fontFamily: "Georgia, 'Times New Roman', serif",
+          fontStyle: "italic",
+          fontSize: 24,
+          color: "#fff",
           textAlign: "center",
+          lineHeight: 1.1,
         }}
       >
-        {error}
+        {t("onboarding.processing.title")}
       </div>
-    ) : null}
-
-    <div
-      style={{
-        marginTop: "auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: 12,
-        paddingBottom: 4,
-      }}
-    >
-      <button type="button" className="vera-btn-primary" onClick={onOpenCamera}>
-        <FaCamera />
-        Open camera
-      </button>
-      <button
-        type="button"
-        className="vera-btn-secondary"
-        onClick={onChooseFromPhotos}
-      >
-        <FaRegImage />
-        Choose from photos
-      </button>
-      <SkipLink onClick={onSkip} label="I'll do it later" />
-      <StepDots active={stepIndex.snap} />
-    </div>
-  </Stage>
-);
-
-const ProcessingScreen = (): React.JSX.Element => (
-  <div
-    className="vera-onboarding vera-onboarding-processing"
-    style={{
-      minHeight: "100%",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: 18,
-      padding: 24,
-    }}
-  >
-    <div
-      style={{
-        position: "relative",
-        width: 96,
-        height: 96,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
       <div
         style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: 999,
-          border: "2px solid rgba(255,255,255,0.12)",
-          borderTopColor: "#65aaa7",
-          animation: "vera-spin 900ms linear infinite",
+          fontSize: 13,
+          color: "rgba(255,255,255,0.6)",
+          textAlign: "center",
+          maxWidth: 280,
         }}
-      />
-      <FaTshirt size={40} color="rgba(255,255,255,0.6)" />
+      >
+        {t("onboarding.processing.subtitle")}
+      </div>
+      <div style={{ marginTop: 20 }}>
+        <StepDots active={stepIndex.processing} />
+      </div>
+      <style>{`@keyframes vera-spin { to { transform: rotate(360deg); } }`}</style>
     </div>
-    <div
-      style={{
-        fontFamily: "Georgia, 'Times New Roman', serif",
-        fontStyle: "italic",
-        fontSize: 24,
-        color: "#fff",
-        textAlign: "center",
-        lineHeight: 1.1,
-      }}
-    >
-      Removing the background…
-    </div>
-    <div
-      style={{
-        fontSize: 13,
-        color: "rgba(255,255,255,0.6)",
-        textAlign: "center",
-        maxWidth: 280,
-      }}
-    >
-      This usually takes a few seconds.
-    </div>
-    <div style={{ marginTop: 20 }}>
-      <StepDots active={stepIndex.processing} />
-    </div>
-    <style>{`@keyframes vera-spin { to { transform: rotate(360deg); } }`}</style>
-  </div>
-);
+  );
+};
 
 const BeforeAfter = ({
   side,
@@ -577,6 +584,7 @@ const BeforeAfter = ({
   side: "before" | "after";
   image: string | null;
 }): React.JSX.Element => {
+  const { t } = useTranslation();
   if (side === "before") {
     return (
       <div
@@ -595,7 +603,7 @@ const BeforeAfter = ({
         {image ? (
           <img
             src={image}
-            alt="Original"
+            alt={t("onboarding.reveal.imageOriginalAlt")}
             style={{
               maxWidth: "85%",
               maxHeight: "85%",
@@ -625,7 +633,7 @@ const BeforeAfter = ({
       {image ? (
         <img
           src={image}
-          alt="Background removed"
+          alt={t("onboarding.reveal.imageCleanedAlt")}
           style={{
             maxWidth: "85%",
             maxHeight: "85%",
@@ -649,7 +657,7 @@ const BeforeAfter = ({
           letterSpacing: 0.02,
         }}
       >
-        clean
+        {t("onboarding.reveal.cleanBadge")}
       </div>
     </div>
   );
@@ -682,8 +690,9 @@ const RevealScreen = ({
   onRetake: () => void;
   onSkip: () => void;
 }): React.JSX.Element => {
+  const { t } = useTranslation();
   const detectedLabel = classification?.subCategory
-    ? subCategoryLabels[classification.subCategory]
+    ? t(`subcategories.${classification.subCategory}` as const)
     : null;
   const canSave =
     !!afterImage &&
@@ -705,10 +714,10 @@ const RevealScreen = ({
           }}
         >
           <FaCheck size={12} />
-          <span>Cleaned up</span>
+          <span>{t("onboarding.reveal.cleanedUp")}</span>
         </div>
         <div className="vera-display" style={{ fontSize: 30 }}>
-          That's all Vera needs.
+          {t("onboarding.reveal.title")}
         </div>
       </div>
 
@@ -750,7 +759,7 @@ const RevealScreen = ({
             marginTop: 4,
           }}
         >
-          Before
+          {t("onboarding.reveal.before")}
         </div>
         <div />
         <div
@@ -762,7 +771,7 @@ const RevealScreen = ({
             marginTop: 4,
           }}
         >
-          After
+          {t("onboarding.reveal.after")}
         </div>
       </div>
 
@@ -777,12 +786,12 @@ const RevealScreen = ({
               letterSpacing: 0.04,
             }}
           >
-            Name
+            {t("common.name")}
           </span>
           <input
             className="vera-input"
             value={name}
-            placeholder="e.g., Navy tee"
+            placeholder={t("common.namePlaceholder")}
             onChange={(e) => onNameChange(e.target.value)}
             disabled={isSaving}
           />
@@ -798,7 +807,7 @@ const RevealScreen = ({
               letterSpacing: 0.04,
             }}
           >
-            Category
+            {t("common.category")}
           </span>
           {classificationFailed ? (
             <select
@@ -812,22 +821,17 @@ const RevealScreen = ({
               disabled={isSaving}
             >
               <option disabled value="">
-                Select…
+                {t("common.select")}
               </option>
-              {categoryOptions.map((cat) => (
-                <optgroup key={cat.value} label={cat.label}>
-                  {Object.entries(subCategoryLabels)
-                    .filter(
-                      ([sub]) =>
-                        subCategoryToCategory[
-                          sub as ClothingItemSubCategory
-                        ] === cat.value,
-                    )
-                    .map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
+              {ALL_CATEGORIES.map((cat) => (
+                <optgroup key={cat} label={t(`categories.${cat}` as const)}>
+                  {ALL_SUBCATEGORIES.filter(
+                    (sub) => subCategoryToCategory[sub] === cat,
+                  ).map((sub) => (
+                    <option key={sub} value={sub}>
+                      {t(`subcategories.${sub}` as const)}
+                    </option>
+                  ))}
                 </optgroup>
               ))}
             </select>
@@ -840,8 +844,10 @@ const RevealScreen = ({
                 alignItems: "center",
               }}
             >
-              <span>{detectedLabel ?? "Detecting…"}</span>
-              <span style={{ color: "var(--vera-fg-muted)" }}>auto</span>
+              <span>{detectedLabel ?? t("onboarding.reveal.detecting")}</span>
+              <span style={{ color: "var(--vera-fg-muted)" }}>
+                {t("onboarding.reveal.autoTag")}
+              </span>
             </div>
           )}
         </label>
@@ -862,7 +868,7 @@ const RevealScreen = ({
           onClick={onSave}
           disabled={!canSave}
         >
-          {isSaving ? "Saving…" : "Save to closet"}
+          {isSaving ? t("common.saving") : t("onboarding.reveal.save")}
         </button>
         <button
           type="button"
@@ -870,9 +876,9 @@ const RevealScreen = ({
           onClick={onRetake}
           disabled={isSaving}
         >
-          Retake
+          {t("onboarding.reveal.retake")}
         </button>
-        <SkipLink onClick={onSkip} label="Skip and finish" />
+        <SkipLink onClick={onSkip} label={t("onboarding.reveal.skip")} />
         <StepDots active={stepIndex.reveal} />
       </div>
     </Stage>

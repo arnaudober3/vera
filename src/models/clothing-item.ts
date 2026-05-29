@@ -63,40 +63,16 @@ export const subCategoryToCategory: Record<
   earring: "accessories",
 };
 
-export const subCategoryLabels: Record<ClothingItemSubCategory, string> = {
-  "t-shirt": "T-shirt",
-  shirt: "Shirt",
-  sweater: "Sweater",
-  jacket: "Jacket",
-  coat: "Coat",
-  hoodie: "Hoodie",
-  pants: "Pants",
-  jeans: "Jeans",
-  shorts: "Shorts",
-  skirt: "Skirt",
-  sneakers: "Sneakers",
-  boots: "Boots",
-  sandals: "Sandals",
-  dress_shoes: "Dress Shoes",
-  bag: "Bag",
-  belt: "Belt",
-  scarf: "Scarf",
-  hat: "Hat",
-  watch: "Watch",
-  ring: "Ring",
-  earring: "Earrings",
-};
+export const ALL_SUBCATEGORIES: ClothingItemSubCategory[] = Object.keys(
+  subCategoryToCategory,
+) as ClothingItemSubCategory[];
 
-type ClothingCategoryOption = {
-  value: ClothingItemCategory;
-  label: string;
-};
-export const categoryOptions: ClothingCategoryOption[] = [
-  { value: "top", label: "Tops" },
-  { value: "bottom", label: "Bottoms" },
-  { value: "outerwear", label: "Jackets/coats" },
-  { value: "shoes", label: "Shoes" },
-  { value: "accessories", label: "Accessories" },
+export const ALL_CATEGORIES: ClothingItemCategory[] = [
+  "top",
+  "bottom",
+  "outerwear",
+  "shoes",
+  "accessories",
 ];
 
 export type ClothingItem = {

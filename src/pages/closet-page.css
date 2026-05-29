@@ -11,4 +11,30 @@
     background-color: var(--vera-danger-strong);
   }
 }
+
+.pin-button {
+  opacity: 80%;
+  width: calc(var(--spacing) * 4);
+  height: calc(var(--spacing) * 4);
+  background-color: var(--vera-surface);
+  border: 1px solid var(--vera-surface-border);
+  color: var(--vera-fg-muted);
+  border-radius: calc(infinity * 1px);
+  cursor: pointer;
+
+  &:hover {
+    color: var(--vera-primary);
+  }
+}
+
+.pin-button.active {
+  opacity: 100%;
+  background-color: var(--vera-primary);
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.pin-button svg {
+  transform: scale(0.65);
+}
 /* force */

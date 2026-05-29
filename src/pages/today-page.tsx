@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
 import { BasketStrip } from "../components/basket-strip.tsx";
@@ -16,6 +17,7 @@ import {
   FaPlus,
   FaRegHeart,
   FaSyncAlt,
+  FaThumbtack,
   FaTimes,
 } from "react-icons/fa";
 import { PiPantsFill, PiTShirtFill } from "react-icons/pi";
@@ -23,12 +25,14 @@ import { useNavigate } from "react-router";
 import { isDarkColor } from "../utils/color.ts";
 import "../pages/today-page.css";
 
-const formatDate = (d: Date): string =>
-  d.toLocaleDateString("en-GB", {
+const formatDate = (d: Date, locale: string): string => {
+  const s = d.toLocaleDateString(locale, {
     weekday: "long",
     day: "numeric",
     month: "long",
   });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+};
 
 type RailProps = {
   glyph: React.ReactNode;
@@ -54,12 +58,17 @@ const PieceRow = ({
   label,
   rail,
   imageSrc,
+  pinned,
+  onUnpin,
 }: {
   piece: ClothingItem;
   label: string;
   rail: { glyph: React.ReactNode; topLine: boolean; bottomLine: boolean };
   imageSrc: string | undefined;
+  pinned?: boolean;
+  onUnpin?: () => void;
 }) => {
+  const { t } = useTranslation();
   const dark = isDarkColor(piece.color);
   const tint = dark
     ? piece.color
@@ -81,6 +90,16 @@ const PieceRow = ({
         className="today-piece-card"
         style={{ background: tint, border: `1px solid ${borderColor}` }}
       >
+        {pinned && (
+          <button
+            type="button"
+            onClick={onUnpin}
+            aria-label={t("today.unpinAria")}
+            className="today-pin"
+          >
+            <FaThumbtack size={12} />
+          </button>
+        )}
         <div className="today-piece-well">
           {imageSrc && (
             <img src={imageSrc} alt={piece.name} loading="lazy" />
@@ -104,12 +123,15 @@ const AccessoryRow = ({
   onAddClick,
   onRemove,
   getImage,
+  pinnedId,
 }: {
   added: ClothingItem[];
   onAddClick: () => void;
   onRemove: (id: string) => void;
   getImage: (id: string) => string | undefined;
+  pinnedId?: string;
 }) => {
+  const { t } = useTranslation();
   const empty = added.length === 0;
   return (
     <div className="today-accessory-row">
@@ -127,7 +149,7 @@ const AccessoryRow = ({
             className="today-accessory-add"
           >
             <FaPlus size={10} />
-            Add an accessory
+            {t("today.addAccessory")}
           </button>
         ) : (
           <div className="today-accessory-list">
@@ -138,11 +160,14 @@ const AccessoryRow = ({
                     <img src={getImage(it.id)} alt={it.name} loading="lazy" />
                   )}
                 </div>
+                {it.id === pinnedId && (
+                  <FaThumbtack size={9} className="today-accessory-pin" />
+                )}
                 <span className="today-accessory-name">{it.name}</span>
                 <button
                   type="button"
                   onClick={() => onRemove(it.id)}
-                  aria-label={`Remove ${it.name}`}
+                  aria-label={t("today.removeAria", { name: it.name })}
                   className="today-accessory-remove"
                 >
                   <FaTimes />
@@ -152,7 +177,7 @@ const AccessoryRow = ({
             <button
               type="button"
               onClick={onAddClick}
-              aria-label="Add another item"
+              aria-label={t("today.addAnotherAria")}
               className="today-accessory-add-more"
             >
               <FaPlus />
@@ -165,6 +190,7 @@ const AccessoryRow = ({
 };
 
 const SwipeToWear = ({ onConfirm }: { onConfirm: () => void }) => {
+  const { t } = useTranslation();
   const trackRef = useRef<HTMLDivElement>(null);
   const [drag, setDrag] = useState(0);
   const [maxDrag, setMaxDrag] = useState(0);
@@ -209,7 +235,7 @@ const SwipeToWear = ({ onConfirm }: { onConfirm: () => void }) => {
   return (
     <div ref={trackRef} className="today-swipe-track">
       <div className="today-swipe-label">
-        <span style={{ opacity: 1 - progress * 0.7 }}>Swipe to wear</span>
+        <span style={{ opacity: 1 - progress * 0.7 }}>{t("today.swipeToWear")}</span>
       </div>
       <div
         onPointerDown={onPointerDown}
@@ -243,6 +269,7 @@ const AccessorySheet = ({
   onPick: (it: ClothingItem) => void;
   getImage: (id: string) => string | undefined;
 }) => {
+  const { t } = useTranslation();
   if (!open) return null;
   return (
     <div
@@ -257,20 +284,18 @@ const AccessorySheet = ({
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold">Add an accessory</h3>
+          <h3 className="text-lg font-semibold">{t("today.sheetTitle")}</h3>
           <button
             className="p-2 text-gray-500"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("common.close")}
           >
             ✕
           </button>
         </div>
         <div className="today-sheet-grid">
           {library.length === 0 ? (
-            <div className="today-sheet-empty">
-              Nothing to add, your closet doesn't have any extra items yet.
-            </div>
+            <div className="today-sheet-empty">{t("today.sheetEmpty")}</div>
           ) : (
             library.map((it) => {
               const picked = selectedIds.includes(it.id);
@@ -294,7 +319,7 @@ const AccessorySheet = ({
                   <div className="today-sheet-name">{it.name}</div>
                   <div className="today-sheet-added" style={{ visibility: picked ? "visible" : "hidden" }}>
                     <FaCheck size={10} />
-                    added
+                    {t("today.sheetAdded")}
                   </div>
                 </button>
               );
@@ -307,6 +332,7 @@ const AccessorySheet = ({
 };
 
 const LookbookHeart = () => {
+  const { t } = useTranslation();
   const { outfit } = useOutfit();
   const { addToLookbook, removeFromLookbookByOutfit, isInLookbook } =
     useLookbook();
@@ -345,9 +371,7 @@ const LookbookHeart = () => {
     <button
       type="button"
       onClick={() => onToggle()}
-      aria-label={
-        saved ? "Remove from lookbook" : "Add to lookbook"
-      }
+      aria-label={saved ? t("today.heartRemoveAria") : t("today.heartAddAria")}
       className={`today-heart ${saved ? "active" : ""}`}
     >
       {saved ? <FaHeart size={13} /> : <FaRegHeart size={13} />}
@@ -356,6 +380,7 @@ const LookbookHeart = () => {
 };
 
 const TodayOutfit = (): React.JSX.Element => {
+  const { t } = useTranslation();
   const { getImage } = useImage();
   const { items: _items, isItemClean, markWorn } = useCloset();
   const items = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _items) : _items;
@@ -366,6 +391,7 @@ const TodayOutfit = (): React.JSX.Element => {
     canGenerateOutfit,
     addItemToOutfit,
     removeItemFromOutfit,
+    unpinItem,
   } = useOutfit();
   const outfit = import.meta.env.VITE_ENABLE_DEBUG === "true" ? undefined : _outfit;
   const { recordOutfit } = useOutfitHistory();
@@ -427,9 +453,9 @@ const TodayOutfit = (): React.JSX.Element => {
       <>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "100px" }}>
           <EmptyMessageTemplate
-            title="No outfit right now."
-            subtitle="All your clothes are in the basket — time to do laundry!"
-            buttonText="Go to closet"
+            title={t("today.empty.title")}
+            subtitle={t("today.empty.subtitle")}
+            buttonText={t("today.empty.button")}
             onButtonClick={() => navigate("/closet")}
           />
         </div>
@@ -460,25 +486,30 @@ const TodayOutfit = (): React.JSX.Element => {
           <LookbookHeart />
           <PieceRow
             piece={outfit!.top}
-            label="Top"
+            label={t("today.topLabel")}
             rail={{ glyph: <PiTShirtFill size={10} />, topLine: false, bottomLine: true }}
             imageSrc={getImage(outfit!.top.id)}
+            pinned={outfit!.pinnedItemId === outfit!.top.id}
+            onUnpin={() => void unpinItem()}
           />
           <PieceRow
             piece={outfit!.bottom}
-            label="Bottom"
+            label={t("today.bottomLabel")}
             rail={{
               glyph: <PiPantsFill size={10} />,
               topLine: true,
               bottomLine: true,
             }}
             imageSrc={getImage(outfit!.bottom.id)}
+            pinned={outfit!.pinnedItemId === outfit!.bottom.id}
+            onUnpin={() => void unpinItem()}
           />
           <AccessoryRow
             added={added}
             onAddClick={() => setPickerOpen(true)}
             onRemove={(id) => void removeItemFromOutfit(id)}
             getImage={getImage}
+            pinnedId={outfit!.pinnedItemId}
           />
           <div className="today-swipe-inline">
             <SwipeToWear onConfirm={() => void handleConfirmWorn()} />
@@ -495,7 +526,7 @@ const TodayOutfit = (): React.JSX.Element => {
           <button
             type="button"
             onClick={() => void onRegenerate()}
-            aria-label="Regenerate the outfit"
+            aria-label={t("today.regenerateAria")}
             disabled={!canGenerateOutfit()}
             className="vera-nav-fab"
           >
@@ -520,7 +551,8 @@ const TodayOutfit = (): React.JSX.Element => {
 };
 
 export const TodayPage = (): React.JSX.Element => {
-  const today = formatDate(new Date());
+  const { i18n } = useTranslation();
+  const today = formatDate(new Date(), i18n.language || "en");
 
   return (
     <div className="today-page">

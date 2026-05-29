@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router";
+import { useTranslation } from "react-i18next";
 import { MdChevronLeft, MdLocalLaundryService } from "react-icons/md";
 import { useCloset } from "../hooks/closet.ts";
 import { isWashable } from "../models/clothing-item.ts";
@@ -11,11 +12,12 @@ export const BasketImage = ({
   full: boolean;
   width: number;
 }): React.JSX.Element => {
+  const { t } = useTranslation();
   const src = full ? "/assets/basket_full.png" : "/assets/basket_empty.png";
   return (
     <img
       src={src}
-      alt={full ? "Full basket" : "Empty basket"}
+      alt={full ? t("basket.fullAlt") : t("basket.emptyAlt")}
       style={{ width, height: "auto", display: "block", flexShrink: 0 }}
     />
   );
@@ -35,6 +37,7 @@ export const BasketStrip = ({
   onWash,
 }: BasketStripProps): React.JSX.Element | null => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { items, markLaundryDone } = useCloset();
 
   const computedDirtyCount =
@@ -61,8 +64,8 @@ export const BasketStrip = ({
       aria-pressed={viewingBasket}
       aria-label={
         viewingBasket
-          ? "Showing the basket — tap to go back"
-          : `${computedDirtyCount} ${computedDirtyCount === 1 ? "item" : "items"} in the basket — tap to view`
+          ? t("basket.viewingAria")
+          : t("basket.tapAria", { count: computedDirtyCount })
       }
     >
       <div className="vera-basket-strip__media">
@@ -74,19 +77,16 @@ export const BasketStrip = ({
           <>
             <div className="vera-basket-strip__title">
               <MdChevronLeft size={16} aria-hidden />
-              Showing the basket
+              {t("basket.viewingTitle")}
             </div>
-            <div className="vera-basket-strip__sub">Tap to go back</div>
+            <div className="vera-basket-strip__sub">{t("basket.viewingSub")}</div>
           </>
         ) : (
           <>
             <div className="vera-basket-strip__title">
-              {computedDirtyCount}{" "}
-              {computedDirtyCount === 1 ? "item" : "items"} in the basket
+              {t("basket.countTitle", { count: computedDirtyCount })}
             </div>
-            <div className="vera-basket-strip__sub">
-              Tap to see what's worn
-            </div>
+            <div className="vera-basket-strip__sub">{t("basket.countSub")}</div>
           </>
         )}
       </div>
@@ -99,11 +99,11 @@ export const BasketStrip = ({
             handleWash();
           }}
           className="vera-btn-primary vera-basket-strip__wash"
-          aria-label="Mark all worn items as clean"
-          title="Mark all worn items as clean"
+          aria-label={t("basket.washAria")}
+          title={t("basket.washTitle")}
         >
           <MdLocalLaundryService size={14} />
-          Wash
+          {t("basket.wash")}
         </button>
       )}
     </div>
