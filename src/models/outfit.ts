@@ -6,4 +6,6 @@ export interface Outfit {
   outerwear?: ClothingItem;
   shoes?: ClothingItem;
   accessories?: ClothingItem[];
+  /** Id of an item the user has pinned; the rest of the outfit regenerates around it. */
+  pinnedItemId?: string;
 }

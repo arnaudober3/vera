@@ -17,6 +17,7 @@ import {
   FaPlus,
   FaRegHeart,
   FaSyncAlt,
+  FaThumbtack,
   FaTimes,
 } from "react-icons/fa";
 import { PiPantsFill, PiTShirtFill } from "react-icons/pi";
@@ -57,12 +58,17 @@ const PieceRow = ({
   label,
   rail,
   imageSrc,
+  pinned,
+  onUnpin,
 }: {
   piece: ClothingItem;
   label: string;
   rail: { glyph: React.ReactNode; topLine: boolean; bottomLine: boolean };
   imageSrc: string | undefined;
+  pinned?: boolean;
+  onUnpin?: () => void;
 }) => {
+  const { t } = useTranslation();
   const dark = isDarkColor(piece.color);
   const tint = dark
     ? piece.color
@@ -84,6 +90,16 @@ const PieceRow = ({
         className="today-piece-card"
         style={{ background: tint, border: `1px solid ${borderColor}` }}
       >
+        {pinned && (
+          <button
+            type="button"
+            onClick={onUnpin}
+            aria-label={t("today.unpinAria")}
+            className="today-pin"
+          >
+            <FaThumbtack size={12} />
+          </button>
+        )}
         <div className="today-piece-well">
           {imageSrc && (
             <img src={imageSrc} alt={piece.name} loading="lazy" />
@@ -107,11 +123,13 @@ const AccessoryRow = ({
   onAddClick,
   onRemove,
   getImage,
+  pinnedId,
 }: {
   added: ClothingItem[];
   onAddClick: () => void;
   onRemove: (id: string) => void;
   getImage: (id: string) => string | undefined;
+  pinnedId?: string;
 }) => {
   const { t } = useTranslation();
   const empty = added.length === 0;
@@ -142,6 +160,9 @@ const AccessoryRow = ({
                     <img src={getImage(it.id)} alt={it.name} loading="lazy" />
                   )}
                 </div>
+                {it.id === pinnedId && (
+                  <FaThumbtack size={9} className="today-accessory-pin" />
+                )}
                 <span className="today-accessory-name">{it.name}</span>
                 <button
                   type="button"
@@ -370,6 +391,7 @@ const TodayOutfit = (): React.JSX.Element => {
     canGenerateOutfit,
     addItemToOutfit,
     removeItemFromOutfit,
+    unpinItem,
   } = useOutfit();
   const outfit = import.meta.env.VITE_ENABLE_DEBUG === "true" ? undefined : _outfit;
   const { recordOutfit } = useOutfitHistory();
@@ -467,6 +489,8 @@ const TodayOutfit = (): React.JSX.Element => {
             label={t("today.topLabel")}
             rail={{ glyph: <PiTShirtFill size={10} />, topLine: false, bottomLine: true }}
             imageSrc={getImage(outfit!.top.id)}
+            pinned={outfit!.pinnedItemId === outfit!.top.id}
+            onUnpin={() => void unpinItem()}
           />
           <PieceRow
             piece={outfit!.bottom}
@@ -477,12 +501,15 @@ const TodayOutfit = (): React.JSX.Element => {
               bottomLine: true,
             }}
             imageSrc={getImage(outfit!.bottom.id)}
+            pinned={outfit!.pinnedItemId === outfit!.bottom.id}
+            onUnpin={() => void unpinItem()}
           />
           <AccessoryRow
             added={added}
             onAddClick={() => setPickerOpen(true)}
             onRemove={(id) => void removeItemFromOutfit(id)}
             getImage={getImage}
+            pinnedId={outfit!.pinnedItemId}
           />
           <div className="today-swipe-inline">
             <SwipeToWear onConfirm={() => void handleConfirmWorn()} />
