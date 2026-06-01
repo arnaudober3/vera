@@ -33,6 +33,7 @@
     "coat": "Manteau",
     "hoodie": "Sweat à capuche",
     "pants": "Pantalon",
+    "joggers": "Jogging",
     "jeans": "Jean",
     "shorts": "Short",
     "skirt": "Jupe",
@@ -99,6 +100,20 @@
     "sheetAdded": "ajouté",
     "heartAddAria": "Ajouter au lookbook",
     "heartRemoveAria": "Retirer du lookbook",
+    "occasionLabel": "Occasion",
+    "occasion": {
+      "casual": "Décontracté",
+      "smart": "Chic",
+      "formal": "Habillé",
+      "sport": "Sport"
+    },
+    "weather": {
+      "setManual": "Définir la météo",
+      "manualPrompt": "Temp °C",
+      "done": "OK",
+      "rainHint": "Pluie en vue — on a ajouté une couche.",
+      "unavailable": "Météo indisponible"
+    },
     "empty": {
       "title": "Aucune tenue pour le moment.",
       "subtitle": "Tous tes vêtements sont au panier — l'heure de la lessive !",

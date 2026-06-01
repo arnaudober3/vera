@@ -8,7 +8,14 @@ import {
 } from "../models/clothing-item.ts";
 import type { Color } from "../models/color.ts";
 import { getSeasonScore, type Season } from "../models/season.ts";
+import { getOccasionScore, type Occasion } from "../models/occasion.ts";
 import { getCurrentSeason } from "../services/season.ts";
+import {
+  getCachedWeather,
+  needsOuterwear,
+  temperatureToSeason,
+} from "../services/weather.ts";
+import { getSelectedOccasion } from "./occasion.ts";
 import { differenceCiede2000 } from "culori";
 import { lsGet, lsSet, outfitKey } from "../storage/local-store.ts";
 import { useOutfitHistory } from "./outfit-history.ts";
@@ -92,7 +99,8 @@ export const useOutfit = () => {
     anchor: ClothingItem,
     candidates: ClothingItem[],
     currentPartnerId: string | undefined,
-    currentSeason: Season,
+    effectiveSeason: Season,
+    occasion: Occasion,
   ): ClothingItem => {
     const hasAlternative = candidates.some((c) => c.id !== currentPartnerId);
     let best: ClothingItem | null = null;
@@ -100,11 +108,13 @@ export const useOutfit = () => {
     for (const candidate of candidates) {
       if (hasAlternative && candidate.id === currentPartnerId) continue;
       const baseScore = scoreColors({ a: anchor.color, b: candidate.color }) ?? 0;
-      // Only the candidate's season is scored — never penalise the pinned anchor.
+      // Only the candidate's season/occasion is scored — never penalise the
+      // pinned anchor for being out of season or off the occasion.
       const adjustedScore =
         baseScore *
         getRecencyPenalty([anchor.id, candidate.id]) *
-        getSeasonScore(candidate, currentSeason);
+        getSeasonScore(candidate, effectiveSeason) *
+        getOccasionScore(candidate, occasion);
       if (adjustedScore > bestScore) {
         bestScore = adjustedScore;
         best = candidate;
@@ -118,7 +128,8 @@ export const useOutfit = () => {
   const pickBestDuo = (
     availableTops: ClothingItem[],
     availableBottoms: ClothingItem[],
-    currentSeason: Season,
+    effectiveSeason: Season,
+    occasion: Occasion,
   ): { top: ClothingItem; bottom: ClothingItem } | null => {
     const maxAttempts = availableTops.length + availableBottoms.length;
     let bestDuo: { top: ClothingItem; bottom: ClothingItem } | null = null;
@@ -153,12 +164,16 @@ export const useOutfit = () => {
         b: candidate.bottom.color,
       });
       const seasonScore =
-        getSeasonScore(candidate.top, currentSeason) *
-        getSeasonScore(candidate.bottom, currentSeason);
+        getSeasonScore(candidate.top, effectiveSeason) *
+        getSeasonScore(candidate.bottom, effectiveSeason);
+      const occasionScore =
+        getOccasionScore(candidate.top, occasion) *
+        getOccasionScore(candidate.bottom, occasion);
       const adjustedScore =
         (pairScore ?? 0) *
         getRecencyPenalty([candidate.top.id, candidate.bottom.id]) *
-        seasonScore;
+        seasonScore *
+        occasionScore;
 
       if (adjustedScore > highestScore) {
         highestScore = adjustedScore;
@@ -189,7 +204,13 @@ export const useOutfit = () => {
       ? availableItems.find((i) => i.id === effectivePinnedId)
       : undefined;
 
-    const currentSeason = getCurrentSeason();
+    // Weather refines the season when available: a temperature-derived season
+    // flows through the existing season scoring. Falls back to the calendar.
+    const weather = getCachedWeather();
+    const effectiveSeason = weather
+      ? temperatureToSeason(weather.temperatureC)
+      : getCurrentSeason();
+    const occasion = getSelectedOccasion();
 
     let duo: { top: ClothingItem; bottom: ClothingItem } | null;
     if (pinned?.category === "top") {
@@ -199,7 +220,8 @@ export const useOutfit = () => {
           pinned,
           availableBottoms,
           outfit?.bottom?.id,
-          currentSeason,
+          effectiveSeason,
+          occasion,
         ),
       };
     } else if (pinned?.category === "bottom") {
@@ -208,12 +230,13 @@ export const useOutfit = () => {
           pinned,
           availableTops,
           outfit?.top?.id,
-          currentSeason,
+          effectiveSeason,
+          occasion,
         ),
         bottom: pinned,
       };
     } else {
-      duo = pickBestDuo(availableTops, availableBottoms, currentSeason);
+      duo = pickBestDuo(availableTops, availableBottoms, effectiveSeason, occasion);
     }
 
     // Fall back to the current top/bottom if no new duo could be formed.
@@ -232,6 +255,20 @@ export const useOutfit = () => {
       else if (pinned.category === "shoes") finalOutfit.shoes = pinned;
       else if (pinned.category === "accessories")
         finalOutfit.accessories = [pinned];
+    }
+
+    // On a cold or rainy day, suggest a layer: attach the best colour-matching
+    // outerwear if the user hasn't already pinned/added one.
+    if (weather && needsOuterwear(weather) && !finalOutfit.outerwear) {
+      const availableOuterwear = availableItems.filter(
+        (i) => i.category === "outerwear",
+      );
+      if (availableOuterwear.length > 0) {
+        finalOutfit.outerwear = findBestMatch({
+          candidates: availableOuterwear,
+          anchor: finalOutfit.top,
+        });
+      }
     }
 
     if (pinned) {

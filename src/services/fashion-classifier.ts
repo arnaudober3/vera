@@ -12,6 +12,32 @@ export interface ClassificationResult {
 
 const validSubCategories = ALL_SUBCATEGORIES;
 
+// The model often replies with everyday synonyms rather than our exact labels.
+// We resolve these BEFORE the generic substring match so, e.g., "track pants"
+// maps to joggers instead of falling through to the earlier "pants" label.
+// Ordered most-specific first.
+const SUBCATEGORY_SYNONYMS: {
+  match: RegExp;
+  subCategory: ClothingItemSubCategory;
+}[] = [
+  { match: /jogg|sweat ?pant|track ?pant|sweatpant/, subCategory: "joggers" },
+  { match: /chino|trouser|slack/, subCategory: "pants" },
+  { match: /denim/, subCategory: "jeans" },
+  { match: /\btee\b|t[- ]?shirt/, subCategory: "t-shirt" },
+  { match: /pullover|jumper|knit/, subCategory: "sweater" },
+  { match: /trainer|plimsoll/, subCategory: "sneakers" },
+];
+
+const resolveSubCategory = (
+  reply: string,
+): ClothingItemSubCategory | undefined => {
+  // Prefer a synonym hit (handles multi-word, natural replies) ...
+  const synonym = SUBCATEGORY_SYNONYMS.find((s) => s.match.test(reply));
+  if (synonym) return synonym.subCategory;
+  // ... otherwise fall back to an exact or substring match on a known label.
+  return validSubCategories.find((sc) => reply === sc || reply.includes(sc));
+};
+
 const HF_BASE_URL = import.meta.env.DEV
   ? "/api/huggingface"
   : "https://router.huggingface.co";
@@ -48,7 +74,11 @@ class FashionClassifierService {
               },
               {
                 type: "text",
-                text: `Classify this clothing item into exactly one of these categories: ${validSubCategories.join(", ")}. Reply with only the category name, nothing else.`,
+                text:
+                  `Classify this clothing item into exactly one of these labels: ${validSubCategories.join(", ")}.\n` +
+                  `Guidance for trousers: use "joggers" for athletic/sweat/track pants with an elastic or drawstring waist and cuffs; ` +
+                  `use "pants" only for tailored trousers, chinos or dress pants; use "jeans" for denim.\n` +
+                  `Reply with only the label, nothing else.`,
               },
             ],
           },
@@ -72,10 +102,8 @@ class FashionClassifierService {
       throw new Error("No classification result returned.");
     }
 
-    // Match the reply against valid sub-categories
-    const matched = validSubCategories.find(
-      (sc) => reply === sc || reply.includes(sc),
-    );
+    // Match the reply against valid sub-categories (synonyms first)
+    const matched = resolveSubCategory(reply);
 
     if (!matched) {
       throw new Error(`Unrecognized classification: "${reply}"`);

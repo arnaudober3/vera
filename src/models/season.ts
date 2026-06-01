@@ -25,6 +25,7 @@ export const subCategorySeasons: Partial<
   hoodie: ["spring", "fall", "winter"],
 
   // Bottoms
+  joggers: ["spring", "fall", "winter"],
   shorts: ["spring", "summer"],
   skirt: ["spring", "summer", "fall"],
 };

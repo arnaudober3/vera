@@ -12,6 +12,104 @@
   flex-shrink: 0;
 }
 
+.today-context {
+  margin-top: 10px;
+}
+
+.today-context-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.today-occasions {
+  display: flex;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.today-occasions::-webkit-scrollbar {
+  display: none;
+}
+
+.today-occasion-chip {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border-radius: var(--vera-radius-pill);
+  border: 1px solid var(--vera-surface-border);
+  background: var(--vera-surface);
+  color: var(--vera-fg-muted);
+  font-family: var(--vera-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--vera-duration) var(--vera-ease),
+    color var(--vera-duration) var(--vera-ease),
+    border-color var(--vera-duration) var(--vera-ease);
+}
+
+.today-occasion-chip.active {
+  background: var(--vera-primary);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.today-weather-badge {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--vera-radius-pill);
+  border: 1px solid var(--vera-surface-border);
+  background: var(--vera-surface);
+  color: var(--vera-fg-strong);
+  font-family: var(--vera-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.today-weather-edit {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.today-weather-input {
+  width: 72px;
+  padding: 6px 10px;
+  border-radius: var(--vera-radius-pill);
+  border: 1px solid var(--vera-surface-border);
+  background: var(--vera-surface);
+  color: var(--vera-fg-strong);
+  font-family: var(--vera-font-sans);
+  font-size: 13px;
+}
+
+.today-weather-done {
+  padding: 6px 12px;
+  border-radius: var(--vera-radius-pill);
+  border: 1px solid transparent;
+  background: var(--vera-primary);
+  color: #ffffff;
+  font-family: var(--vera-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.today-weather-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--vera-fg-muted);
+}
+
 
 .today-rail-area {
   flex: 1;
