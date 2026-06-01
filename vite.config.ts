@@ -5,6 +5,12 @@ import {VitePWA} from "vite-plugin-pwa";
 // https://vite.dev/config/
 export default defineConfig({
     server: {
+        host: '0.0.0.0',
+        // VirtioFS/gRPC-FUSE bind mounts on macOS Docker don't reliably forward
+        // inotify events into the container, so file-watching needs polling.
+        watch: {
+            usePolling: true,
+        },
         proxy: {
             '/api/huggingface': {
                 target: 'https://router.huggingface.co',

@@ -33,6 +33,7 @@
     "coat": "Coat",
     "hoodie": "Hoodie",
     "pants": "Pants",
+    "joggers": "Joggers",
     "jeans": "Jeans",
     "shorts": "Shorts",
     "skirt": "Skirt",
@@ -99,6 +100,20 @@
     "sheetAdded": "added",
     "heartAddAria": "Add to lookbook",
     "heartRemoveAria": "Remove from lookbook",
+    "occasionLabel": "Occasion",
+    "occasion": {
+      "casual": "Casual",
+      "smart": "Smart",
+      "formal": "Formal",
+      "sport": "Sport"
+    },
+    "weather": {
+      "setManual": "Set weather",
+      "manualPrompt": "Temp °C",
+      "done": "Done",
+      "rainHint": "Rain about — we've added a layer.",
+      "unavailable": "Weather unavailable"
+    },
     "empty": {
       "title": "No outfit right now.",
       "subtitle": "All your clothes are in the basket — time to do laundry!",
