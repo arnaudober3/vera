@@ -117,25 +117,30 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Sur mobile, le cadre téléphone est plein écran : tout fond visible (interstice
-   transitoire en bas après un zoom, rubber-banding iOS) doit s'harmoniser avec le
-   dégradé pastel plutôt que d'être noir. Sur desktop, le #111 entourant le cadre
-   centré est conservé. */
-@media (max-width: 479px) {
-  html,
-  body {
-    background: var(--vera-bg-mint);
-  }
-}
-
 .vera-bg-app {
   background: var(--vera-bg-app);
+}
+
+/* Sur mobile, le cadre téléphone occupe tout l'écran. On peint le dégradé sur le
+   `body` (dont le fond est propagé à tout le canvas du viewport, overscroll inclus)
+   et on rend le cadre transparent. Ainsi, même si `100dvh` ne couvre pas exactement
+   la zone visible (bug iOS où `dvh` reste figé après clavier/zoom, ou au lancement),
+   aucune bande n'apparaît : c'est le même dégradé continu partout.
+   Sur desktop, le cadre reste opaque et le #111 du body l'entoure (inchangé). */
+@media (max-width: 479px) {
+  body {
+    background: var(--vera-bg-app);
+  }
+
+  .vera-bg-app {
+    background: transparent;
+  }
 }
 
 .vera-phone-frame {
   position: relative;
   width: 100%;
-  height: var(--app-height, 100dvh);
+  height: 100dvh;
   padding-top: env(safe-area-inset-top);
   margin: 0 auto;
   display: flex;
@@ -146,7 +151,7 @@ body {
 
 @media (min-width: 480px) {
   .vera-phone-frame {
-    max-width: calc(var(--app-height, 100dvh) * 9 / 19.5);
+    max-width: calc(100dvh * 9 / 19.5);
   }
 }
 
