@@ -1,8 +1,6 @@
 .vera-nav-dock {
   position: fixed;
-  /* Dock flottant à ~50px du bas (comme avant), tout en restant au-dessus du
-     home indicator sur les appareils à grande safe-area. */
-  bottom: max(50px, calc(env(safe-area-inset-bottom) + 16px));
+  bottom: 50px;
   left: 16px;
   right: 16px;
   max-width: 360px;
