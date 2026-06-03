@@ -21,6 +21,7 @@ export type ClothingItemSubCategory =
   | "coat"
   | "hoodie"
   | "pants"
+  | "joggers"
   | "jeans"
   | "shorts"
   | "skirt"
@@ -47,6 +48,7 @@ export const subCategoryToCategory: Record<
   coat: "outerwear",
   hoodie: "top",
   pants: "bottom",
+  joggers: "bottom",
   jeans: "bottom",
   shorts: "bottom",
   skirt: "bottom",

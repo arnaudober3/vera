@@ -9,7 +9,11 @@ import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
 import { useLookbook } from "../hooks/lookbook.ts";
+import { useOccasion } from "../hooks/occasion.ts";
+import { useWeather } from "../hooks/weather.ts";
 import type { ClothingItem } from "../models/clothing-item.ts";
+import { ALL_OCCASIONS, fitsOccasion, type Occasion } from "../models/occasion.ts";
+import type { Weather } from "../models/weather.ts";
 import {
   FaCheck,
   FaChevronRight,
@@ -21,6 +25,13 @@ import {
   FaTimes,
 } from "react-icons/fa";
 import { PiPantsFill, PiTShirtFill } from "react-icons/pi";
+import {
+  MdAcUnit,
+  MdCloud,
+  MdGrain,
+  MdThermostat,
+  MdWbSunny,
+} from "react-icons/md";
 import { useNavigate } from "react-router";
 import { isDarkColor } from "../utils/color.ts";
 import "../pages/today-page.css";
@@ -396,6 +407,7 @@ const TodayOutfit = (): React.JSX.Element => {
   const outfit = import.meta.env.VITE_ENABLE_DEBUG === "true" ? undefined : _outfit;
   const { recordOutfit } = useOutfitHistory();
   const { lookbook, recordWear } = useLookbook();
+  const { occasion } = useOccasion();
   const [pickerOpen, setPickerOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -449,13 +461,29 @@ const TodayOutfit = (): React.JSX.Element => {
     isItemClean(outfit.bottom.id);
 
   if (!hasVisibleOutfit) {
+    // Distinguish "nothing clean at all" from "nothing clean fits this
+    // occasion": when clean clothes exist but none suit the occasion, the
+    // hard occasion filter leaves no outfit, so guide the user accordingly.
+    const cleanTops = items.filter(
+      (i) => i.category === "top" && isItemClean(i.id),
+    );
+    const cleanBottoms = items.filter(
+      (i) => i.category === "bottom" && isItemClean(i.id),
+    );
+    const hasCleanDuo = cleanTops.length > 0 && cleanBottoms.length > 0;
+    const hasOccasionDuo =
+      cleanTops.some((t) => fitsOccasion(t, occasion)) &&
+      cleanBottoms.some((b) => fitsOccasion(b, occasion));
+    const occasionBlocked = hasCleanDuo && !hasOccasionDuo;
+    const emptyKey = occasionBlocked ? "today.emptyOccasion" : "today.empty";
+
     return (
       <>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "100px" }}>
           <EmptyMessageTemplate
-            title={t("today.empty.title")}
-            subtitle={t("today.empty.subtitle")}
-            buttonText={t("today.empty.button")}
+            title={t(`${emptyKey}.title`)}
+            subtitle={t(`${emptyKey}.subtitle`)}
+            buttonText={t(`${emptyKey}.button`)}
             onButtonClick={() => navigate("/closet")}
           />
         </div>
@@ -550,6 +578,153 @@ const TodayOutfit = (): React.JSX.Element => {
   );
 };
 
+const weatherGlyph = (w: Weather): React.ReactNode => {
+  if (w.isManual) return <MdThermostat size={14} aria-hidden />;
+  if (w.isPrecipitating) return <MdGrain size={14} aria-hidden />;
+  const c = w.weatherCode;
+  if (c >= 71 && c <= 77) return <MdAcUnit size={14} aria-hidden />; // snow
+  if (c >= 45) return <MdGrain size={14} aria-hidden />; // fog/rain/thunder
+  if (c >= 2) return <MdCloud size={14} aria-hidden />; // cloudy
+  return <MdWbSunny size={14} aria-hidden />; // clear
+};
+
+const OccasionChips = (): React.JSX.Element => {
+  const { t } = useTranslation();
+  const { occasion, setOccasion } = useOccasion();
+  const { generateOutfit } = useOutfit();
+
+  const onSelect = (next: Occasion): void => {
+    if (next === occasion) return;
+    setOccasion(next);
+    void generateOutfit();
+  };
+
+  return (
+    <div
+      className="today-occasions"
+      role="group"
+      aria-label={t("today.occasionLabel")}
+    >
+      {ALL_OCCASIONS.map((o) => (
+        <button
+          key={o}
+          type="button"
+          className={`today-occasion-chip ${o === occasion ? "active" : ""}`}
+          aria-pressed={o === occasion}
+          onClick={() => onSelect(o)}
+        >
+          {t(`today.occasion.${o}`)}
+        </button>
+      ))}
+    </div>
+  );
+};
+
+const WeatherBadge = (): React.JSX.Element => {
+  const { t } = useTranslation();
+  const { weather, setManualWeather } = useWeather();
+  const { generateOutfit } = useOutfit();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState("");
+
+  const submit = (): void => {
+    const n = parseFloat(value);
+    if (!Number.isNaN(n)) {
+      setManualWeather(n);
+      void generateOutfit();
+    }
+    setEditing(false);
+    setValue("");
+  };
+
+  if (editing) {
+    return (
+      <div className="today-weather-edit">
+        <input
+          type="number"
+          inputMode="numeric"
+          autoFocus
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") submit();
+            if (e.key === "Escape") setEditing(false);
+          }}
+          placeholder={t("today.weather.manualPrompt")}
+          aria-label={t("today.weather.manualPrompt")}
+          className="today-weather-input"
+        />
+        <button
+          type="button"
+          className="today-weather-done"
+          onClick={submit}
+        >
+          {t("today.weather.done")}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      className="today-weather-badge"
+      onClick={() => {
+        setValue(weather ? String(weather.temperatureC) : "");
+        setEditing(true);
+      }}
+      aria-label={
+        weather ? `${weather.temperatureC}°C` : t("today.weather.setManual")
+      }
+    >
+      {weather ? (
+        <>
+          {weatherGlyph(weather)}
+          <span>{weather.temperatureC}°</span>
+        </>
+      ) : (
+        <>
+          <MdThermostat size={14} aria-hidden />
+          <span>{t("today.weather.setManual")}</span>
+        </>
+      )}
+    </button>
+  );
+};
+
+const TodayContextBar = (): React.JSX.Element => {
+  const { t } = useTranslation();
+  const { weather, refreshWeather } = useWeather();
+  const { generateOutfit } = useOutfit();
+  // Only regenerate when a genuinely new reading arrives, so revisiting the
+  // Today page with a fresh cache doesn't reshuffle the current outfit.
+  const initialFetchedAt = useRef(weather?.fetchedAt);
+
+  useEffect(() => {
+    let cancelled = false;
+    void refreshWeather().then((w) => {
+      if (cancelled || !w) return;
+      if (w.fetchedAt !== initialFetchedAt.current) void generateOutfit();
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="today-context">
+      <div className="today-context-row">
+        <OccasionChips />
+        <WeatherBadge />
+      </div>
+      {weather?.isPrecipitating && (
+        <div className="today-weather-hint">{t("today.weather.rainHint")}</div>
+      )}
+    </div>
+  );
+};
+
 export const TodayPage = (): React.JSX.Element => {
   const { i18n } = useTranslation();
   const today = formatDate(new Date(), i18n.language || "en");
@@ -558,6 +733,7 @@ export const TodayPage = (): React.JSX.Element => {
     <div className="today-page">
       <div className="today-header">
         <h2 className="vera-page-title">{today}</h2>
+        <TodayContextBar />
       </div>
 
       <TodayOutfit />
