@@ -391,8 +391,7 @@ body {
   position: fixed;
   left: 16px;
   right: 16px;
-  /* Juste au-dessus du dock de navigation (dock flottant + hauteur du dock). */
-  bottom: max(116px, calc(env(safe-area-inset-bottom) + 82px));
+  bottom: 116px;
   max-width: 360px;
   margin: 0 auto;
   z-index: 150;
