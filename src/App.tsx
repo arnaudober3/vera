@@ -11,12 +11,15 @@ const RootRoute = () =>
   isOnboardingComplete() ? <TodayPage /> : <Navigate to="/welcome" replace />;
 
 /**
- * Synchronise --app-height sur la hauteur réelle de la fenêtre.
- * iOS Safari ne recalcule pas l'unité CSS `dvh` après un pinch-zoom/dézoom :
- * la hauteur reste figée à sa valeur d'avant zoom, laissant un liseré du fond
- * sous le cadre. Lire window.innerHeight en JS donne toujours la valeur fraîche.
- * Les événements visualViewport se déclenchent au zoom/dézoom (et au clavier),
- * ce que `window.resize` seul ne couvre pas sur iOS.
+ * Recale --app-height APRÈS un évènement de viewport (fermeture du clavier,
+ * zoom/dézoom). iOS Safari laisse alors `dvh` figé à sa valeur précédente,
+ * ce qui découvre un liseré du fond sous le cadre. window.innerHeight lu en JS
+ * donne la hauteur fraîche.
+ *
+ * On NE met PAS à jour au montage : le premier rendu reste géré par `100dvh`
+ * (repli de `var(--app-height, 100dvh)`), car window.innerHeight au tout premier
+ * paint iOS peut être trop petit (barre d'adresse) et créerait une bande au
+ * lancement.
  */
 function useAppHeight() {
   useEffect(() => {
@@ -26,7 +29,6 @@ function useAppHeight() {
         `${window.innerHeight}px`,
       );
     };
-    update();
     window.addEventListener("resize", update);
     const vv = window.visualViewport;
     vv?.addEventListener("resize", update);
