@@ -121,22 +121,30 @@ body {
   font-size: var(--vera-text-base);
   line-height: var(--vera-leading);
   background: transparent; /* laisse voir le dégradé de html */
+  overflow: hidden; /* aucun scroll de document : la hauteur reste celle de l'écran */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
 }
 
 .vera-phone-frame {
   position: relative;
   width: 100%;
   max-width: 480px; /* desktop : colonne centrée (responsive, sans maquette) */
-  height: 100dvh; /* hauteur définie : nécessaire au scroll interne des pages */
+  /* En PWA standalone (pas de barre d'adresse), 100% de la chaîne html/body/#root est
+     plus fiable que 100dvh : il colle exactement à l'écran, sans débordement ni
+     décalage iOS après clavier/zoom. */
+  height: 100%;
   padding-top: env(safe-area-inset-top);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   /* Pas de transform : les enfants position:fixed (nav, basket) s'ancrent au vrai
-     viewport, donc collés au bas réel de l'écran quel que soit le 100dvh. */
+     viewport, donc collés au bas réel de l'écran. */
 }
 
 /* Voile sombre derrière la status bar (PWA iOS) pour garder le texte
@@ -383,7 +391,8 @@ body {
   position: fixed;
   left: 16px;
   right: 16px;
-  bottom: 116px;
+  /* Juste au-dessus du dock de navigation (dock flottant + hauteur du dock). */
+  bottom: max(116px, calc(env(safe-area-inset-bottom) + 82px));
   max-width: 360px;
   margin: 0 auto;
   z-index: 150;
