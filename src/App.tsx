@@ -11,7 +11,7 @@ const RootRoute = () =>
 
 function App() {
   return (
-    <div className="vera-phone-frame">
+    <div className="vera-phone-frame vera-bg-app">
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<RootRoute />} />

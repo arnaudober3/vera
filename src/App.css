@@ -107,44 +107,36 @@ body {
   height: 100%;
 }
 
-/* Le fond de <html> est propagé par le navigateur à tout le canvas du viewport
-   (overscroll + safe-areas comprises). En peignant le dégradé ici, aucune bande de
-   couleur ne peut apparaître, quelle que soit la hauteur réelle du cadre. */
-html {
-  background: var(--vera-bg-app);
-  background-color: var(--vera-bg-mint); /* repli pour l'overscroll au-delà du box */
-}
-
 body {
   font-family: var(--vera-font-sans);
   color: var(--vera-fg-default);
   font-size: var(--vera-text-base);
   line-height: var(--vera-leading);
-  background: transparent; /* laisse voir le dégradé de html */
-  overflow: hidden; /* aucun scroll de document : la hauteur reste celle de l'écran */
+  background: #111;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#root {
-  height: 100%;
+.vera-bg-app {
+  background: var(--vera-bg-app);
 }
 
 .vera-phone-frame {
   position: relative;
   width: 100%;
-  max-width: 480px; /* desktop : colonne centrée (responsive, sans maquette) */
-  /* En PWA standalone (pas de barre d'adresse), 100% de la chaîne html/body/#root est
-     plus fiable que 100dvh : il colle exactement à l'écran, sans débordement ni
-     décalage iOS après clavier/zoom. */
-  height: 100%;
+  height: 100dvh;
   padding-top: env(safe-area-inset-top);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Pas de transform : les enfants position:fixed (nav, basket) s'ancrent au vrai
-     viewport, donc collés au bas réel de l'écran. */
+  transform: translate(0);
+}
+
+@media (min-width: 480px) {
+  .vera-phone-frame {
+    max-width: calc(100dvh * 9 / 19.5);
+  }
 }
 
 /* Voile sombre derrière la status bar (PWA iOS) pour garder le texte
