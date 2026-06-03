@@ -12,7 +12,7 @@ import { useLookbook } from "../hooks/lookbook.ts";
 import { useOccasion } from "../hooks/occasion.ts";
 import { useWeather } from "../hooks/weather.ts";
 import type { ClothingItem } from "../models/clothing-item.ts";
-import { ALL_OCCASIONS, type Occasion } from "../models/occasion.ts";
+import { ALL_OCCASIONS, fitsOccasion, type Occasion } from "../models/occasion.ts";
 import type { Weather } from "../models/weather.ts";
 import {
   FaCheck,
@@ -407,6 +407,7 @@ const TodayOutfit = (): React.JSX.Element => {
   const outfit = import.meta.env.VITE_ENABLE_DEBUG === "true" ? undefined : _outfit;
   const { recordOutfit } = useOutfitHistory();
   const { lookbook, recordWear } = useLookbook();
+  const { occasion } = useOccasion();
   const [pickerOpen, setPickerOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -460,13 +461,29 @@ const TodayOutfit = (): React.JSX.Element => {
     isItemClean(outfit.bottom.id);
 
   if (!hasVisibleOutfit) {
+    // Distinguish "nothing clean at all" from "nothing clean fits this
+    // occasion": when clean clothes exist but none suit the occasion, the
+    // hard occasion filter leaves no outfit, so guide the user accordingly.
+    const cleanTops = items.filter(
+      (i) => i.category === "top" && isItemClean(i.id),
+    );
+    const cleanBottoms = items.filter(
+      (i) => i.category === "bottom" && isItemClean(i.id),
+    );
+    const hasCleanDuo = cleanTops.length > 0 && cleanBottoms.length > 0;
+    const hasOccasionDuo =
+      cleanTops.some((t) => fitsOccasion(t, occasion)) &&
+      cleanBottoms.some((b) => fitsOccasion(b, occasion));
+    const occasionBlocked = hasCleanDuo && !hasOccasionDuo;
+    const emptyKey = occasionBlocked ? "today.emptyOccasion" : "today.empty";
+
     return (
       <>
         <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "100px" }}>
           <EmptyMessageTemplate
-            title={t("today.empty.title")}
-            subtitle={t("today.empty.subtitle")}
-            buttonText={t("today.empty.button")}
+            title={t(`${emptyKey}.title`)}
+            subtitle={t(`${emptyKey}.subtitle`)}
+            buttonText={t(`${emptyKey}.button`)}
             onButtonClick={() => navigate("/closet")}
           />
         </div>

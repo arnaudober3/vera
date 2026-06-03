@@ -118,6 +118,11 @@
       "title": "No outfit right now.",
       "subtitle": "All your clothes are in the basket — time to do laundry!",
       "button": "Go to closet"
+    },
+    "emptyOccasion": {
+      "title": "Nothing for this occasion.",
+      "subtitle": "No clean clothes fit this occasion — pick another occasion or do laundry.",
+      "button": "Go to closet"
     }
   },
   "closet": {
