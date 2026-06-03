@@ -7,12 +7,6 @@ export type Occasion = "casual" | "smart" | "formal" | "sport";
 
 export const ALL_OCCASIONS: Occasion[] = ["casual", "smart", "formal", "sport"];
 
-// Soft-preference multipliers folded into the outfit score, mirroring season
-// scoring. The 0.4 floor keeps occasion influential without hard-excluding an
-// item, so generation never gets stuck when the closet is sparse.
-export const IN_OCCASION_SCORE = 1.0;
-export const OUT_OF_OCCASION_SCORE = 0.4;
-
 // Occasions each subcategory is appropriate for. Mirrors subCategorySeasons:
 // any subcategory not listed here — and items without a subCategory — are
 // treated as all-occasion (neutral) via getItemOccasions below.
@@ -47,11 +41,9 @@ export const subCategoryOccasions: Partial<
 export const getItemOccasions = (item: ClothingItem): Occasion[] =>
   (item.subCategory && subCategoryOccasions[item.subCategory]) ?? ALL_OCCASIONS;
 
-// Soft multiplier: in-occasion => 1.0, out-of-occasion => 0.4.
-export const getOccasionScore = (
-  item: ClothingItem,
-  occasion: Occasion,
-): number =>
-  getItemOccasions(item).includes(occasion)
-    ? IN_OCCASION_SCORE
-    : OUT_OF_OCCASION_SCORE;
+// Hard filter: an item suits the occasion only if its subcategory lists it
+// (items without a subCategory are neutral => all occasions). Unlike a soft
+// multiplier, an off-occasion item is excluded outright, so a "formal" pick
+// never falls back to joggers just because the closet is sparse.
+export const fitsOccasion = (item: ClothingItem, occasion: Occasion): boolean =>
+  getItemOccasions(item).includes(occasion);

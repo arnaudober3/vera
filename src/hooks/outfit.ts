@@ -8,7 +8,7 @@ import {
 } from "../models/clothing-item.ts";
 import type { Color } from "../models/color.ts";
 import { getSeasonScore, type Season } from "../models/season.ts";
-import { getOccasionScore, type Occasion } from "../models/occasion.ts";
+import { fitsOccasion } from "../models/occasion.ts";
 import { getCurrentSeason } from "../services/season.ts";
 import {
   getCachedWeather,
@@ -100,7 +100,6 @@ export const useOutfit = () => {
     candidates: ClothingItem[],
     currentPartnerId: string | undefined,
     effectiveSeason: Season,
-    occasion: Occasion,
   ): ClothingItem => {
     const hasAlternative = candidates.some((c) => c.id !== currentPartnerId);
     let best: ClothingItem | null = null;
@@ -108,13 +107,13 @@ export const useOutfit = () => {
     for (const candidate of candidates) {
       if (hasAlternative && candidate.id === currentPartnerId) continue;
       const baseScore = scoreColors({ a: anchor.color, b: candidate.color }) ?? 0;
-      // Only the candidate's season/occasion is scored — never penalise the
-      // pinned anchor for being out of season or off the occasion.
+      // Candidates are already occasion-filtered by the caller; only the
+      // candidate's season is scored — never penalise the pinned anchor for
+      // being out of season.
       const adjustedScore =
         baseScore *
         getRecencyPenalty([anchor.id, candidate.id]) *
-        getSeasonScore(candidate, effectiveSeason) *
-        getOccasionScore(candidate, occasion);
+        getSeasonScore(candidate, effectiveSeason);
       if (adjustedScore > bestScore) {
         bestScore = adjustedScore;
         best = candidate;
@@ -129,7 +128,6 @@ export const useOutfit = () => {
     availableTops: ClothingItem[],
     availableBottoms: ClothingItem[],
     effectiveSeason: Season,
-    occasion: Occasion,
   ): { top: ClothingItem; bottom: ClothingItem } | null => {
     const maxAttempts = availableTops.length + availableBottoms.length;
     let bestDuo: { top: ClothingItem; bottom: ClothingItem } | null = null;
@@ -166,14 +164,11 @@ export const useOutfit = () => {
       const seasonScore =
         getSeasonScore(candidate.top, effectiveSeason) *
         getSeasonScore(candidate.bottom, effectiveSeason);
-      const occasionScore =
-        getOccasionScore(candidate.top, occasion) *
-        getOccasionScore(candidate.bottom, occasion);
+      // Both pools are already occasion-filtered, so occasion no longer scores.
       const adjustedScore =
         (pairScore ?? 0) *
         getRecencyPenalty([candidate.top.id, candidate.bottom.id]) *
-        seasonScore *
-        occasionScore;
+        seasonScore;
 
       if (adjustedScore > highestScore) {
         highestScore = adjustedScore;
@@ -185,16 +180,24 @@ export const useOutfit = () => {
   };
 
   const generateOutfit = async (pinnedId?: string): Promise<Outfit | null> => {
+    // Clearing the current outfit when nothing can be generated keeps the UI in
+    // sync: e.g. switching to an occasion the closet can't satisfy must drop the
+    // stale outfit so the empty state shows, instead of leaving it on screen.
+    const clearAndReturn = async (): Promise<null> => {
+      await emitChange(null);
+      return null;
+    };
+
     const availableItems = items.filter((i) => i.isClean || !isWashable(i.category));
     if (!availableItems || availableItems.length === 0) {
-      return null;
+      return clearAndReturn();
     }
 
     const availableTops = availableItems.filter((i) => i.category === "top");
     const availableBottoms = availableItems.filter((i) => i.category === "bottom");
 
     if (availableTops.length === 0 || availableBottoms.length === 0) {
-      return null;
+      return clearAndReturn();
     }
 
     // Resolve the effective pin: an explicit id wins, otherwise reuse the persisted
@@ -212,39 +215,58 @@ export const useOutfit = () => {
       : getCurrentSeason();
     const occasion = getSelectedOccasion();
 
+    // Hard occasion filter: only clothes that suit the selected occasion are
+    // eligible. A pinned anchor is kept as-is (explicit user choice), but its
+    // partner — and any unpinned duo — must fit the occasion.
+    const occasionTops = availableTops.filter((t) => fitsOccasion(t, occasion));
+    const occasionBottoms = availableBottoms.filter((b) =>
+      fitsOccasion(b, occasion),
+    );
+
     let duo: { top: ClothingItem; bottom: ClothingItem } | null;
     if (pinned?.category === "top") {
+      // No occasion-appropriate bottom to pair with the pinned top.
+      if (occasionBottoms.length === 0) return clearAndReturn();
       duo = {
         top: pinned,
         bottom: pickPartner(
           pinned,
-          availableBottoms,
+          occasionBottoms,
           outfit?.bottom?.id,
           effectiveSeason,
-          occasion,
         ),
       };
     } else if (pinned?.category === "bottom") {
+      // No occasion-appropriate top to pair with the pinned bottom.
+      if (occasionTops.length === 0) return clearAndReturn();
       duo = {
         top: pickPartner(
           pinned,
-          availableTops,
+          occasionTops,
           outfit?.top?.id,
           effectiveSeason,
-          occasion,
         ),
         bottom: pinned,
       };
     } else {
-      duo = pickBestDuo(availableTops, availableBottoms, effectiveSeason, occasion);
+      // No pin (or a pinned add-on): need a full occasion-appropriate duo.
+      if (occasionTops.length === 0 || occasionBottoms.length === 0)
+        return clearAndReturn();
+      duo = pickBestDuo(occasionTops, occasionBottoms, effectiveSeason);
     }
 
-    // Fall back to the current top/bottom if no new duo could be formed.
-    if (!duo && state) {
+    // Fall back to the current top/bottom only if they still fit the occasion,
+    // so regeneration never resurrects an off-occasion outfit.
+    if (
+      !duo &&
+      state &&
+      fitsOccasion(state.top, occasion) &&
+      fitsOccasion(state.bottom, occasion)
+    ) {
       duo = { top: state.top, bottom: state.bottom };
     }
     if (!duo) {
-      return null;
+      return clearAndReturn();
     }
 
     const finalOutfit: Outfit = { top: duo.top, bottom: duo.bottom };
@@ -260,8 +282,10 @@ export const useOutfit = () => {
     // On a cold or rainy day, suggest a layer: attach the best colour-matching
     // outerwear if the user hasn't already pinned/added one.
     if (weather && needsOuterwear(weather) && !finalOutfit.outerwear) {
+      // Keep the suggested layer occasion-appropriate too (no sport jacket on
+      // a formal day); skip the layer if nothing suitable is available.
       const availableOuterwear = availableItems.filter(
-        (i) => i.category === "outerwear",
+        (i) => i.category === "outerwear" && fitsOccasion(i, occasion),
       );
       if (availableOuterwear.length > 0) {
         finalOutfit.outerwear = findBestMatch({
@@ -326,8 +350,15 @@ export const useOutfit = () => {
 
   const canGenerateOutfit = (): boolean => {
     const availableItems = items.filter((i) => i.isClean || !isWashable(i.category));
-    const availableTops = availableItems.filter((i) => i.category === "top");
-    const availableBottoms = availableItems.filter((i) => i.category === "bottom");
+    // Mirror generateOutfit's hard occasion filter so the regenerate control
+    // reflects what can actually be produced for the selected occasion.
+    const occasion = getSelectedOccasion();
+    const availableTops = availableItems.filter(
+      (i) => i.category === "top" && fitsOccasion(i, occasion),
+    );
+    const availableBottoms = availableItems.filter(
+      (i) => i.category === "bottom" && fitsOccasion(i, occasion),
+    );
 
     if (availableTops.length === 0 || availableBottoms.length === 0) {
       return false;
