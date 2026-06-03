@@ -107,52 +107,36 @@ body {
   height: 100%;
 }
 
+/* Le fond de <html> est propagé par le navigateur à tout le canvas du viewport
+   (overscroll + safe-areas comprises). En peignant le dégradé ici, aucune bande de
+   couleur ne peut apparaître, quelle que soit la hauteur réelle du cadre. */
+html {
+  background: var(--vera-bg-app);
+  background-color: var(--vera-bg-mint); /* repli pour l'overscroll au-delà du box */
+}
+
 body {
   font-family: var(--vera-font-sans);
   color: var(--vera-fg-default);
   font-size: var(--vera-text-base);
   line-height: var(--vera-leading);
-  background: #111;
+  background: transparent; /* laisse voir le dégradé de html */
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-.vera-bg-app {
-  background: var(--vera-bg-app);
-}
-
-/* Sur mobile, le cadre téléphone occupe tout l'écran. On peint le dégradé sur le
-   `body` (dont le fond est propagé à tout le canvas du viewport, overscroll inclus)
-   et on rend le cadre transparent. Ainsi, même si `100dvh` ne couvre pas exactement
-   la zone visible (bug iOS où `dvh` reste figé après clavier/zoom, ou au lancement),
-   aucune bande n'apparaît : c'est le même dégradé continu partout.
-   Sur desktop, le cadre reste opaque et le #111 du body l'entoure (inchangé). */
-@media (max-width: 479px) {
-  body {
-    background: var(--vera-bg-app);
-  }
-
-  .vera-bg-app {
-    background: transparent;
-  }
 }
 
 .vera-phone-frame {
   position: relative;
   width: 100%;
-  height: 100dvh;
+  max-width: 480px; /* desktop : colonne centrée (responsive, sans maquette) */
+  height: 100dvh; /* hauteur définie : nécessaire au scroll interne des pages */
   padding-top: env(safe-area-inset-top);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  transform: translate(0);
-}
-
-@media (min-width: 480px) {
-  .vera-phone-frame {
-    max-width: calc(100dvh * 9 / 19.5);
-  }
+  /* Pas de transform : les enfants position:fixed (nav, basket) s'ancrent au vrai
+     viewport, donc collés au bas réel de l'écran quel que soit le 100dvh. */
 }
 
 /* Voile sombre derrière la status bar (PWA iOS) pour garder le texte
