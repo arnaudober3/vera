@@ -89,7 +89,7 @@
   background: var(--vera-surface);
   color: var(--vera-fg-strong);
   font-family: var(--vera-font-sans);
-  font-size: 16px; /* >= 16px : empêche le zoom auto d'iOS Safari au focus */
+  font-size: 13px;
 }
 
 .today-weather-done {
