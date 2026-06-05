@@ -392,15 +392,12 @@ body {
 }
 
 .vera-basket-strip {
-  /* Ancré au .vera-phone-frame comme le dock (cohérence + pas de saut au
-     démarrage). Position inchangée : toujours bottom: 116px. */
-  position: absolute;
-  left: 16px;
-  right: 16px;
-  bottom: 116px;
+  /* En flux dans le footer (.vera-footer), au-dessus du dock. Apparition/
+     disparition (panier vide) redimensionne la zone scrollable au lieu de
+     recouvrir le contenu — pas de saut, pas de positionnement absolu. */
+  width: 100%;
   max-width: 360px;
   margin: 0 auto;
-  z-index: 150;
   background: var(--vera-surface);
   border: 1px solid var(--vera-surface-border);
   border-radius: var(--vera-radius-lg);

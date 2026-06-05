@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
 import { BasketStrip } from "../components/basket-strip.tsx";
+import { AppFooter } from "../components/app-footer.tsx";
 import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
 import { useLookbook } from "../hooks/lookbook.ts";
@@ -377,11 +378,11 @@ export const LookbookPage = (): React.JSX.Element => {
         </div>
       </div>
 
-      <div className="shrink-0 h-20" />
+      <AppFooter>
+        <BasketStrip />
 
-      <BasketStrip />
-
-      <NavigationBar activePage="lookbook" />
+        <NavigationBar activePage="lookbook" />
+      </AppFooter>
     </div>
   );
 };

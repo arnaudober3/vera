@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
 import { BasketStrip } from "../components/basket-strip.tsx";
+import { AppFooter } from "../components/app-footer.tsx";
 import { useOutfit } from "../hooks/outfit.ts";
 import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
@@ -479,7 +480,7 @@ const TodayOutfit = (): React.JSX.Element => {
 
     return (
       <>
-        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", paddingBottom: "100px" }}>
+        <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
           <EmptyMessageTemplate
             title={t(`${emptyKey}.title`)}
             subtitle={t(`${emptyKey}.subtitle`)}
@@ -487,8 +488,10 @@ const TodayOutfit = (): React.JSX.Element => {
             onButtonClick={() => navigate("/closet")}
           />
         </div>
-        <BasketStrip />
-        <NavigationBar activePage="today" />
+        <AppFooter>
+          <BasketStrip />
+          <NavigationBar activePage="today" />
+        </AppFooter>
       </>
     );
   }
@@ -543,25 +546,28 @@ const TodayOutfit = (): React.JSX.Element => {
             <SwipeToWear onConfirm={() => void handleConfirmWorn()} />
           </div>
         </div>
-        <div style={{ height: 120 }} />
+        {/* Clearance pour le fondu (mask) en bas de la zone scrollable, afin
+            que le swipe-to-wear ne soit pas estompé. */}
+        <div style={{ height: 48 }} />
       </div>
 
-      <BasketStrip />
-
-      <NavigationBar
-        activePage="today"
-        action={
-          <button
-            type="button"
-            onClick={() => void onRegenerate()}
-            aria-label={t("today.regenerateAria")}
-            disabled={!canGenerateOutfit()}
-            className="vera-nav-fab"
-          >
-            <FaSyncAlt size={18} />
-          </button>
-        }
-      />
+      <AppFooter>
+        <BasketStrip />
+        <NavigationBar
+          activePage="today"
+          action={
+            <button
+              type="button"
+              onClick={() => void onRegenerate()}
+              aria-label={t("today.regenerateAria")}
+              disabled={!canGenerateOutfit()}
+              className="vera-nav-fab"
+            >
+              <FaSyncAlt size={18} />
+            </button>
+          }
+        />
+      </AppFooter>
 
       <AccessorySheet
         open={pickerOpen}

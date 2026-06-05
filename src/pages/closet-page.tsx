@@ -5,6 +5,7 @@ import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
 import { BasketImage, BasketStrip } from "../components/basket-strip.tsx";
+import { AppFooter } from "../components/app-footer.tsx";
 import {
   ALL_CATEGORIES,
   isWashable,
@@ -340,7 +341,7 @@ export const ClosetPage = (): React.JSX.Element => {
         {viewingBasket && <BasketHero count={dirtyCount} />}
 
         <div
-          className={`w-full mx-auto max-w-4xl px-4 ${showEmptyState ? "flex-1 flex flex-col justify-center" : "pb-56"}`}
+          className={`w-full mx-auto max-w-4xl px-4 ${showEmptyState ? "flex-1 flex flex-col justify-center" : "pb-4"}`}
         >
           <div
             className={`rounded-2xl ${showEmptyState ? "flex-1 flex flex-col justify-center" : ""}`}
@@ -377,26 +378,26 @@ export const ClosetPage = (): React.JSX.Element => {
         </div>
       </div>
 
-      <div className="shrink-0 h-20" />
+      <AppFooter>
+        <BasketStrip
+          dirtyCount={dirtyCount}
+          viewingBasket={viewingBasket}
+          onTap={toggleBasketView}
+          onWash={() => void onWash()}
+        />
 
-      <BasketStrip
-        dirtyCount={dirtyCount}
-        viewingBasket={viewingBasket}
-        onTap={toggleBasketView}
-        onWash={() => void onWash()}
-      />
-
-      <NavigationBar
-        activePage="closet"
-        action={
-          items.length > 0 ? (
-            <AddItemButton
-              onClick={() => setShowUploadModal(true)}
-              disabled={isUploadLimitReached()}
-            />
-          ) : undefined
-        }
-      />
+        <NavigationBar
+          activePage="closet"
+          action={
+            items.length > 0 ? (
+              <AddItemButton
+                onClick={() => setShowUploadModal(true)}
+                disabled={isUploadLimitReached()}
+              />
+            ) : undefined
+          }
+        />
+      </AppFooter>
 
       {showUploadModal && (
         <UploadClothingItemModal
