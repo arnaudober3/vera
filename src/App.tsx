@@ -11,15 +11,17 @@ const RootRoute = () =>
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<RootRoute />} />
-        <Route path="/welcome" element={<WelcomePage />} />
-        <Route path="/closet" element={<ClosetPage />} />
-        <Route path="/closet/basket" element={<ClosetPage />} />
-        <Route path="/lookbook" element={<LookbookPage />} />
-      </Routes>
-    </BrowserRouter>
+    <div className="vera-phone-frame vera-bg-app">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<RootRoute />} />
+          <Route path="/welcome" element={<WelcomePage />} />
+          <Route path="/closet" element={<ClosetPage />} />
+          <Route path="/closet/basket" element={<ClosetPage />} />
+          <Route path="/lookbook" element={<LookbookPage />} />
+        </Routes>
+      </BrowserRouter>
+    </div>
   );
 }
 
