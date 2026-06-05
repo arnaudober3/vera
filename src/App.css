@@ -112,12 +112,21 @@ body {
   color: var(--vera-fg-default);
   font-size: var(--vera-text-base);
   line-height: var(--vera-leading);
-  /* Sur mobile, le dégradé porte aussi les safe-areas (autour du phone-frame),
-     pour éviter une bande sombre en haut/bas en PWA standalone iOS.
-     Sur desktop, on repasse en fond sombre (voir media query plus bas). */
-  background: var(--vera-bg-app);
+  background: #111;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Sur mobile, le cadre téléphone est plein écran : tout fond visible (safe-areas
+   en PWA standalone, interstice transitoire au démarrage / après zoom, rubber-
+   banding iOS) prend un mint uni plutôt que le noir #111. Couleur unie = peinte
+   instantanément, donc aucun flash au démarrage (contrairement au dégradé).
+   Sur desktop, le #111 entourant le cadre centré est conservé. */
+@media (max-width: 479px) {
+  html,
+  body {
+    background: var(--vera-bg-mint);
+  }
 }
 
 .vera-bg-app {
@@ -139,10 +148,6 @@ body {
 @media (min-width: 480px) {
   .vera-phone-frame {
     max-width: calc(100dvh * 9 / 19.5);
-  }
-  /* Sur grand écran, fond sombre autour de la maquette téléphone. */
-  body {
-    background: #111;
   }
 }
 
