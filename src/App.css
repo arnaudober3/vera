@@ -392,7 +392,9 @@ body {
 }
 
 .vera-basket-strip {
-  position: fixed;
+  /* Ancré au .vera-phone-frame comme le dock (cohérence + pas de saut au
+     démarrage). Position inchangée : toujours bottom: 116px. */
+  position: absolute;
   left: 16px;
   right: 16px;
   bottom: 116px;
