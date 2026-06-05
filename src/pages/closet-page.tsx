@@ -331,7 +331,7 @@ export const ClosetPage = (): React.JSX.Element => {
       )}
 
       <div
-        className="flex-1 min-h-0 overflow-y-auto flex flex-col relative"
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain flex flex-col relative"
         style={{
           maskImage: "linear-gradient(to bottom, transparent, black 1.5rem, black calc(100% - 3rem), transparent)",
           WebkitMaskImage: "linear-gradient(to bottom, transparent, black 1.5rem, black calc(100% - 3rem), transparent)",

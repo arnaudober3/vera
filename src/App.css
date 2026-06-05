@@ -105,6 +105,16 @@ html,
 body {
   margin: 0;
   height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Le dégradé est posé sur <html> : Safari échantillonne le fond de la racine
+   pour colorer les zones de chrome (status bar, barre d'outils) et, en
+   standalone PWA, <html> couvre la safe-area du bas — sans quoi ces bandes
+   restent blanches (fond par défaut / background_color du manifest). */
+html {
+  background: var(--vera-bg-app);
 }
 
 body {
@@ -112,9 +122,23 @@ body {
   color: var(--vera-fg-default);
   font-size: var(--vera-text-base);
   line-height: var(--vera-leading);
-  background: var(--vera-bg-app);
+  background: transparent;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Calque de fond plein écran. En standalone PWA, ni body { height: 100% } ni
+   html ne peignent la safe-area du bas → le background_color blanc du manifest
+   transparaît. Un élément position: fixed est calé sur le visual viewport, qui
+   avec viewport-fit=cover couvre tout l'écran (safe-areas incluses). Placé
+   derrière tout le contenu (z-index: -1), un seul calque de dégradé continu. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: var(--vera-bg-app);
+  z-index: -1;
+  pointer-events: none;
 }
 
 /* Le conteneur racine de l'app. Colonne flex à hauteur d'écran : les pages s'y
@@ -124,7 +148,7 @@ body {
   position: relative;
   width: 100%;
   max-width: 480px;
-  height: 100dvh;
+  height: 100%;
   padding-top: env(safe-area-inset-top);
   margin: 0 auto;
   display: flex;

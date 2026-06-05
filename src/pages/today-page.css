@@ -115,6 +115,8 @@
   flex: 1;
   padding: 0 16px;
   overflow: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   user-select: none;
   -webkit-user-select: none;
   -webkit-mask-image: linear-gradient(
