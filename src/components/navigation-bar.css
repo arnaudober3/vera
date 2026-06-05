@@ -1,5 +1,8 @@
 .vera-nav-dock {
-  position: fixed;
+  /* Ancré au .vera-phone-frame (position: relative) plutôt qu'au viewport :
+     le frame ne scrolle pas, donc le rendu est identique en usage, mais le dock
+     ne saute plus au démarrage (où viewport et frame ne coïncident pas encore). */
+  position: absolute;
   bottom: 50px;
   left: 16px;
   right: 16px;
