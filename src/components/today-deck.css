@@ -1,0 +1,329 @@
+/* ============================================================
+   Today — deck edition. Each outfit is a swipeable card; the
+   collage is a flat overlapping tile composition.
+   ============================================================ */
+
+/* Deck region: holds the stacked cards, the swipe-hint chevrons and the
+   centered hint line. Equal breathing room above (after the filter chips) and
+   below (before the nav). */
+.deck-region {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 20px 12px;
+}
+
+.deck-region-empty {
+  justify-content: center;
+}
+
+/* ── Card stack ── */
+/* The scale box is the laid-out size; the stack inside keeps its fixed design
+   size and is scaled to fill it (see Deck component). */
+.deck-scale-box {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.deck-stack {
+  position: relative;
+}
+
+.deck-front,
+.deck-peek {
+  position: absolute;
+  inset: 0;
+}
+
+.deck-peek {
+  pointer-events: none;
+  transition:
+    transform 0.34s var(--vera-ease),
+    opacity 0.34s var(--vera-ease);
+}
+
+.deck-front {
+  z-index: 10;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  animation: veraCardIn 0.34s var(--vera-ease) both;
+}
+
+/* New front card rises into place when the previous look is swiped away.
+   Animates translate/scale only (never opacity) to avoid peek bleed-through. */
+@keyframes veraCardIn {
+  from {
+    transform: translateY(16px) scale(0.94);
+  }
+  to {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deck-front {
+    animation: none;
+  }
+}
+
+/* ── Card face ── */
+.deck-card {
+  position: absolute;
+  inset: 0;
+  background: var(--vera-surface);
+  border: 1px solid var(--vera-surface-border);
+  border-radius: 22px;
+  box-shadow: var(--vera-shadow-card);
+  padding: 14px 14px 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color 0.2s var(--vera-ease);
+}
+
+.deck-card.worn {
+  border: 1.5px solid var(--vera-primary);
+}
+
+/* Top chrome — tall enough that the heart always clears the items below. */
+.deck-card-chrome {
+  position: relative;
+  height: 46px;
+  flex-shrink: 0;
+}
+
+.deck-worn-badge {
+  position: absolute;
+  left: 0;
+  top: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--vera-primary);
+  color: #fff;
+  border-radius: 9999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.3);
+}
+
+.deck-heart {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 9999px;
+  background: var(--vera-gray-50);
+  border: 1px solid var(--vera-surface-border);
+  color: var(--vera-fg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background var(--vera-duration) var(--vera-ease),
+    color var(--vera-duration) var(--vera-ease),
+    border-color var(--vera-duration) var(--vera-ease);
+}
+
+.deck-heart.active {
+  background: var(--vera-primary);
+  border-color: transparent;
+  color: #fff;
+}
+
+/* Single "add accessories" affordance, top-left of the card chrome. Solid,
+   fully opaque chip so it never reads as a transparent placeholder. */
+.deck-add-btn {
+  position: absolute;
+  left: 0;
+  top: 3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 13px;
+  border-radius: 9999px;
+  border: 1px solid var(--vera-surface-border);
+  background: var(--vera-gray-100);
+  color: var(--vera-fg-default);
+  font-family: var(--vera-font-sans);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--vera-duration) var(--vera-ease),
+    color var(--vera-duration) var(--vera-ease);
+}
+
+.deck-add-btn:hover {
+  background: var(--vera-gray-200);
+}
+
+/* ── Collage well ── */
+.deck-well-wrap {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+}
+
+.deck-well {
+  position: relative;
+}
+
+.deck-tile {
+  position: absolute;
+  border-radius: 16px;
+  /* flat white outline separates overlapping pieces — no blur, no depth */
+  box-shadow: 0 0 0 4px var(--vera-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+
+.deck-tile-head {
+  width: 100%;
+  text-align: center;
+}
+
+.deck-tile-name {
+  font-weight: 700;
+  line-height: 1.12;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+.deck-tile-label {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  margin-top: 2px;
+}
+
+.deck-tile-img {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  width: 100%;
+}
+
+.deck-tile-img img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.deck-tile-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 2;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  border: 1px solid var(--vera-surface-border);
+  background: var(--vera-surface);
+  color: var(--vera-fg-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.deck-extra-badge {
+  position: absolute;
+  left: 2px;
+  top: 0;
+  background: var(--vera-fg-default);
+  color: #fff;
+  border-radius: 9999px;
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--vera-surface);
+}
+
+/* ── Swipe hint chevrons ── */
+.deck-chevron {
+  position: absolute;
+  top: 42%;
+  color: var(--vera-fg-subtle);
+  font-size: 18px;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.deck-chevron.left {
+  left: 6px;
+}
+
+.deck-chevron.right {
+  right: 6px;
+}
+
+/* Reserve the basket-strip's footprint even when it's empty, so the deck region
+   keeps a constant height — the deck sits in the same spot whether or not there's
+   laundry, instead of jumping when worn items fill the basket. Matches the
+   basket-strip's min-height (App.css .vera-basket-strip). */
+.deck-basket-slot {
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* ── Hint / status line ── */
+.deck-hint {
+  flex-shrink: 0;
+  height: 22px;
+  margin-top: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13.5px;
+  text-align: center;
+  color: var(--vera-fg-muted);
+  font-weight: 500;
+  transition: color 0.2s var(--vera-ease);
+}
+
+.deck-hint.worn {
+  color: var(--vera-primary);
+  font-weight: 600;
+}
+
+.deck-hint b {
+  color: var(--vera-fg-default);
+  font-weight: 600;
+}
+
+.deck-hint-sub {
+  color: var(--vera-fg-subtle);
+  font-weight: 500;
+}
+
+.deck-hint-dot {
+  color: var(--vera-gray-300);
+}
