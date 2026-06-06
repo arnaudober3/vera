@@ -46,7 +46,7 @@ export function useOutfitHistory() {
     outerwearId?: string,
     shoesId?: string,
     accessoriesIds?: string[],
-  ): Promise<void> => {
+  ): Promise<string> => {
     const sessionId = getSessionId();
     const entryId = `${sessionId}_${Date.now()}`;
 
@@ -63,6 +63,16 @@ export function useOutfitHistory() {
 
     const updated = [newEntry, ...state].slice(0, HISTORY_LIMIT);
     emitChange(updated);
+    return entryId;
+  };
+
+  // Remove a single history entry by id — used to undo a wear that was committed
+  // by mistake (the deck's tap-to-wear, then tap-to-undo).
+  const removeOutfitRecord = async (id: string): Promise<void> => {
+    const newState = state.filter((h) => h.id !== id);
+    if (newState.length !== state.length) {
+      emitChange(newState);
+    }
   };
 
   const getRecencyPenalty = (itemIds: string[]): number => {
@@ -118,6 +128,7 @@ export function useOutfitHistory() {
   return {
     history,
     recordOutfit,
+    removeOutfitRecord,
     getRecencyPenalty,
     clearHistory,
     removeHistoryEntriesWithItem,

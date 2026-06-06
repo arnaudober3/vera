@@ -97,6 +97,20 @@ export function useCloset() {
 
     return { ...item, isClean: false };
   };
+  // Inverse of markWorn: returns a single item to the clean pool. Used to undo a
+  // "wear" that was committed by mistake. No-op for non-washable items (which are
+  // always clean), mirroring markWorn's guard.
+  const markClean = async (item: ClothingItem): Promise<ClothingItem> => {
+    if (!isWashable(item.category)) {
+      return item;
+    }
+
+    emitChange(
+      state.map((i) => (item.id === i.id ? { ...i, isClean: true } : i)),
+    );
+
+    return { ...item, isClean: true };
+  };
   const isItemClean = (id: string): boolean => {
     const item = state.find((i) => i.id === id);
     if (!item) return false;
@@ -121,6 +135,7 @@ export function useCloset() {
     removeClothingItem,
     markLaundryDone,
     markWorn,
+    markClean,
     isItemClean,
     areAllItemsClean,
     isUploadLimitReached,

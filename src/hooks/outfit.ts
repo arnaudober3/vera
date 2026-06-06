@@ -8,7 +8,7 @@ import {
 } from "../models/clothing-item.ts";
 import type { Color } from "../models/color.ts";
 import { getSeasonScore, type Season } from "../models/season.ts";
-import { fitsOccasion } from "../models/occasion.ts";
+import { fitsOccasion, type Occasion } from "../models/occasion.ts";
 import { getCurrentSeason } from "../services/season.ts";
 import {
   getCachedWeather,
@@ -346,6 +346,82 @@ export const useOutfit = () => {
     await emitChange(next);
   };
 
+  // Build an ordered list of distinct candidate outfits for the deck (Today page).
+  // Reuses the same color × season × recency scoring as generateOutfit, but is
+  // deterministic and exhaustive (closets are capped at ~10 items, so the
+  // top × bottom product is tiny). The deck is local to the page: this never
+  // touches the singleton state nor calls emitChange.
+  const buildDeck = (filter: Occasion | "all", deckSize = 10): Outfit[] => {
+    const availableItems = items.filter(
+      (i) => i.isClean || !isWashable(i.category),
+    );
+
+    const matchesFilter = (i: ClothingItem): boolean =>
+      filter === "all" || fitsOccasion(i, filter);
+
+    const tops = availableItems.filter(
+      (i) => i.category === "top" && matchesFilter(i),
+    );
+    const bottoms = availableItems.filter(
+      (i) => i.category === "bottom" && matchesFilter(i),
+    );
+    if (tops.length === 0 || bottoms.length === 0) return [];
+
+    const weather = getCachedWeather();
+    const effectiveSeason = weather
+      ? temperatureToSeason(weather.temperatureC)
+      : getCurrentSeason();
+
+    // Score every distinct top/bottom duo, then rank by score descending.
+    const scored = [] as {
+      top: ClothingItem;
+      bottom: ClothingItem;
+      score: number;
+    }[];
+    for (const top of tops) {
+      for (const bottom of bottoms) {
+        const score =
+          (scoreColors({ a: top.color, b: bottom.color }) ?? 0) *
+          getRecencyPenalty([top.id, bottom.id]) *
+          getSeasonScore(top, effectiveSeason) *
+          getSeasonScore(bottom, effectiveSeason);
+        scored.push({ top, bottom, score });
+      }
+    }
+    scored.sort((a, b) => b.score - a.score);
+
+    // Greedy spread: avoid the same top anchoring two consecutive cards, so the
+    // deck feels varied. Skipped duos are appended at the end to fill the deck.
+    const ordered: typeof scored = [];
+    const deferred: typeof scored = [];
+    for (const duo of scored) {
+      const prev = ordered[ordered.length - 1];
+      if (prev && prev.top.id === duo.top.id) deferred.push(duo);
+      else ordered.push(duo);
+    }
+    ordered.push(...deferred);
+
+    // Outerwear suggestion mirrors generateOutfit: on a cold/rainy day attach the
+    // best colour-matching, occasion-appropriate layer to each card.
+    const availableOuterwear =
+      weather && needsOuterwear(weather)
+        ? availableItems.filter(
+            (i) => i.category === "outerwear" && matchesFilter(i),
+          )
+        : [];
+
+    return ordered.slice(0, deckSize).map(({ top, bottom }) => {
+      const out: Outfit = { top, bottom };
+      if (availableOuterwear.length > 0) {
+        out.outerwear = findBestMatch({
+          candidates: availableOuterwear,
+          anchor: top,
+        });
+      }
+      return out;
+    });
+  };
+
   const clearOutfit = async (): Promise<void> => await emitChange(null);
 
   const canGenerateOutfit = (): boolean => {
@@ -398,6 +474,7 @@ export const useOutfit = () => {
   return {
     outfit,
     generateOutfit,
+    buildDeck,
     clearOutfit,
     canGenerateOutfit,
     addItemToOutfit,
