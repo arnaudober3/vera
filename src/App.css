@@ -117,20 +117,57 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Sur mobile, le cadre téléphone est plein écran : tout fond visible (safe-areas
+   en PWA standalone, interstice transitoire au démarrage / après zoom, rubber-
+   banding iOS) prend un mint uni plutôt que le noir #111. Couleur unie = peinte
+   instantanément, donc aucun flash au démarrage (contrairement au dégradé).
+   Sur desktop, le #111 entourant le cadre centré est conservé. */
+@media (max-width: 479px) {
+  html,
+  body {
+    background: var(--vera-bg-mint);
+  }
+}
+
 .vera-bg-app {
   background: var(--vera-bg-app);
 }
 
 .vera-phone-frame {
   position: relative;
-  width: 100vw;
+  width: 100%;
   height: 100dvh;
-  max-width: calc(100dvh * 9 / 19.5);
+  padding-top: env(safe-area-inset-top);
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   overflow: hidden;
   transform: translate(0);
+}
+
+@media (min-width: 480px) {
+  .vera-phone-frame {
+    max-width: calc(100dvh * 9 / 19.5);
+  }
+}
+
+/* Voile sombre derrière la status bar (PWA iOS) pour garder le texte
+   blanc lisible au-dessus du dégradé clair. Limité à la safe-area du haut,
+   donc invisible hors mode standalone (inset = 0). */
+.vera-phone-frame::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: env(safe-area-inset-top);
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.32),
+    rgba(0, 0, 0, 0)
+  );
+  pointer-events: none;
+  z-index: 10;
 }
 
 .vera-page-title {
@@ -355,13 +392,12 @@ body {
 }
 
 .vera-basket-strip {
-  position: fixed;
-  left: 16px;
-  right: 16px;
-  bottom: 116px;
+  /* En flux dans le footer (.vera-footer), au-dessus du dock. Apparition/
+     disparition (panier vide) redimensionne la zone scrollable au lieu de
+     recouvrir le contenu — pas de saut, pas de positionnement absolu. */
+  width: 100%;
   max-width: 360px;
   margin: 0 auto;
-  z-index: 150;
   background: var(--vera-surface);
   border: 1px solid var(--vera-surface-border);
   border-radius: var(--vera-radius-lg);

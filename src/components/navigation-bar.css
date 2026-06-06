@@ -1,14 +1,16 @@
 .vera-nav-dock {
-  position: fixed;
-  bottom: 50px;
-  left: 16px;
-  right: 16px;
+  /* En flux dans le footer (.vera-footer) : la zone scrollable au-dessus
+     réserve naturellement la place du dock, donc plus de chevauchement, de
+     cale magique, ni de saut au démarrage. */
+  width: 100%;
   max-width: 360px;
   margin: 0 auto;
   display: flex;
   gap: 8px;
   align-items: stretch;
   min-height: 52px;
+  padding: 0;
+  background: transparent;
 }
 
 .vera-nav-pill {
