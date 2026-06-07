@@ -63,11 +63,6 @@ const tints = (color: Color) => {
   };
 };
 
-const CAT_LABEL: Partial<Record<ClothingItem["category"], string>> = {
-  accessories: "acc",
-  outerwear: "layer",
-};
-
 const cardKeyOf = (o: Outfit): string => `${o.top.id}|${o.bottom.id}`;
 
 // The piece that fills the "acc" collage well: the layer takes priority over an
@@ -87,7 +82,8 @@ const ItemTile = ({
   imageSrc: string | undefined;
   onRemove?: () => void;
 }): React.JSX.Element => {
-  const t = tints(piece.color);
+  const { t } = useTranslation();
+  const tint = tints(piece.color);
   const big = pos.w > 120;
   return (
     <div
@@ -99,8 +95,8 @@ const ItemTile = ({
         height: pos.h,
         transform: `rotate(${pos.rot}deg)`,
         zIndex: pos.z,
-        background: t.bg,
-        border: `1px solid ${t.border}`,
+        background: tint.bg,
+        border: `1px solid ${tint.border}`,
         padding: big ? "9px 9px 8px" : "7px 6px 6px",
       }}
     >
@@ -118,12 +114,12 @@ const ItemTile = ({
       <div className="deck-tile-head">
         <div
           className="deck-tile-name"
-          style={{ color: t.name, fontSize: big ? 15 : 11.5 }}
+          style={{ color: tint.name, fontSize: big ? 15 : 11.5 }}
         >
           {piece.name}
         </div>
-        <div className="deck-tile-label" style={{ color: t.label }}>
-          {CAT_LABEL[piece.category] || piece.category}
+        <div className="deck-tile-label" style={{ color: tint.label }}>
+          {t(`today.tileLabel.${piece.category}`)}
         </div>
       </div>
       <div className="deck-tile-img">
