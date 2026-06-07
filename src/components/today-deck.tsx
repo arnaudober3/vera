@@ -628,6 +628,7 @@ export const TodayDeck = (): React.JSX.Element => {
   };
 
   const len = deck.length;
+  const canSwipe = len > 1;
   const baseFront = len ? deck[index % len] : null;
   const front: Outfit | null = worn ? worn.snapshot : baseFront ? mergeEdits(baseFront) : null;
   const frontKey = worn ? worn.cardKey : baseFront ? cardKeyOf(baseFront) : "";
@@ -779,7 +780,7 @@ export const TodayDeck = (): React.JSX.Element => {
       <FilterChips active={filter} onSelect={setFilter} />
 
       <div className="deck-region" ref={setRegionRef}>
-        {!worn && (
+        {!worn && canSwipe && (
           <>
             <div className="deck-chevron left" aria-hidden="true">
               <FaChevronLeft />
@@ -799,7 +800,7 @@ export const TodayDeck = (): React.JSX.Element => {
           fav={fav}
           scale={scale}
           getImage={getImage}
-          swipeEnabled={!worn}
+          swipeEnabled={!worn && canSwipe}
           onToggleFav={onToggleFav}
           onAddSlot={() => setSheetKey(frontKey)}
           onRemovePiece={(id) => removePiece(frontKey, front, id)}
@@ -820,10 +821,14 @@ export const TodayDeck = (): React.JSX.Element => {
               <span>
                 <b>{t("today.hintTap")}</b> {t("today.hintWear")}
               </span>
-              <span className="deck-hint-dot">·</span>
-              <span>
-                <b>{t("today.hintSwipe")}</b> {t("today.hintAnother")}
-              </span>
+              {canSwipe && (
+                <>
+                  <span className="deck-hint-dot">·</span>
+                  <span>
+                    <b>{t("today.hintSwipe")}</b> {t("today.hintAnother")}
+                  </span>
+                </>
+              )}
             </>
           )}
         </div>
