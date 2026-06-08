@@ -124,7 +124,7 @@
     },
     "empty": {
       "title": "Aucune tenue pour le moment.",
-      "subtitle": "Tous tes vêtements sont au panier — l'heure de la lessive !",
+      "subtitle": "Ajoute des vêtements ou fais une lessive pour composer une tenue.",
       "button": "Aller au dressing"
     },
     "emptyOccasion": {
@@ -158,11 +158,12 @@
     "basketViewItems_one": "{{count}} article porté",
     "basketViewItems_other": "{{count}} articles portés",
     "basketViewSub": "à laver",
+    "basketSection": "Articles à laver",
     "edit": "Modifier",
     "editDone": "OK",
     "backToCloset": "Tout le dressing",
     "addTile": "Ajouter une pièce",
-    "basketTitle": "Le panier"
+    "basketTitle": "Mon panier"
   },
   "lookbook": {
     "title": "Mon lookbook",
@@ -201,7 +202,7 @@
     "viewingSub": "Touche pour revenir",
     "countTitle_one": "{{count}} article dans le panier",
     "countTitle_other": "{{count}} articles dans le panier",
-    "countSub": "Touche pour voir ce qui est porté",
+    "countSub": "Touche pour voir le linge sale",
     "washAria": "Marquer tous les articles portés comme propres",
     "washTitle": "Marquer tous les articles portés comme propres",
     "wash": "Laver"

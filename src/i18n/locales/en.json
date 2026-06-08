@@ -124,7 +124,7 @@
     },
     "empty": {
       "title": "No outfit right now.",
-      "subtitle": "All your clothes are in the basket — time to do laundry!",
+      "subtitle": "Add some clothes or do a laundry run to put an outfit together.",
       "button": "Go to closet"
     },
     "emptyOccasion": {
@@ -158,6 +158,7 @@
     "basketViewItems_one": "{{count}} item worn",
     "basketViewItems_other": "{{count}} items worn",
     "basketViewSub": "to wash",
+    "basketSection": "Items to wash",
     "edit": "Edit",
     "editDone": "Done",
     "backToCloset": "All my closet",
@@ -201,7 +202,7 @@
     "viewingSub": "Tap to go back",
     "countTitle_one": "{{count}} item in the basket",
     "countTitle_other": "{{count}} items in the basket",
-    "countSub": "Tap to see what's worn",
+    "countSub": "Tap to see the laundry",
     "washAria": "Mark all worn items as clean",
     "washTitle": "Mark all worn items as clean",
     "wash": "Wash"

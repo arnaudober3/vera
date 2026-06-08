@@ -59,14 +59,23 @@
   color: var(--vera-primary);
 }
 
+/* Match the chip row's footprint (App.css .vera-chip-row) so the basket view's
+   header sits at the same height as the filter bar. */
+.vera-back-link-bar {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  flex-shrink: 0;
+}
+
 .vera-back-link {
-  align-self: flex-start;
-  margin-top: 4px;
   border: 0;
   background: transparent;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
+  /* Same box height as a chip (.vera-chip), so the bar totals the chip row. */
+  min-height: 30px;
   gap: 6px;
   font-size: 14px;
   font-weight: 600;
