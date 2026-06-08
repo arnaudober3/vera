@@ -9,11 +9,14 @@ import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
 import { useLookbook } from "../hooks/lookbook.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
+import { useTodaySession, cardKeyOf } from "../hooks/today-session.ts";
+import { useMeasuredHeight } from "../hooks/use-measured-height.ts";
 import {
   formatLookbookOutfitDate,
   type LookbookOutfit,
 } from "../models/lookbook-outfit.ts";
 import { isWashable, type ClothingItem } from "../models/clothing-item.ts";
+import type { Outfit } from "../models/outfit.ts";
 import { FaHeart } from "react-icons/fa";
 import { MdEdit, MdLocalLaundryService } from "react-icons/md";
 import { useNavigate } from "react-router";
@@ -85,6 +88,7 @@ const LookbookCard = ({ resolved }: { resolved: ResolvedLookbookOutfit }) => {
   const { removeFromLookbook, renameLookbookOutfit, recordWear } = useLookbook();
   const { markWorn } = useCloset();
   const { recordOutfit } = useOutfitHistory();
+  const { setWorn } = useTodaySession();
 
   const clean = isResolvedClean(resolved);
   const pieces = collectPieces(resolved);
@@ -115,21 +119,33 @@ const LookbookCard = ({ resolved }: { resolved: ResolvedLookbookOutfit }) => {
 
   async function wear(): Promise<void> {
     const { top, bottom, outerwear, shoes, accessories } = resolved;
+    const accs = accessories.filter((a): a is ClothingItem => !!a);
     await recordWear(outfit.id);
-    await recordOutfit(
+    const recordId = await recordOutfit(
       top.id,
       bottom.id,
       outerwear?.id,
       shoes?.id,
-      accessories.filter((a): a is ClothingItem => !!a).map((a) => a.id),
+      accs.map((a) => a.id),
     );
     if (isWashable(top.category)) await markWorn(top);
     if (isWashable(bottom.category)) await markWorn(bottom);
     if (outerwear && isWashable(outerwear.category)) await markWorn(outerwear);
     if (shoes && isWashable(shoes.category)) await markWorn(shoes);
-    for (const accessory of accessories) {
-      if (accessory && isWashable(accessory.category)) await markWorn(accessory);
+    for (const accessory of accs) {
+      if (isWashable(accessory.category)) await markWorn(accessory);
     }
+
+    // Surface this outfit on the Today page as worn today, so it shows with the
+    // worn badge and stays undoable there — mirrors the deck's own commitWear.
+    const snapshot: Outfit = {
+      top,
+      bottom,
+      ...(outerwear && { outerwear }),
+      ...(shoes && { shoes }),
+      ...(accs.length > 0 && { accessories: accs }),
+    };
+    setWorn({ cardKey: cardKeyOf(snapshot), recordId, snapshot });
   }
 
   return (
@@ -243,6 +259,9 @@ export const LookbookPage = (): React.JSX.Element => {
   const navigate = useNavigate();
 
   const [filter, setFilter] = useState<Filter>("all");
+  // The footer floats over the scroll area; reserve its measured height as bottom
+  // padding so the last cards can scroll clear of the nav pill.
+  const [footerRef, footerHeight] = useMeasuredHeight();
 
   const resolvedOutfits = useMemo<ResolvedLookbookOutfit[]>(() => {
     return lookbook
@@ -295,8 +314,8 @@ export const LookbookPage = (): React.JSX.Element => {
   const counts = { all: resolvedOutfits.length, ready: cleanOutfits.length };
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden relative">
+      <div className="mx-auto max-w-4xl px-5 w-full shrink-0">
         <h2 className="vera-page-title">{t("lookbook.title")}</h2>
       </div>
 
@@ -310,17 +329,14 @@ export const LookbookPage = (): React.JSX.Element => {
         </div>
       )}
 
-      <div
-        className="flex-1 min-h-0 overflow-y-auto flex flex-col"
-        style={{
-          maskImage:
-            "linear-gradient(to bottom, transparent, black 1.5rem, black calc(100% - 3rem), transparent)",
-          WebkitMaskImage:
-            "linear-gradient(to bottom, transparent, black 1.5rem, black calc(100% - 3rem), transparent)",
-        }}
-      >
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
         <div
           className={`w-full mx-auto max-w-4xl px-4 ${lookbook.length === 0 ? "flex-1 flex flex-col justify-center" : `pb-3${filter !== "all" ? " pt-[33px]" : ""}`}`}
+          style={
+            lookbook.length === 0
+              ? undefined
+              : { paddingBottom: footerHeight + 12 }
+          }
         >
           {lookbook.length === 0 ? (
             <div className="flex-1 flex items-center justify-center pb-20">
@@ -378,11 +394,13 @@ export const LookbookPage = (): React.JSX.Element => {
         </div>
       </div>
 
-      <AppFooter>
-        <BasketStrip />
+      <div ref={footerRef} className="absolute inset-x-0 bottom-0 z-10">
+        <AppFooter>
+          <BasketStrip />
 
-        <NavigationBar activePage="lookbook" />
-      </AppFooter>
+          <NavigationBar activePage="lookbook" />
+        </AppFooter>
+      </div>
     </div>
   );
 };

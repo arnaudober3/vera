@@ -174,14 +174,17 @@ body {
   font-family: var(--vera-font-display);
   font-style: italic;
   font-weight: 400;
-  font-size: 2rem;
-  line-height: 1.1;
+  font-size: 1.6875rem; /* 27px — shared page-title size across screens */
+  line-height: 1.2;
   letter-spacing: -0.005em;
   color: var(--vera-fg-strong);
-  margin: 16px 0;
-  padding: 0;
-  text-box-trim: trim-end;
-  text-box-edge: cap alphabetic;
+  /* Matches today-title (full line box, 14px top, 3px inline) so all three page
+     headers align identically. today-title overrides margin to 0 since Today
+     gets its top spacing from the header row. */
+  margin: 14px 0 0;
+  padding: 1px 3px;
+  text-box-trim: none;
+  text-box-edge: auto;
 }
 
 .vera-btn-primary {
@@ -278,26 +281,14 @@ body {
   background: rgba(255, 255, 255, 0.4);
 }
 
+/* Mirrors .today-occasions so the filter bar is identical across pages. */
 .vera-chip-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   overflow-x: auto;
   scrollbar-width: none;
-  padding: 4px 16px 4px;
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    black 16px,
-    black calc(100% - 24px),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    black 16px,
-    black calc(100% - 24px),
-    transparent 100%
-  );
+  padding: 12px 20px;
+  flex-shrink: 0;
 }
 
 .vera-chip-row::-webkit-scrollbar {
@@ -308,13 +299,14 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 14px;
+  padding: 6px 12px;
   border-radius: var(--vera-radius-pill);
   background: var(--vera-surface);
-  color: var(--vera-fg-default);
+  color: var(--vera-fg-muted);
   border: 1px solid var(--vera-surface-border);
-  font-size: var(--vera-text-sm);
-  font-weight: 500;
+  font-family: var(--vera-font-sans);
+  font-size: 13px;
+  font-weight: 600;
   white-space: nowrap;
   cursor: pointer;
   flex-shrink: 0;
@@ -325,8 +317,8 @@ body {
 
   &.active {
     background: var(--vera-primary);
-    color: var(--vera-fg-on-primary);
-    border-color: var(--vera-primary);
+    color: #ffffff;
+    border-color: transparent;
   }
 }
 
