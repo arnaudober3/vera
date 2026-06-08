@@ -2,7 +2,6 @@ import * as React from "react";
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import NavigationBar from "../components/navigation-bar.tsx";
-import EmptyMessageTemplate from "../components/empty-message-template.tsx";
 import { BasketStrip } from "../components/basket-strip.tsx";
 import { AppFooter } from "../components/app-footer.tsx";
 import { useCloset } from "../hooks/closet.ts";
@@ -19,7 +18,6 @@ import { isWashable, type ClothingItem } from "../models/clothing-item.ts";
 import type { Outfit } from "../models/outfit.ts";
 import { FaHeart } from "react-icons/fa";
 import { MdEdit, MdLocalLaundryService } from "react-icons/md";
-import { useNavigate } from "react-router";
 import { formatRelativeDate } from "../utils/date.ts";
 import "./lookbook-page.css";
 
@@ -201,10 +199,14 @@ const LookbookFilterBar = ({
   filter,
   onFilterChange,
   counts,
+  availableFilters,
 }: {
   filter: Filter;
   onFilterChange: (f: Filter) => void;
   counts: { all: number; ready: number };
+  // Filters with no matching outfit are disabled so the user can't land on an
+  // empty view.
+  availableFilters: Set<Filter>;
 }) => {
   const { t } = useTranslation();
   const chips: { id: Filter; label: string; count?: number }[] = [
@@ -220,6 +222,7 @@ const LookbookFilterBar = ({
           key={id}
           type="button"
           onClick={() => onFilterChange(id)}
+          disabled={!availableFilters.has(id)}
           className={`vera-chip ${filter === id ? "active" : ""}`}
           aria-pressed={filter === id}
         >
@@ -256,7 +259,6 @@ export const LookbookPage = (): React.JSX.Element => {
   const { lookbook: _lookbook } = useLookbook();
   const lookbook = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _lookbook) : _lookbook;
   const { items } = useCloset();
-  const navigate = useNavigate();
 
   const [filter, setFilter] = useState<Filter>("all");
   // The footer floats over the scroll area; reserve its measured height as bottom
@@ -313,40 +315,56 @@ export const LookbookPage = (): React.JSX.Element => {
 
   const counts = { all: resolvedOutfits.length, ready: cleanOutfits.length };
 
+  const availableFilters = useMemo(() => {
+    // "all" is the default filter and stays selectable even with no favorites.
+    const set = new Set<Filter>(["all"]);
+    if (cleanOutfits.length > 0) set.add("ready");
+    if (resolvedOutfits.some((r) => r.outfit.lastWornAt)) set.add("recent");
+    if (resolvedOutfits.some((r) => (r.outfit.wornCount ?? 0) > 0))
+      set.add("worn");
+    return set;
+  }, [resolvedOutfits, cleanOutfits]);
+
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden relative">
       <div className="mx-auto max-w-4xl px-5 w-full shrink-0">
         <h2 className="vera-page-title">{t("lookbook.title")}</h2>
       </div>
 
-      {lookbook.length > 0 && (
-        <div className="shrink-0">
-          <LookbookFilterBar
-            filter={filter}
-            onFilterChange={setFilter}
-            counts={counts}
-          />
-        </div>
-      )}
+      <div className="shrink-0">
+        <LookbookFilterBar
+          filter={filter}
+          onFilterChange={setFilter}
+          counts={counts}
+          availableFilters={availableFilters}
+        />
+      </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col">
         <div
-          className={`w-full mx-auto max-w-4xl px-4 ${lookbook.length === 0 ? "flex-1 flex flex-col justify-center" : `pb-3${filter !== "all" ? " pt-[33px]" : ""}`}`}
-          style={
-            lookbook.length === 0
-              ? undefined
-              : { paddingBottom: footerHeight + 12 }
-          }
+          className={`w-full mx-auto max-w-4xl px-4 pb-3${filter !== "all" && lookbook.length > 0 ? " pt-[33px]" : ""}`}
+          style={{ paddingBottom: footerHeight + 12 }}
         >
           {lookbook.length === 0 ? (
-            <div className="flex-1 flex items-center justify-center pb-20">
-              <EmptyMessageTemplate
-                title={t("lookbook.empty.title")}
-                subtitle={t("lookbook.empty.subtitle")}
-                buttonText={t("lookbook.empty.button")}
-                onButtonClick={() => navigate("/")}
-              />
-            </div>
+            <>
+              <LookbookSectionHead>
+                {t("lookbook.sectionReady")} · {cleanOutfits.length}
+              </LookbookSectionHead>
+              <div className="lookbook-feed">
+                <div className="lookbook-empty-slot lookbook-empty-slot--message">
+                  <div className="lookbook-row-piece">
+                    <FaHeart size={30} />
+                  </div>
+                  <span className="lookbook-name__text">
+                    {t("lookbook.empty.title")}
+                  </span>
+                  <div className="lookbook-meta">
+                    {t("lookbook.empty.subtitle")}
+                  </div>
+                </div>
+                <LookbookPlaceholders count={MIN_VISIBLE_SLOTS - 1} />
+              </div>
+            </>
           ) : filter === "all" ? (
             <>
               {cleanOutfits.length > 0 && (

@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
-import EmptyMessageTemplate from "../components/empty-message-template.tsx";
 import { BasketStrip } from "../components/basket-strip.tsx";
 import { AppFooter } from "../components/app-footer.tsx";
 import {
@@ -28,9 +27,11 @@ import "./closet-page.css";
 const CategoryFilterBar = ({
   selectedCategory,
   onCategorySelected,
+  availableCategories,
 }: {
   selectedCategory: ClothingItemCategory | null;
   onCategorySelected: (category: ClothingItemCategory | null) => void;
+  availableCategories: Set<ClothingItemCategory>;
 }): React.JSX.Element => {
   const { t } = useTranslation();
   const activeRef = useRef<HTMLButtonElement | null>(null);
@@ -55,12 +56,14 @@ const CategoryFilterBar = ({
     <div className="vera-chip-row mx-auto max-w-4xl w-full">
       {chips.map(({ value, label }) => {
         const isActive = selectedCategory === value;
+        const isDisabled = value !== null && !availableCategories.has(value);
         return (
           <button
             key={value ?? "all"}
             type="button"
             ref={isActive ? activeRef : undefined}
             onClick={() => onCategorySelected(value)}
+            disabled={isDisabled}
             className={`vera-chip ${isActive ? "active" : ""}`}
             aria-pressed={isActive}
           >
@@ -281,9 +284,19 @@ export const ClosetPage = (): React.JSX.Element => {
     if (viewingBasket) {
       navigate(-1);
     } else {
-      navigate("/closet/basket");
+      navigate("/closet/basket", { state: { from: "/closet" } });
     }
   };
+
+  // The basket back link returns through history (navigate(-1)), so label it
+  // after wherever the user opened it from rather than always "the closet".
+  const basketFrom = (location.state as { from?: string } | null)?.from;
+  const basketBackLabel =
+    basketFrom === "/"
+      ? t("nav.today")
+      : basketFrom === "/lookbook"
+        ? t("nav.lookbook")
+        : t("closet.backToCloset");
 
   useEffect(() => {
     if (!showOnboardingToast) return;
@@ -300,6 +313,11 @@ export const ClosetPage = (): React.JSX.Element => {
   const cleanItems = useMemo(
     () => items.filter((i) => !isWashable(i.category) || i.isClean),
     [items],
+  );
+
+  const availableCategories = useMemo(
+    () => new Set(cleanItems.map((i) => i.category)),
+    [cleanItems],
   );
 
   const displayedItems = useMemo(() => {
@@ -328,7 +346,6 @@ export const ClosetPage = (): React.JSX.Element => {
     }
   }
 
-  const showEmptyState = displayedItems.length === 0 && !viewingBasket;
   const showAddTile = !viewingBasket && !effectiveEdit && !isUploadLimitReached();
 
   return (
@@ -359,14 +376,14 @@ export const ClosetPage = (): React.JSX.Element => {
       )}
 
       {viewingBasket ? (
-        <div className="mx-auto max-w-4xl px-4 w-full shrink-0">
+        <div className="vera-back-link-bar mx-auto max-w-4xl w-full shrink-0">
           <button
             type="button"
             onClick={toggleBasketView}
             className="vera-back-link"
           >
             <FaChevronLeft />
-            {t("closet.backToCloset")}
+            {basketBackLabel}
           </button>
         </div>
       ) : (
@@ -374,61 +391,51 @@ export const ClosetPage = (): React.JSX.Element => {
           <CategoryFilterBar
             selectedCategory={selectedCategory}
             onCategorySelected={setSelectedCategory}
+            availableCategories={availableCategories}
           />
         </div>
       )}
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col relative">
         <div
-          className={`w-full mx-auto max-w-4xl px-4 ${showEmptyState ? "flex-1 flex flex-col justify-center" : "pb-4"}`}
-          style={showEmptyState ? undefined : { paddingBottom: footerHeight + 12 }}
+          className="w-full mx-auto max-w-4xl px-4 pb-4"
+          style={{ paddingBottom: footerHeight + 12 }}
         >
           <div className="vera-dressing-sub">
             <span>
               {viewingBasket ? (
                 <>
-                  <span className="vera-dressing-sub__basket">
-                    {t("closet.basketViewItems", { count: dirtyCount })}
-                  </span>{" "}
-                  · {t("closet.basketViewSub")}
+                  {t("closet.basketSection")} ·{" "}
+                  <span className="vera-dressing-sub__basket">{dirtyCount}</span>
                 </>
               ) : (
                 <>
                   {t("closet.available", { count: cleanItems.length })}
-                  {" · "}
-                  <span className="vera-dressing-sub__basket">
-                    {t("closet.basketCountInline", { count: dirtyCount })}
-                  </span>
+                  {items.length > 0 && (
+                    <>
+                      {" · "}
+                      <span className="vera-dressing-sub__basket">
+                        {t("closet.basketCountInline", { count: dirtyCount })}
+                      </span>
+                    </>
+                  )}
                 </>
               )}
             </span>
             <span className="vera-dressing-sub__rule" aria-hidden />
           </div>
-          <div
-            className={`rounded-2xl ${showEmptyState ? "flex-1 flex flex-col justify-center" : ""}`}
-          >
-            {!showEmptyState ? (
-              <div className="grid gap-2.5 grid-cols-2 auto-rows-fr">
-                {showAddTile && (
-                  <AddItemTile
-                    onClick={() => setShowUploadModal(true)}
-                    disabled={isUploadLimitReached()}
-                  />
-                )}
-                {displayedItems.map((item) => (
-                  <ItemCard key={item.id} item={item} editMode={effectiveEdit} />
-                ))}
-              </div>
-            ) : (
-              <div className="flex-1 flex items-center justify-center pb-20">
-                <EmptyMessageTemplate
-                  title={t("closet.emptyTitle")}
-                  subtitle={t("closet.emptySubtitle")}
-                  buttonText={t("closet.emptyButton")}
-                  onButtonClick={() => setShowUploadModal(true)}
+          <div className="rounded-2xl">
+            <div className="grid gap-2.5 grid-cols-2 auto-rows-fr">
+              {showAddTile && (
+                <AddItemTile
+                  onClick={() => setShowUploadModal(true)}
+                  disabled={isUploadLimitReached()}
                 />
-              </div>
-            )}
+              )}
+              {displayedItems.map((item) => (
+                <ItemCard key={item.id} item={item} editMode={effectiveEdit} />
+              ))}
+            </div>
           </div>
         </div>
       </div>
