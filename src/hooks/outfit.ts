@@ -351,7 +351,11 @@ export const useOutfit = () => {
   // deterministic and exhaustive (closets are capped at ~10 items, so the
   // top × bottom product is tiny). The deck is local to the page: this never
   // touches the singleton state nor calls emitChange.
-  const buildDeck = (filter: Occasion | "all", deckSize = 10): Outfit[] => {
+  const buildDeck = (
+    filter: Occasion | "all",
+    deckSize = 10,
+    pinnedId?: string,
+  ): Outfit[] => {
     const availableItems = items.filter(
       (i) => i.isClean || !isWashable(i.category),
     );
@@ -359,47 +363,75 @@ export const useOutfit = () => {
     const matchesFilter = (i: ClothingItem): boolean =>
       filter === "all" || fitsOccasion(i, filter);
 
+    // Resolve the active pin. Dropped silently if the item is no longer
+    // available (deleted/dirty) — mirrors generateOutfit.
+    const pinned = pinnedId
+      ? availableItems.find((i) => i.id === pinnedId)
+      : undefined;
+
     const tops = availableItems.filter(
       (i) => i.category === "top" && matchesFilter(i),
     );
     const bottoms = availableItems.filter(
       (i) => i.category === "bottom" && matchesFilter(i),
     );
-    if (tops.length === 0 || bottoms.length === 0) return [];
 
     const weather = getCachedWeather();
     const effectiveSeason = weather
       ? temperatureToSeason(weather.temperatureC)
       : getCurrentSeason();
 
-    // Score every distinct top/bottom duo, then rank by score descending.
-    const scored = [] as {
-      top: ClothingItem;
-      bottom: ClothingItem;
-      score: number;
-    }[];
-    for (const top of tops) {
-      for (const bottom of bottoms) {
-        const score =
-          (scoreColors({ a: top.color, b: bottom.color }) ?? 0) *
-          getRecencyPenalty([top.id, bottom.id]) *
-          getSeasonScore(top, effectiveSeason) *
-          getSeasonScore(bottom, effectiveSeason);
-        scored.push({ top, bottom, score });
-      }
-    }
-    scored.sort((a, b) => b.score - a.score);
+    const duoScore = (top: ClothingItem, bottom: ClothingItem): number =>
+      (scoreColors({ a: top.color, b: bottom.color }) ?? 0) *
+      getRecencyPenalty([top.id, bottom.id]) *
+      getSeasonScore(top, effectiveSeason) *
+      getSeasonScore(bottom, effectiveSeason);
 
-    // Greedy spread: avoid the same top anchoring two consecutive cards, so the
-    // deck feels varied. Skipped duos are appended at the end to fill the deck.
-    const ordered: typeof scored = [];
-    const deferred: typeof scored = [];
-    for (const duo of scored) {
-      const prev = ordered[ordered.length - 1];
-      if (prev && prev.top.id === duo.top.id) deferred.push(duo);
-      else ordered.push(duo);
+    let ordered: { top: ClothingItem; bottom: ClothingItem }[] = [];
+
+    if (pinned?.category === "top") {
+      // Lock the pinned top into every card; the deck varies only the bottom.
+      // The pinned anchor is kept as-is even if off-occasion (explicit choice),
+      // but its partner must fit the filter.
+      if (bottoms.length === 0) return [];
+      ordered = bottoms
+        .map((bottom) => ({ top: pinned, bottom, score: duoScore(pinned, bottom) }))
+        .sort((a, b) => b.score - a.score)
+        .map(({ top, bottom }) => ({ top, bottom }));
+    } else if (pinned?.category === "bottom") {
+      // Symmetric: lock the pinned bottom, vary the top.
+      if (tops.length === 0) return [];
+      ordered = tops
+        .map((top) => ({ top, bottom: pinned, score: duoScore(top, pinned) }))
+        .sort((a, b) => b.score - a.score)
+        .map(({ top, bottom }) => ({ top, bottom }));
+    } else {
+      // No top/bottom pin: score every distinct duo, rank by score descending.
+      if (tops.length === 0 || bottoms.length === 0) return [];
+      const scored = [] as {
+        top: ClothingItem;
+        bottom: ClothingItem;
+        score: number;
+      }[];
+      for (const top of tops) {
+        for (const bottom of bottoms) {
+          scored.push({ top, bottom, score: duoScore(top, bottom) });
+        }
+      }
+      scored.sort((a, b) => b.score - a.score);
+
+      // Greedy spread: avoid the same top anchoring two consecutive cards, so the
+      // deck feels varied. Skipped duos are appended at the end to fill the deck.
+      const head: typeof scored = [];
+      const deferred: typeof scored = [];
+      for (const duo of scored) {
+        const prev = head[head.length - 1];
+        if (prev && prev.top.id === duo.top.id) deferred.push(duo);
+        else head.push(duo);
+      }
+      head.push(...deferred);
+      ordered = head.map(({ top, bottom }) => ({ top, bottom }));
     }
-    ordered.push(...deferred);
 
     // Outerwear suggestion mirrors generateOutfit: on a cold/rainy day attach the
     // best colour-matching, occasion-appropriate layer to each card.
@@ -417,6 +449,13 @@ export const useOutfit = () => {
           candidates: availableOuterwear,
           anchor: top,
         });
+      }
+      // A pinned add-on (outerwear/shoes/accessory) locks into its slot on every
+      // card, overriding the weather-suggested layer.
+      if (pinned && pinned.category !== "top" && pinned.category !== "bottom") {
+        if (pinned.category === "outerwear") out.outerwear = pinned;
+        else if (pinned.category === "shoes") out.shoes = pinned;
+        else if (pinned.category === "accessories") out.accessories = [pinned];
       }
       return out;
     });

@@ -89,13 +89,6 @@
   "today": {
     "topLabel": "Top",
     "bottomLabel": "Bottom",
-    "tileLabel": {
-      "top": "top",
-      "bottom": "bottom",
-      "outerwear": "layer",
-      "shoes": "shoes",
-      "accessories": "acc"
-    },
     "addAccessory": "Add an accessory",
     "addAnotherAria": "Add another item",
     "removeAria": "Remove {{name}}",
@@ -148,6 +141,7 @@
     "deleteAria": "Delete item",
     "deleteConfirm": "Are you sure you want to delete this item?",
     "pinAria": "Pin to today's outfit",
+    "unpinAria": "Unpin from today's outfit",
     "pinNoMatch": "Can't build an outfit around this item right now.",
     "basketHeroItems_one": "{{count}} item waiting",
     "basketHeroItems_other": "{{count}} items waiting",
@@ -157,7 +151,18 @@
     "onboardingToastSub": "Tap + any time to add more. Check Today tomorrow morning.",
     "emptyTitle": "No items found.",
     "emptySubtitle": "Try selecting a different filter or add a new item!",
-    "emptyButton": "Add an item"
+    "emptyButton": "Add an item",
+    "available_one": "{{count}} available",
+    "available_other": "{{count}} available",
+    "basketCountInline": "{{count}} in the basket",
+    "basketViewItems_one": "{{count}} item worn",
+    "basketViewItems_other": "{{count}} items worn",
+    "basketViewSub": "to wash",
+    "edit": "Edit",
+    "editDone": "Done",
+    "backToCloset": "All my closet",
+    "addTile": "Add a piece",
+    "basketTitle": "The basket"
   },
   "lookbook": {
     "title": "My lookbook",
