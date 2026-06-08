@@ -24,10 +24,9 @@ import { useOutfitHistory } from "../hooks/outfit-history.ts";
 import { useLookbook } from "../hooks/lookbook.ts";
 import { useWeather } from "../hooks/weather.ts";
 import type { ClothingItem } from "../models/clothing-item.ts";
-import type { Color } from "../models/color.ts";
 import type { Outfit } from "../models/outfit.ts";
 import { ALL_OCCASIONS, fitsOccasion, type Occasion } from "../models/occasion.ts";
-import { isDarkColor } from "../utils/color.ts";
+import { itemTint } from "../utils/color.ts";
 import "./today-deck.css";
 
 type Filter = Occasion | "all";
@@ -49,20 +48,6 @@ const POS: Record<"acc" | "top" | "bottom" | "shoes", Pos> = {
   shoes: { left: 152, top: 200, w: 112, h: 130, rot: 7, z: 5 },
 };
 
-// Flat collage tile chrome derived from the item colour. Dark items render as a
-// solid block with white text; light items get a soft tint toward white.
-const tints = (color: Color) => {
-  const dark = isDarkColor(color);
-  return {
-    bg: dark ? color : `color-mix(in oklab, ${color} 62%, #ffffff)`,
-    border: dark
-      ? `color-mix(in oklab, ${color} 60%, #1a1a1a)`
-      : `color-mix(in oklab, ${color} 72%, #ffffff)`,
-    name: dark ? "#ffffff" : "var(--vera-fg-strong)",
-    label: dark ? "rgba(255,255,255,0.6)" : "var(--vera-fg-muted)",
-  };
-};
-
 const cardKeyOf = (o: Outfit): string => `${o.top.id}|${o.bottom.id}`;
 
 // The piece that fills the "acc" collage well: the layer takes priority over an
@@ -76,18 +61,20 @@ const ItemTile = ({
   pos,
   imageSrc,
   onRemove,
+  compact,
 }: {
   piece: ClothingItem;
   pos: Pos;
   imageSrc: string | undefined;
   onRemove?: () => void;
+  // The small accessory tile lets its name area hug the text instead of
+  // reserving the full two-line height, so the photo keeps room to breathe.
+  compact?: boolean;
 }): React.JSX.Element => {
-  const { t } = useTranslation();
-  const tint = tints(piece.color);
   const big = pos.w > 120;
   return (
     <div
-      className="deck-tile"
+      className={`deck-tile ${compact ? "deck-tile--compact" : ""}`}
       style={{
         left: pos.left,
         top: pos.top,
@@ -95,9 +82,6 @@ const ItemTile = ({
         height: pos.h,
         transform: `rotate(${pos.rot}deg)`,
         zIndex: pos.z,
-        background: tint.bg,
-        border: `1px solid ${tint.border}`,
-        padding: big ? "9px 9px 8px" : "7px 6px 6px",
       }}
     >
       {onRemove && (
@@ -111,18 +95,12 @@ const ItemTile = ({
           <FaTimes />
         </button>
       )}
-      <div className="deck-tile-head">
-        <div
-          className="deck-tile-name"
-          style={{ color: tint.name, fontSize: big ? 15 : 11.5 }}
-        >
-          {piece.name}
-        </div>
-        <div className="deck-tile-label" style={{ color: tint.label }}>
-          {t(`today.tileLabel.${piece.category}`)}
-        </div>
+      {/* name sits on top so it stays readable where tiles overlap */}
+      <div className="deck-tile-name">
+        <span style={{ fontSize: big ? 13 : 10 }}>{piece.name}</span>
       </div>
-      <div className="deck-tile-img">
+      {/* photo floats on a soft tint of its own colour — mirrors the closet card */}
+      <div className="deck-tile-tray" style={{ background: itemTint(piece.color) }}>
         {imageSrc && <img src={imageSrc} alt={piece.name} loading="lazy" />}
       </div>
     </div>
@@ -201,6 +179,7 @@ const CardFace = ({
               pos={POS.acc}
               imageSrc={getImage(acc.id)}
               onRemove={editable ? () => onRemovePiece?.(acc.id) : undefined}
+              compact
             />
           )}
           {extraCount > 0 && (

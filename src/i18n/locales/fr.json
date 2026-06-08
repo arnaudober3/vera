@@ -89,13 +89,6 @@
   "today": {
     "topLabel": "Haut",
     "bottomLabel": "Bas",
-    "tileLabel": {
-      "top": "haut",
-      "bottom": "bas",
-      "outerwear": "couche",
-      "shoes": "chaussures",
-      "accessories": "acc"
-    },
     "addAccessory": "Ajouter un accessoire",
     "addAnotherAria": "Ajouter un autre article",
     "removeAria": "Retirer {{name}}",
