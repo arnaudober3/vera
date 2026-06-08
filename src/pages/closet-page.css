@@ -1,20 +1,40 @@
 /* ── Header ─────────────────────────────────────────────────────── */
+/* Mirrors .vera-page-title / .today-title so all three page headers render the
+   title identically; top spacing comes from the container (pt-3.5 = 14px) and
+   nowrap keeps it on one line next to the edit toggle. */
 .vera-dressing-title {
-  margin: 0;
   font-family: var(--vera-font-display);
   font-style: italic;
   font-weight: 400;
-  font-size: 32px;
-  line-height: 1;
-  letter-spacing: -0.01em;
+  font-size: 1.6875rem; /* 27px — matches the shared page title */
+  line-height: 1.2;
+  letter-spacing: -0.005em;
   color: var(--vera-fg-strong);
+  margin: 0;
+  padding: 1px 3px;
+  text-box-trim: none;
+  text-box-edge: auto;
   white-space: nowrap;
 }
 
+/* Mirrors .lookbook-section-head: small uppercase label + a rule filling the row. */
 .vera-dressing-sub {
-  margin-top: 8px;
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 4px 8px;
+  font-family: var(--vera-font-sans);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
   color: var(--vera-fg-muted);
+}
+
+.vera-dressing-sub__rule {
+  flex: 1;
+  height: 1px;
+  background: var(--vera-surface-border);
 }
 
 .vera-dressing-sub__basket {

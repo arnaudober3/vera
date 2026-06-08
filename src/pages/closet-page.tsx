@@ -18,6 +18,7 @@ import * as React from "react";
 import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
+import { useMeasuredHeight } from "../hooks/use-measured-height.ts";
 import { FaCheck, FaChevronLeft } from "react-icons/fa";
 import { BsPin, BsPinFill } from "react-icons/bs";
 import { MdAdd } from "react-icons/md";
@@ -263,6 +264,9 @@ export const ClosetPage = (): React.JSX.Element => {
   const justOnboarded =
     (location.state as { justOnboarded?: boolean } | null)?.justOnboarded ??
     false;
+  // The footer floats over the scroll area; reserve its measured height as bottom
+  // padding so the last cards can scroll clear of the nav pill.
+  const [footerRef, footerHeight] = useMeasuredHeight();
   const [selectedCategory, setSelectedCategory] =
     useState<ClothingItemCategory | null>(null);
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
@@ -328,8 +332,8 @@ export const ClosetPage = (): React.JSX.Element => {
   const showAddTile = !viewingBasket && !effectiveEdit && !isUploadLimitReached();
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      <div className="mx-auto max-w-4xl px-5 pt-2 pb-1 w-full shrink-0">
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden relative">
+      <div className="mx-auto max-w-4xl px-5 pt-3.5 w-full shrink-0">
         <div className="flex items-center justify-between gap-3">
           <h2 className="vera-dressing-title">
             {viewingBasket ? t("closet.basketTitle") : t("closet.title")}
@@ -342,24 +346,6 @@ export const ClosetPage = (): React.JSX.Element => {
             >
               {editMode ? t("closet.editDone") : t("closet.edit")}
             </button>
-          )}
-        </div>
-        <div className="vera-dressing-sub">
-          {viewingBasket ? (
-            <>
-              <span className="vera-dressing-sub__basket">
-                {t("closet.basketViewItems", { count: dirtyCount })}
-              </span>{" "}
-              · {t("closet.basketViewSub")}
-            </>
-          ) : (
-            <>
-              {t("closet.available", { count: cleanItems.length })}
-              {" · "}
-              <span className="vera-dressing-sub__basket">
-                {t("closet.basketCountInline", { count: dirtyCount })}
-              </span>
-            </>
           )}
         </div>
       </div>
@@ -394,8 +380,30 @@ export const ClosetPage = (): React.JSX.Element => {
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col relative">
         <div
-          className={`w-full mx-auto max-w-4xl px-4 ${showEmptyState ? "flex-1 flex flex-col justify-center" : "pt-2 pb-4"}`}
+          className={`w-full mx-auto max-w-4xl px-4 ${showEmptyState ? "flex-1 flex flex-col justify-center" : "pb-4"}`}
+          style={showEmptyState ? undefined : { paddingBottom: footerHeight + 12 }}
         >
+          <div className="vera-dressing-sub">
+            <span>
+              {viewingBasket ? (
+                <>
+                  <span className="vera-dressing-sub__basket">
+                    {t("closet.basketViewItems", { count: dirtyCount })}
+                  </span>{" "}
+                  · {t("closet.basketViewSub")}
+                </>
+              ) : (
+                <>
+                  {t("closet.available", { count: cleanItems.length })}
+                  {" · "}
+                  <span className="vera-dressing-sub__basket">
+                    {t("closet.basketCountInline", { count: dirtyCount })}
+                  </span>
+                </>
+              )}
+            </span>
+            <span className="vera-dressing-sub__rule" aria-hidden />
+          </div>
           <div
             className={`rounded-2xl ${showEmptyState ? "flex-1 flex flex-col justify-center" : ""}`}
           >
@@ -425,16 +433,18 @@ export const ClosetPage = (): React.JSX.Element => {
         </div>
       </div>
 
-      <AppFooter>
-        <BasketStrip
-          dirtyCount={dirtyCount}
-          viewingBasket={viewingBasket}
-          onTap={toggleBasketView}
-          onWash={() => void onWash()}
-        />
+      <div ref={footerRef} className="absolute inset-x-0 bottom-0 z-10">
+        <AppFooter>
+          <BasketStrip
+            dirtyCount={dirtyCount}
+            viewingBasket={viewingBasket}
+            onTap={toggleBasketView}
+            onWash={() => void onWash()}
+          />
 
-        <NavigationBar activePage="closet" />
-      </AppFooter>
+          <NavigationBar activePage="closet" />
+        </AppFooter>
+      </div>
 
       {showUploadModal && (
         <UploadClothingItemModal

@@ -6,6 +6,17 @@
 /* Deck region: holds the stacked cards, the swipe-hint chevrons and the
    centered hint line. Equal breathing room above (after the filter chips) and
    below (before the nav). */
+/* Invisible spacer reproducing the section-head row (10px + 11px×1.4 + 8px) the
+   other pages show below the chips, so the deck starts at the same height even
+   though Today has no such heading. */
+.deck-lead-spacer {
+  flex-shrink: 0;
+  padding: 10px 4px 8px;
+  font-size: 11px;
+  line-height: var(--vera-leading);
+  visibility: hidden;
+}
+
 .deck-region {
   position: relative;
   flex: 1;
@@ -13,8 +24,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding: 12px 20px 12px;
+  justify-content: flex-start;
 }
 
 .deck-region-empty {
