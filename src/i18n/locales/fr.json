@@ -148,6 +148,7 @@
     "deleteAria": "Supprimer l'article",
     "deleteConfirm": "Es-tu sûr·e de vouloir supprimer cet article ?",
     "pinAria": "Épingler à la tenue du jour",
+    "unpinAria": "Retirer l'épingle de la tenue du jour",
     "pinNoMatch": "Impossible de composer une tenue autour de cet article pour le moment.",
     "basketHeroItems_one": "{{count}} article en attente",
     "basketHeroItems_other": "{{count}} articles en attente",
@@ -157,7 +158,18 @@
     "onboardingToastSub": "Touche + à tout moment pour en ajouter d'autres. Reviens demain matin sur Aujourd'hui.",
     "emptyTitle": "Aucun article trouvé.",
     "emptySubtitle": "Essaie un autre filtre ou ajoute un nouvel article !",
-    "emptyButton": "Ajouter un article"
+    "emptyButton": "Ajouter un article",
+    "available_one": "{{count}} disponible",
+    "available_other": "{{count}} disponibles",
+    "basketCountInline": "{{count}} au panier",
+    "basketViewItems_one": "{{count}} article porté",
+    "basketViewItems_other": "{{count}} articles portés",
+    "basketViewSub": "à laver",
+    "edit": "Modifier",
+    "editDone": "OK",
+    "backToCloset": "Tout le dressing",
+    "addTile": "Ajouter une pièce",
+    "basketTitle": "Le panier"
   },
   "lookbook": {
     "title": "Mon lookbook",

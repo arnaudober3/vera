@@ -553,7 +553,7 @@ export const TodayDeck = (): React.JSX.Element => {
   const navigate = useNavigate();
   const { getImage } = useImage();
   const { items, markWorn, markClean, isItemClean } = useCloset();
-  const { buildDeck } = useOutfit();
+  const { buildDeck, outfit } = useOutfit();
   const { weather } = useWeather();
   const { recordOutfit, removeOutfitRecord } = useOutfitHistory();
   const {
@@ -604,11 +604,14 @@ export const TodayDeck = (): React.JSX.Element => {
   }, []);
   useEffect(() => () => roRef.current?.disconnect(), []);
 
+  // An active pin (set from the closet) locks its garment into every deck card,
+  // so swiping to regenerate only varies the rest of the outfit.
+  const pinnedItemId = outfit?.pinnedItemId;
   const deck = useMemo(
-    () => buildDeck(filter),
+    () => buildDeck(filter, 10, pinnedItemId),
     // buildDeck is recreated each render; rebuild only on the real inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [items, filter, weather?.fetchedAt],
+    [items, filter, weather?.fetchedAt, pinnedItemId],
   );
 
   // Picking a chip narrows the deck and resets to the top; per-card edits don't
