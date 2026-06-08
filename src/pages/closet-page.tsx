@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
 import EmptyMessageTemplate from "../components/empty-message-template.tsx";
-import { BasketImage, BasketStrip } from "../components/basket-strip.tsx";
+import { BasketStrip } from "../components/basket-strip.tsx";
 import { AppFooter } from "../components/app-footer.tsx";
 import {
   ALL_CATEGORIES,
@@ -18,8 +18,11 @@ import * as React from "react";
 import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
-import { FaCheck, FaThumbtack } from "react-icons/fa";
+import { useMeasuredHeight } from "../hooks/use-measured-height.ts";
+import { FaCheck, FaChevronLeft } from "react-icons/fa";
+import { BsPin, BsPinFill } from "react-icons/bs";
 import { MdAdd } from "react-icons/md";
+import { itemTint } from "../utils/color.ts";
 import "./closet-page.css";
 
 const CategoryFilterBar = ({
@@ -68,14 +71,22 @@ const CategoryFilterBar = ({
     </div>
   );
 };
-const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
+
+const ItemCard = ({
+  item,
+  editMode,
+}: {
+  item: ClothingItem;
+  editMode: boolean;
+}): React.JSX.Element => {
   const { t } = useTranslation();
   const { getImage, removeImage } = useImage();
   const { removeClothingItem } = useCloset();
-  const { outfit, clearOutfit, pinItem } = useOutfit();
+  const { outfit, clearOutfit, pinItem, unpinItem } = useOutfit();
   const navigate = useNavigate();
 
   const isPinned = outfit?.pinnedItemId === item.id;
+  const trayBackground = itemTint(item.color);
 
   async function remove(id: string): Promise<void> {
     if (window.confirm(t("closet.deleteConfirm"))) {
@@ -97,6 +108,12 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
   }
 
   async function pin(): Promise<void> {
+    // Tapping an already-pinned item releases the lock (and stays on the closet);
+    // otherwise pin it into today's outfit and jump to the Today page.
+    if (isPinned) {
+      await unpinItem();
+      return;
+    }
     const result = await pinItem(item);
     if (result) {
       navigate("/");
@@ -106,46 +123,52 @@ const ItemCard = ({ item }: { item: ClothingItem }): React.JSX.Element => {
   }
 
   return (
-    <div className="flex flex-col gap-2 p-2 h-full min-w-0" style={{ aspectRatio: "1 / 1.2" }}>
-      <div
-        className="vera-card flex flex-col items-center relative h-full min-w-0 overflow-hidden"
-      >
-        <button
-          onClick={() => pin()}
-          className={`pin-button absolute top-2 left-2 flex items-center justify-center transition-all vera-keep-opaque ${isPinned ? "active" : ""}`}
-          aria-label={t("closet.pinAria")}
-        >
-          <FaThumbtack size={12} />
-        </button>
-        <button
-          onClick={() => remove(item.id)}
-          className="delete-button absolute top-2 right-2 flex items-center justify-center transition-all text-sm font-bold vera-keep-opaque"
-          aria-label={t("closet.deleteAria")}
-        >
-          <IoClose size={14} />
-        </button>
+    <div
+      className="h-full min-w-0"
+      style={{ aspectRatio: "1 / 1.05" }}
+    >
+      <div className="vera-item-card">
+        {/* tinted tray — the cutout photo floats on a soft tint of its own colour */}
+        <div className="vera-item-tray" style={{ background: trayBackground }}>
+          <img
+            src={getImage(item.imageId || item.id)} // Fallback to item.id for backwards compatibility
+            alt={item.name}
+            className="vera-item-photo"
+            loading="lazy"
+          />
 
-        <div className="flex-grow flex items-center justify-center w-full min-w-0">
-          <div className="flex flex-col items-center w-full min-w-0">
-            <div className="text-7xl flex items-center justify-center">
-              <img
-                src={getImage(item.imageId || item.id)} // Fallback to item.id for backwards compatibility
-                alt={item.name}
-                className="w-24 h-24 object-contain"
-                loading="lazy"
-              />
-            </div>
+          {!editMode && (
+            <button
+              onClick={() => pin()}
+              className={`pin-button vera-keep-opaque ${isPinned ? "active" : ""}`}
+              aria-label={isPinned ? t("closet.unpinAria") : t("closet.pinAria")}
+              aria-pressed={isPinned}
+            >
+              {isPinned ? <BsPinFill size={14} /> : <BsPin size={14} />}
+            </button>
+          )}
 
-            <div className="mt-2 text-sm font-semibold whitespace-nowrap text-ellipsis overflow-hidden w-full text-center">
-              {item.name}
-            </div>
-          </div>
+          {editMode && (
+            <button
+              onClick={() => remove(item.id)}
+              className="delete-button vera-keep-opaque"
+              aria-label={t("closet.deleteAria")}
+            >
+              <IoClose size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* name — reserved two-line area so every card is the same height */}
+        <div className="vera-item-name">
+          <span>{item.name}</span>
         </div>
       </div>
     </div>
   );
 };
-const AddItemButton = ({
+
+const AddItemTile = ({
   onClick,
   disabled,
 }: {
@@ -154,28 +177,21 @@ const AddItemButton = ({
 }): React.JSX.Element => {
   const { t } = useTranslation();
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={t("closet.addItemAria")}
-      title={
-        disabled ? t("closet.addItemLimitTitle") : t("closet.addItemTitle")
-      }
-      className="vera-nav-fab"
-    >
-      <MdAdd size={26} />
-    </button>
-  );
-};
-const BasketHero = ({ count }: { count: number }): React.JSX.Element => {
-  const { t } = useTranslation();
-  return (
-    <div className="vera-basket-hero">
-      <BasketImage full={count > 0} width={110} />
-      <div className="vera-basket-hero__title">
-        {t("closet.basketHeroItems", { count })}
-      </div>
-      <div className="vera-basket-hero__sub">{t("closet.basketHeroSub")}</div>
+    <div className="h-full min-w-0" style={{ aspectRatio: "1 / 1.05" }}>
+      <button
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={t("closet.addItemAria")}
+        title={
+          disabled ? t("closet.addItemLimitTitle") : t("closet.addItemTitle")
+        }
+        className="vera-add-tile"
+      >
+        <span className="vera-add-tile__icon">
+          <MdAdd size={20} />
+        </span>
+        <span className="vera-add-tile__label">{t("closet.addTile")}</span>
+      </button>
     </div>
   );
 };
@@ -248,13 +264,19 @@ export const ClosetPage = (): React.JSX.Element => {
   const justOnboarded =
     (location.state as { justOnboarded?: boolean } | null)?.justOnboarded ??
     false;
+  // The footer floats over the scroll area; reserve its measured height as bottom
+  // padding so the last cards can scroll clear of the nav pill.
+  const [footerRef, footerHeight] = useMeasuredHeight();
   const [selectedCategory, setSelectedCategory] =
     useState<ClothingItemCategory | null>(null);
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
+  const [editMode, setEditMode] = useState<boolean>(false);
   const [showOnboardingToast, setShowOnboardingToast] = useState<boolean>(
     justOnboarded,
   );
   const viewingBasket = location.pathname === "/closet/basket";
+  // Destructive edit mode only applies to the closet grid, never the basket.
+  const effectiveEdit = editMode && !viewingBasket;
   const toggleBasketView = (): void => {
     if (viewingBasket) {
       navigate(-1);
@@ -307,11 +329,25 @@ export const ClosetPage = (): React.JSX.Element => {
   }
 
   const showEmptyState = displayedItems.length === 0 && !viewingBasket;
+  const showAddTile = !viewingBasket && !effectiveEdit && !isUploadLimitReached();
 
   return (
-    <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-      <div className="mx-auto max-w-4xl px-5 pb-1 w-full shrink-0">
-        <h2 className="vera-page-title">{t("closet.title")}</h2>
+    <div className="flex flex-col flex-1 min-h-0 overflow-hidden relative">
+      <div className="mx-auto max-w-4xl px-5 pt-3.5 w-full shrink-0">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="vera-dressing-title">
+            {viewingBasket ? t("closet.basketTitle") : t("closet.title")}
+          </h2>
+          {!viewingBasket && items.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setEditMode((v) => !v)}
+              className={`vera-edit-toggle ${editMode ? "active" : ""}`}
+            >
+              {editMode ? t("closet.editDone") : t("closet.edit")}
+            </button>
+          )}
+        </div>
       </div>
 
       {showOnboardingToast && (
@@ -322,7 +358,18 @@ export const ClosetPage = (): React.JSX.Element => {
         </div>
       )}
 
-      {!viewingBasket && (
+      {viewingBasket ? (
+        <div className="mx-auto max-w-4xl px-4 w-full shrink-0">
+          <button
+            type="button"
+            onClick={toggleBasketView}
+            className="vera-back-link"
+          >
+            <FaChevronLeft />
+            {t("closet.backToCloset")}
+          </button>
+        </div>
+      ) : (
         <div className="shrink-0">
           <CategoryFilterBar
             selectedCategory={selectedCategory}
@@ -331,73 +378,73 @@ export const ClosetPage = (): React.JSX.Element => {
         </div>
       )}
 
-      <div
-        className="flex-1 min-h-0 overflow-y-auto flex flex-col relative"
-        style={{
-          maskImage: "linear-gradient(to bottom, transparent, black 1.5rem, black calc(100% - 3rem), transparent)",
-          WebkitMaskImage: "linear-gradient(to bottom, transparent, black 1.5rem, black calc(100% - 3rem), transparent)",
-        }}
-      >
-        {viewingBasket && <BasketHero count={dirtyCount} />}
-
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col relative">
         <div
           className={`w-full mx-auto max-w-4xl px-4 ${showEmptyState ? "flex-1 flex flex-col justify-center" : "pb-4"}`}
+          style={showEmptyState ? undefined : { paddingBottom: footerHeight + 12 }}
         >
+          <div className="vera-dressing-sub">
+            <span>
+              {viewingBasket ? (
+                <>
+                  <span className="vera-dressing-sub__basket">
+                    {t("closet.basketViewItems", { count: dirtyCount })}
+                  </span>{" "}
+                  · {t("closet.basketViewSub")}
+                </>
+              ) : (
+                <>
+                  {t("closet.available", { count: cleanItems.length })}
+                  {" · "}
+                  <span className="vera-dressing-sub__basket">
+                    {t("closet.basketCountInline", { count: dirtyCount })}
+                  </span>
+                </>
+              )}
+            </span>
+            <span className="vera-dressing-sub__rule" aria-hidden />
+          </div>
           <div
             className={`rounded-2xl ${showEmptyState ? "flex-1 flex flex-col justify-center" : ""}`}
           >
-            {displayedItems.length > 0 ? (
-              <div className="grid gap-2 grid-cols-2 auto-rows-fr">
+            {!showEmptyState ? (
+              <div className="grid gap-2.5 grid-cols-2 auto-rows-fr">
+                {showAddTile && (
+                  <AddItemTile
+                    onClick={() => setShowUploadModal(true)}
+                    disabled={isUploadLimitReached()}
+                  />
+                )}
                 {displayedItems.map((item) => (
-                  <ItemCard key={item.id} item={item} />
+                  <ItemCard key={item.id} item={item} editMode={effectiveEdit} />
                 ))}
-                {(() => {
-                  const slotCount = viewingBasket ? 4 : 6;
-                  return displayedItems.length < slotCount
-                    ? Array.from({ length: slotCount - displayedItems.length }).map((_, i) => (
-                        <div key={`placeholder-${i}`} className="flex flex-col gap-2 p-2 h-full">
-                          <div className="vera-empty-slot w-full h-full" aria-hidden />
-                        </div>
-                      ))
-                    : null;
-                })()}
               </div>
             ) : (
-              !viewingBasket && (
-                <div className="flex-1 flex items-center justify-center pb-20">
-                  <EmptyMessageTemplate
-                    title={t("closet.emptyTitle")}
-                    subtitle={t("closet.emptySubtitle")}
-                    buttonText={t("closet.emptyButton")}
-                    onButtonClick={() => setShowUploadModal(true)}
-                  />
-                </div>
-              )
+              <div className="flex-1 flex items-center justify-center pb-20">
+                <EmptyMessageTemplate
+                  title={t("closet.emptyTitle")}
+                  subtitle={t("closet.emptySubtitle")}
+                  buttonText={t("closet.emptyButton")}
+                  onButtonClick={() => setShowUploadModal(true)}
+                />
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      <AppFooter>
-        <BasketStrip
-          dirtyCount={dirtyCount}
-          viewingBasket={viewingBasket}
-          onTap={toggleBasketView}
-          onWash={() => void onWash()}
-        />
+      <div ref={footerRef} className="absolute inset-x-0 bottom-0 z-10">
+        <AppFooter>
+          <BasketStrip
+            dirtyCount={dirtyCount}
+            viewingBasket={viewingBasket}
+            onTap={toggleBasketView}
+            onWash={() => void onWash()}
+          />
 
-        <NavigationBar
-          activePage="closet"
-          action={
-            items.length > 0 ? (
-              <AddItemButton
-                onClick={() => setShowUploadModal(true)}
-                disabled={isUploadLimitReached()}
-              />
-            ) : undefined
-          }
-        />
-      </AppFooter>
+          <NavigationBar activePage="closet" />
+        </AppFooter>
+      </div>
 
       {showUploadModal && (
         <UploadClothingItemModal

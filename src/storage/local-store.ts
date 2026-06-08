@@ -22,3 +22,4 @@ export const outfitKey = (sessionId: string) => `vera:outfit:${sessionId}`;
 export const lookbookKey = (sessionId: string) =>
   `vera:lookbook:${sessionId}`;
 export const historyKey = (sessionId: string) => `vera:history:${sessionId}`;
+export const todayKey = (sessionId: string) => `vera:today:${sessionId}`;

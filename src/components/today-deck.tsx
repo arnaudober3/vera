@@ -23,14 +23,13 @@ import { useImage } from "../hooks/image.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
 import { useLookbook } from "../hooks/lookbook.ts";
 import { useWeather } from "../hooks/weather.ts";
+import { useTodaySession, cardKeyOf, type Filter } from "../hooks/today-session.ts";
 import type { ClothingItem } from "../models/clothing-item.ts";
-import type { Color } from "../models/color.ts";
 import type { Outfit } from "../models/outfit.ts";
-import { ALL_OCCASIONS, fitsOccasion, type Occasion } from "../models/occasion.ts";
-import { isDarkColor } from "../utils/color.ts";
+import { ALL_OCCASIONS, fitsOccasion } from "../models/occasion.ts";
+import { itemTint } from "../utils/color.ts";
 import "./today-deck.css";
 
-type Filter = Occasion | "all";
 const FILTERS: Filter[] = ["all", ...ALL_OCCASIONS];
 
 // Card + collage geometry (mirrors the design prototype). The collage well is a
@@ -49,27 +48,6 @@ const POS: Record<"acc" | "top" | "bottom" | "shoes", Pos> = {
   shoes: { left: 152, top: 200, w: 112, h: 130, rot: 7, z: 5 },
 };
 
-// Flat collage tile chrome derived from the item colour. Dark items render as a
-// solid block with white text; light items get a soft tint toward white.
-const tints = (color: Color) => {
-  const dark = isDarkColor(color);
-  return {
-    bg: dark ? color : `color-mix(in oklab, ${color} 62%, #ffffff)`,
-    border: dark
-      ? `color-mix(in oklab, ${color} 60%, #1a1a1a)`
-      : `color-mix(in oklab, ${color} 72%, #ffffff)`,
-    name: dark ? "#ffffff" : "var(--vera-fg-strong)",
-    label: dark ? "rgba(255,255,255,0.6)" : "var(--vera-fg-muted)",
-  };
-};
-
-const CAT_LABEL: Partial<Record<ClothingItem["category"], string>> = {
-  accessories: "acc",
-  outerwear: "layer",
-};
-
-const cardKeyOf = (o: Outfit): string => `${o.top.id}|${o.bottom.id}`;
-
 // The piece that fills the "acc" collage well: the layer takes priority over an
 // accessory on a cold day, otherwise the first accessory.
 const accWellPiece = (o: Outfit): ClothingItem | undefined =>
@@ -81,17 +59,20 @@ const ItemTile = ({
   pos,
   imageSrc,
   onRemove,
+  compact,
 }: {
   piece: ClothingItem;
   pos: Pos;
   imageSrc: string | undefined;
   onRemove?: () => void;
+  // The small accessory tile lets its name area hug the text instead of
+  // reserving the full two-line height, so the photo keeps room to breathe.
+  compact?: boolean;
 }): React.JSX.Element => {
-  const t = tints(piece.color);
   const big = pos.w > 120;
   return (
     <div
-      className="deck-tile"
+      className={`deck-tile ${compact ? "deck-tile--compact" : ""}`}
       style={{
         left: pos.left,
         top: pos.top,
@@ -99,9 +80,6 @@ const ItemTile = ({
         height: pos.h,
         transform: `rotate(${pos.rot}deg)`,
         zIndex: pos.z,
-        background: t.bg,
-        border: `1px solid ${t.border}`,
-        padding: big ? "9px 9px 8px" : "7px 6px 6px",
       }}
     >
       {onRemove && (
@@ -115,18 +93,12 @@ const ItemTile = ({
           <FaTimes />
         </button>
       )}
-      <div className="deck-tile-head">
-        <div
-          className="deck-tile-name"
-          style={{ color: t.name, fontSize: big ? 15 : 11.5 }}
-        >
-          {piece.name}
-        </div>
-        <div className="deck-tile-label" style={{ color: t.label }}>
-          {CAT_LABEL[piece.category] || piece.category}
-        </div>
+      {/* name sits on top so it stays readable where tiles overlap */}
+      <div className="deck-tile-name">
+        <span style={{ fontSize: big ? 13 : 10 }}>{piece.name}</span>
       </div>
-      <div className="deck-tile-img">
+      {/* photo floats on a soft tint of its own colour — mirrors the closet card */}
+      <div className="deck-tile-tray" style={{ background: itemTint(piece.color) }}>
         {imageSrc && <img src={imageSrc} alt={piece.name} loading="lazy" />}
       </div>
     </div>
@@ -205,6 +177,7 @@ const CardFace = ({
               pos={POS.acc}
               imageSrc={getImage(acc.id)}
               onRemove={editable ? () => onRemovePiece?.(acc.id) : undefined}
+              compact
             />
           )}
           {extraCount > 0 && (
@@ -450,9 +423,13 @@ const Deck = ({
 const FilterChips = ({
   active,
   onSelect,
+  disabled = false,
 }: {
   active: Filter;
   onSelect: (f: Filter) => void;
+  // Disabled while an outfit is worn: the deck can't regenerate, so the filter
+  // is locked until the wear is undone.
+  disabled?: boolean;
 }): React.JSX.Element => {
   const { t } = useTranslation();
   return (
@@ -463,6 +440,7 @@ const FilterChips = ({
           type="button"
           className={`today-occasion-chip ${f === active ? "active" : ""}`}
           aria-pressed={f === active}
+          disabled={disabled}
           onClick={() => onSelect(f)}
         >
           {f === "all" ? t("today.filterAll") : t(`today.occasion.${f}`)}
@@ -549,15 +527,13 @@ const AccessorySheet = ({
   );
 };
 
-type WornState = { cardKey: string; recordId: string; snapshot: Outfit };
-
 // ────────── Page (deck) ──────────
 export const TodayDeck = (): React.JSX.Element => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { getImage } = useImage();
   const { items, markWorn, markClean, isItemClean } = useCloset();
-  const { buildDeck } = useOutfit();
+  const { buildDeck, outfit } = useOutfit();
   const { weather } = useWeather();
   const { recordOutfit, removeOutfitRecord } = useOutfitHistory();
   const {
@@ -568,10 +544,18 @@ export const TodayDeck = (): React.JSX.Element => {
     removeFromLookbookByOutfit,
   } = useLookbook();
 
-  const [filter, setFilter] = useState<Filter>("all");
-  const [index, setIndex] = useState(0);
-  const [edits, setEdits] = useState<Record<string, Partial<Outfit>>>({});
-  const [worn, setWorn] = useState<WornState | null>(null);
+  const {
+    filter,
+    index,
+    edits,
+    worn,
+    selected,
+    setFilter,
+    setIndex,
+    setEdits,
+    setWorn,
+    setSelected,
+  } = useTodaySession();
   const [sheetKey, setSheetKey] = useState<string | null>(null);
 
   // Scale the fixed-design card to fill the available height of the deck region,
@@ -608,19 +592,27 @@ export const TodayDeck = (): React.JSX.Element => {
   }, []);
   useEffect(() => () => roRef.current?.disconnect(), []);
 
+  // An active pin (set from the closet) locks its garment into every deck card,
+  // so swiping to regenerate only varies the rest of the outfit.
+  const pinnedItemId = outfit?.pinnedItemId;
   const deck = useMemo(
-    () => buildDeck(filter),
+    () => buildDeck(filter, 10, pinnedItemId),
     // buildDeck is recreated each render; rebuild only on the real inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [items, filter, weather?.fetchedAt],
+    [items, filter, weather?.fetchedAt, pinnedItemId],
   );
 
-  // Picking a chip narrows the deck and resets to the top; per-card edits don't
-  // carry across filters.
+  // The worn/selected snapshot is the render source even once its pieces are
+  // dirty. If a key piece (top/bottom) has since been deleted from the closet,
+  // the outfit can no longer be reconstituted — drop it so the deck returns to
+  // normal suggestions.
+  const hasDuo = (o: Outfit): boolean =>
+    items.some((i) => i.id === o.top.id || i.id === o.bottom.id);
   useEffect(() => {
-    setIndex(0);
-    setEdits({});
-  }, [filter]);
+    if (worn && !hasDuo(worn.snapshot)) setWorn(null);
+    if (selected && !hasDuo(selected)) setSelected(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, worn, selected]);
 
   const mergeEdits = (base: Outfit): Outfit => {
     const o = edits[cardKeyOf(base)];
@@ -628,11 +620,36 @@ export const TodayDeck = (): React.JSX.Element => {
   };
 
   const len = deck.length;
-  const baseFront = len ? deck[index % len] : null;
-  const front: Outfit | null = worn ? worn.snapshot : baseFront ? mergeEdits(baseFront) : null;
+  // A kept outfit (post-undo) takes the front slot over the deck card; the deck
+  // sits right behind it so a swipe simply moves on to the regular suggestions.
+  const baseFront: Outfit | null = selected ?? (len ? deck[index % len] : null);
+  const front: Outfit | null = worn
+    ? worn.snapshot
+    : baseFront
+      ? mergeEdits(baseFront)
+      : null;
   const frontKey = worn ? worn.cardKey : baseFront ? cardKeyOf(baseFront) : "";
-  const peekA = worn ? deck[0] : len > 1 ? mergeEdits(deck[(index + 1) % len]) : undefined;
-  const peekB = worn ? deck[1] : len > 2 ? mergeEdits(deck[(index + 2) % len]) : undefined;
+  // Swiping is possible when there's more than one deck card, or when a kept
+  // outfit sits in front of at least one deck card to fall back to.
+  const swipeEnabled = !worn && (len > 1 || (!!selected && len >= 1));
+  const peekA = worn
+    ? deck[0]
+    : selected
+      ? len >= 1
+        ? mergeEdits(deck[index % len])
+        : undefined
+      : len > 1
+        ? mergeEdits(deck[(index + 1) % len])
+        : undefined;
+  const peekB = worn
+    ? deck[1]
+    : selected
+      ? len > 1
+        ? mergeEdits(deck[(index + 1) % len])
+        : undefined
+      : len > 2
+        ? mergeEdits(deck[(index + 2) % len])
+        : undefined;
 
   // ── Wear commit + undo ──
   const commitWear = async (eff: Outfit, key: string): Promise<void> => {
@@ -671,17 +688,22 @@ export const TodayDeck = (): React.JSX.Element => {
     if (eff.shoes) await markClean(eff.shoes);
     for (const a of eff.accessories ?? []) await markClean(a);
     await removeOutfitRecord(worn.recordId);
+    // Keep the outfit on the deck (unworn) instead of regenerating; the user
+    // swipes to move on to fresh suggestions.
+    setSelected(eff);
     setWorn(null);
   };
 
   // ── Per-card secondary editing ──
-  const applyEdit = (key: string, item: ClothingItem): void => {
+  const applyEdit = (key: string, eff: Outfit, item: ClothingItem): void => {
     setEdits((prev) => {
       const cur: Partial<Outfit> = { ...(prev[key] || {}) };
       if (item.category === "outerwear") cur.outerwear = item;
       else if (item.category === "shoes") cur.shoes = item;
       else if (item.category === "accessories") {
-        const existing = cur.accessories ?? [];
+        // Seed from the effective outfit so a kept outfit's existing accessories
+        // (or a deck card's pinned one) survive when a new accessory is added.
+        const existing = cur.accessories ?? eff.accessories ?? [];
         if (!existing.some((a) => a.id === item.id))
           cur.accessories = [...existing, item];
       }
@@ -728,6 +750,9 @@ export const TodayDeck = (): React.JSX.Element => {
     return (
       <>
         <FilterChips active={filter} onSelect={setFilter} />
+        <div className="deck-lead-spacer" aria-hidden>
+          &nbsp;
+        </div>
         <div className="deck-region deck-region-empty">
           <EmptyMessageTemplate
             title={t(`${emptyKey}.title`)}
@@ -776,10 +801,14 @@ export const TodayDeck = (): React.JSX.Element => {
 
   return (
     <>
-      <FilterChips active={filter} onSelect={setFilter} />
+      <FilterChips active={filter} onSelect={setFilter} disabled={!!worn} />
+
+      <div className="deck-lead-spacer" aria-hidden>
+        &nbsp;
+      </div>
 
       <div className="deck-region" ref={setRegionRef}>
-        {!worn && (
+        {swipeEnabled && (
           <>
             <div className="deck-chevron left" aria-hidden="true">
               <FaChevronLeft />
@@ -799,12 +828,16 @@ export const TodayDeck = (): React.JSX.Element => {
           fav={fav}
           scale={scale}
           getImage={getImage}
-          swipeEnabled={!worn}
+          swipeEnabled={swipeEnabled}
           onToggleFav={onToggleFav}
           onAddSlot={() => setSheetKey(frontKey)}
           onRemovePiece={(id) => removePiece(frontKey, front, id)}
           onWearToggle={() => (worn ? void undoWear() : void commitWear(front, frontKey))}
-          onSwiped={() => setIndex((i) => i + 1)}
+          onSwiped={() => {
+            // Dismiss a kept outfit to reveal the deck; otherwise advance it.
+            if (selected) setSelected(null);
+            else setIndex((i) => i + 1);
+          }}
         />
 
         <div className={`deck-hint ${worn ? "worn" : ""}`}>
@@ -820,10 +853,14 @@ export const TodayDeck = (): React.JSX.Element => {
               <span>
                 <b>{t("today.hintTap")}</b> {t("today.hintWear")}
               </span>
-              <span className="deck-hint-dot">·</span>
-              <span>
-                <b>{t("today.hintSwipe")}</b> {t("today.hintAnother")}
-              </span>
+              {swipeEnabled && (
+                <>
+                  <span className="deck-hint-dot">·</span>
+                  <span>
+                    <b>{t("today.hintSwipe")}</b> {t("today.hintAnother")}
+                  </span>
+                </>
+              )}
             </>
           )}
         </div>
@@ -842,7 +879,7 @@ export const TodayDeck = (): React.JSX.Element => {
         library={library}
         selectedIds={selectedIds}
         onPick={(it) => {
-          if (sheetKey) applyEdit(sheetKey, it);
+          if (sheetKey && front) applyEdit(sheetKey, front, it);
           setSheetKey(null);
         }}
         getImage={getImage}
