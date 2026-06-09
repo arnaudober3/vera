@@ -137,6 +137,7 @@
     "addItemTitle": "Add a new item to your closet",
     "addItemLimitTitle": "The limit of uploaded items has been reached",
     "deleteAria": "Delete item",
+    "renameAria": "Rename item",
     "deleteConfirm": "Are you sure you want to delete this item?",
     "pinAria": "Pin to today's outfit",
     "unpinAria": "Unpin from today's outfit",
