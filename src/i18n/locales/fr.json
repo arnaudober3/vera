@@ -137,6 +137,7 @@
     "addItemTitle": "Ajouter un nouvel article à ton dressing",
     "addItemLimitTitle": "La limite d'articles ajoutés a été atteinte",
     "deleteAria": "Supprimer l'article",
+    "renameAria": "Renommer l'article",
     "deleteConfirm": "Es-tu sûr·e de vouloir supprimer cet article ?",
     "pinAria": "Épingler à la tenue du jour",
     "unpinAria": "Retirer l'épingle de la tenue du jour",

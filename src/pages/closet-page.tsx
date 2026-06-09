@@ -84,12 +84,37 @@ const ItemCard = ({
 }): React.JSX.Element => {
   const { t } = useTranslation();
   const { getImage, removeImage } = useImage();
-  const { removeClothingItem } = useCloset();
+  const { removeClothingItem, renameClothingItem } = useCloset();
   const { outfit, clearOutfit, pinItem, unpinItem } = useOutfit();
   const navigate = useNavigate();
 
   const isPinned = outfit?.pinnedItemId === item.id;
   const trayBackground = itemTint(item.color);
+
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [draftName, setDraftName] = useState(item.name);
+
+  // Leaving edit mode while a card is mid-rename should drop back to the plain name.
+  useEffect(() => {
+    if (!editMode) {
+      setIsRenaming(false);
+    }
+  }, [editMode]);
+
+  function startRenaming(): void {
+    setDraftName(item.name);
+    setIsRenaming(true);
+  }
+
+  async function commitRename(): Promise<void> {
+    await renameClothingItem(item.id, draftName);
+    setIsRenaming(false);
+  }
+
+  function cancelRename(): void {
+    setDraftName(item.name);
+    setIsRenaming(false);
+  }
 
   async function remove(id: string): Promise<void> {
     if (window.confirm(t("closet.deleteConfirm"))) {
@@ -164,7 +189,42 @@ const ItemCard = ({
 
         {/* name — reserved two-line area so every card is the same height */}
         <div className="vera-item-name">
-          <span>{item.name}</span>
+          {editMode && isRenaming ? (
+            <input
+              className="vera-item-name-edit"
+              value={draftName}
+              autoFocus
+              onChange={(e) => setDraftName(e.target.value)}
+              onBlur={() => commitRename()}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  commitRename();
+                } else if (e.key === "Escape") {
+                  e.preventDefault();
+                  cancelRename();
+                }
+              }}
+            />
+          ) : editMode ? (
+            <span
+              className="vera-item-name-editable"
+              role="button"
+              tabIndex={0}
+              aria-label={t("closet.renameAria")}
+              onClick={startRenaming}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  startRenaming();
+                }
+              }}
+            >
+              {item.name}
+            </span>
+          ) : (
+            <span>{item.name}</span>
+          )}
         </div>
       </div>
     </div>
