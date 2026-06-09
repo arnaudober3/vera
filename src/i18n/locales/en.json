@@ -54,7 +54,7 @@
       "title": "A fresh outfit every morning.",
       "subtitle": "Snap your closet — Vera organises it, picks an outfit for tomorrow, and tracks what's clean.",
       "cta": "Get started",
-      "skip": "I'll do it later"
+      "skip": "Skip"
     },
     "snap": {
       "step": "Step 1",
@@ -72,18 +72,17 @@
       "subtitle": "This usually takes a few seconds."
     },
     "reveal": {
-      "cleanedUp": "Cleaned up",
+      "cleanedUp": "Uploaded",
       "title": "That's all Vera needs.",
       "before": "Before",
       "after": "After",
-      "cleanBadge": "clean",
       "imageOriginalAlt": "Original",
       "imageCleanedAlt": "Background removed",
       "detecting": "Detecting…",
       "autoTag": "auto",
       "save": "Save to closet",
       "retake": "Retake",
-      "skip": "Skip and finish"
+      "skip": "Finish"
     }
   },
   "today": {
