@@ -1,7 +1,6 @@
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import {
   FaCheck,
   FaCheckCircle,
@@ -12,9 +11,9 @@ import {
   FaPlus,
   FaRegHeart,
   FaTimes,
+  FaTshirt,
 } from "react-icons/fa";
 import NavigationBar from "./navigation-bar.tsx";
-import EmptyMessageTemplate from "./empty-message-template.tsx";
 import { BasketStrip } from "./basket-strip.tsx";
 import { AppFooter } from "./app-footer.tsx";
 import { useOutfit } from "../hooks/outfit.ts";
@@ -423,10 +422,14 @@ const Deck = ({
 const FilterChips = ({
   active,
   onSelect,
+  availableFilters,
   disabled = false,
 }: {
   active: Filter;
   onSelect: (f: Filter) => void;
+  // Filters with no available outfit (no clean duo for that occasion) are
+  // disabled so the user can't land on an empty deck.
+  availableFilters: Set<Filter>;
   // Disabled while an outfit is worn: the deck can't regenerate, so the filter
   // is locked until the wear is undone.
   disabled?: boolean;
@@ -440,7 +443,7 @@ const FilterChips = ({
           type="button"
           className={`today-occasion-chip ${f === active ? "active" : ""}`}
           aria-pressed={f === active}
-          disabled={disabled}
+          disabled={disabled || !availableFilters.has(f)}
           onClick={() => onSelect(f)}
         >
           {f === "all" ? t("today.filterAll") : t(`today.occasion.${f}`)}
@@ -530,7 +533,6 @@ const AccessorySheet = ({
 // ────────── Page (deck) ──────────
 export const TodayDeck = (): React.JSX.Element => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { getImage } = useImage();
   const { items, markWorn, markClean, isItemClean } = useCloset();
   const { buildDeck, outfit } = useOutfit();
@@ -569,7 +571,7 @@ export const TodayDeck = (): React.JSX.Element => {
     roRef.current = null;
     if (!el) return;
     // Space the hint + peek tail need below the card, in design pixels.
-    const HINT_RESERVE = 70;
+    const HINT_RESERVE = 48;
     let raf = 0;
     const measure = (): void => {
       const cs = getComputedStyle(el);
@@ -595,12 +597,32 @@ export const TodayDeck = (): React.JSX.Element => {
   // An active pin (set from the closet) locks its garment into every deck card,
   // so swiping to regenerate only varies the rest of the outfit.
   const pinnedItemId = outfit?.pinnedItemId;
-  const deck = useMemo(
+  const _deck = useMemo(
     () => buildDeck(filter, 10, pinnedItemId),
     // buildDeck is recreated each render; rebuild only on the real inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [items, filter, weather?.fetchedAt, pinnedItemId],
   );
+  const deck =
+    import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _deck) : _deck;
+
+  // A filter has an available outfit when a clean top and a clean bottom both
+  // fit its occasion — the same duo logic that drives the empty state below.
+  const availableFilters = useMemo(() => {
+    const cleanTops = items.filter(
+      (i) => i.category === "top" && isItemClean(i.id),
+    );
+    const cleanBottoms = items.filter(
+      (i) => i.category === "bottom" && isItemClean(i.id),
+    );
+    const hasDuo = (f: Filter): boolean => {
+      const fits = (i: ClothingItem): boolean =>
+        f === "all" || fitsOccasion(i, f);
+      return cleanTops.some(fits) && cleanBottoms.some(fits);
+    };
+    return new Set(FILTERS.filter(hasDuo));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);
 
   // The worn/selected snapshot is the render source even once its pieces are
   // dirty. If a key piece (top/bottom) has since been deleted from the closet,
@@ -629,27 +651,32 @@ export const TodayDeck = (): React.JSX.Element => {
       ? mergeEdits(baseFront)
       : null;
   const frontKey = worn ? worn.cardKey : baseFront ? cardKeyOf(baseFront) : "";
-  // Swiping is possible when there's more than one deck card, or when a kept
-  // outfit sits in front of at least one deck card to fall back to.
-  const swipeEnabled = !worn && (len > 1 || (!!selected && len >= 1));
+  // Swiping (and its chevron/peek affordances) only makes sense when the deck
+  // holds an outfit different from the one on display — otherwise there's
+  // nothing to regenerate. After undoing a worn look the kept outfit is often
+  // the deck's only card, so guard against that rather than just `len >= 1`.
+  const hasAlternative = deck.some((d) => cardKeyOf(d) !== frontKey);
+  const swipeEnabled = !worn && hasAlternative;
   const peekA = worn
     ? deck[0]
-    : selected
-      ? len >= 1
+    : !hasAlternative
+      ? undefined
+      : selected
         ? mergeEdits(deck[index % len])
-        : undefined
-      : len > 1
-        ? mergeEdits(deck[(index + 1) % len])
-        : undefined;
+        : len > 1
+          ? mergeEdits(deck[(index + 1) % len])
+          : undefined;
   const peekB = worn
     ? deck[1]
-    : selected
-      ? len > 1
-        ? mergeEdits(deck[(index + 1) % len])
-        : undefined
-      : len > 2
-        ? mergeEdits(deck[(index + 2) % len])
-        : undefined;
+    : !hasAlternative
+      ? undefined
+      : selected
+        ? len > 1
+          ? mergeEdits(deck[(index + 1) % len])
+          : undefined
+        : len > 2
+          ? mergeEdits(deck[(index + 2) % len])
+          : undefined;
 
   // ── Wear commit + undo ──
   const commitWear = async (eff: Outfit, key: string): Promise<void> => {
@@ -749,17 +776,39 @@ export const TodayDeck = (): React.JSX.Element => {
 
     return (
       <>
-        <FilterChips active={filter} onSelect={setFilter} />
+        <FilterChips
+          active={filter}
+          onSelect={setFilter}
+          availableFilters={availableFilters}
+        />
         <div className="deck-lead-spacer" aria-hidden>
           &nbsp;
         </div>
-        <div className="deck-region deck-region-empty">
-          <EmptyMessageTemplate
-            title={t(`${emptyKey}.title`)}
-            subtitle={t(`${emptyKey}.subtitle`)}
-            buttonText={t(`${emptyKey}.button`)}
-            onButtonClick={() => navigate("/closet")}
-          />
+        <div className="deck-region" ref={setRegionRef}>
+          <div
+            className="deck-scale-box"
+            style={{ width: CARD_W * scale, height: CARD_H * scale }}
+          >
+            <div
+              className="deck-stack"
+              style={{
+                width: CARD_W,
+                height: CARD_H,
+                transform: `scale(${scale})`,
+                transformOrigin: "top left",
+              }}
+            >
+              <div className="deck-card">
+                <div className="deck-empty-body">
+                  <div className="deck-empty-icon" aria-hidden>
+                    <FaTshirt />
+                  </div>
+                  <p className="deck-empty-title">{t(`${emptyKey}.title`)}</p>
+                  <p className="deck-empty-sub">{t(`${emptyKey}.subtitle`)}</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
         <AppFooter>
           <div className="deck-basket-slot">
@@ -801,7 +850,12 @@ export const TodayDeck = (): React.JSX.Element => {
 
   return (
     <>
-      <FilterChips active={filter} onSelect={setFilter} disabled={!!worn} />
+      <FilterChips
+        active={filter}
+        onSelect={setFilter}
+        availableFilters={availableFilters}
+        disabled={!!worn}
+      />
 
       <div className="deck-lead-spacer" aria-hidden>
         &nbsp;

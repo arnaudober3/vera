@@ -199,3 +199,32 @@
   background: rgba(255, 255, 255, 0.4);
   min-height: 210px;
 }
+
+.lookbook-empty-slot--message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 18px;
+  text-align: center;
+}
+
+.lookbook-empty-slot--message .lookbook-row-piece {
+  color: var(--vera-primary);
+}
+
+.lookbook-empty-slot--message .lookbook-name__text {
+  font-family: var(--vera-font-display);
+  font-style: italic;
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--vera-fg-default);
+  white-space: normal;
+  overflow: visible;
+}
+
+.lookbook-empty-slot--message .lookbook-meta {
+  margin-top: 0;
+  max-width: 30ch;
+}

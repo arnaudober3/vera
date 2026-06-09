@@ -27,10 +27,6 @@
   justify-content: flex-start;
 }
 
-.deck-region-empty {
-  justify-content: center;
-}
-
 /* ── Card stack ── */
 /* The scale box is the laid-out size; the stack inside keeps its fixed design
    size and is scaled to fill it (see Deck component). */
@@ -99,6 +95,67 @@
 
 .deck-card.worn {
   border: 1.5px solid var(--vera-primary);
+}
+
+/* Empty card — same shell (and border) as a deck card, message centred in
+   place of the well. */
+.deck-empty-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+  padding: 0 12px 8px;
+}
+
+/* Icon sits in a soft tinted disc, echoing the deck tile trays. */
+.deck-empty-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  margin-bottom: 4px;
+  border-radius: 9999px;
+  background: var(--vera-gray-100);
+  color: var(--vera-gray-300);
+  font-size: 38px;
+}
+
+/* Title — same look as a deck tile name. */
+.deck-empty-title {
+  margin: 0;
+  text-align: center;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--vera-fg-strong);
+}
+
+/* Subtitle — same typography as the deck "add" button. */
+.deck-empty-sub {
+  margin: 0;
+  text-align: center;
+  color: var(--vera-fg-muted);
+  font-family: var(--vera-font-sans);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* CTA reuses the deck-hint text style (like "Tap to wear"), as a button. */
+.deck-empty-hint {
+  height: auto;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  font-family: var(--vera-font-sans);
+}
+
+.deck-empty-hint:hover {
+  color: var(--vera-primary);
 }
 
 /* Top chrome — tall enough that the heart always clears the items below. */
@@ -329,7 +386,7 @@
 .deck-hint {
   flex-shrink: 0;
   height: 22px;
-  margin-top: 24px;
+  margin-top: 14px;
   display: flex;
   align-items: center;
   justify-content: center;

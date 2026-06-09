@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useNavigate } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { MdChevronLeft, MdLocalLaundryService } from "react-icons/md";
 import { useCloset } from "../hooks/closet.ts";
@@ -37,6 +37,7 @@ export const BasketStrip = ({
   onWash,
 }: BasketStripProps): React.JSX.Element | null => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const { items, markLaundryDone } = useCloset();
 
@@ -46,7 +47,9 @@ export const BasketStrip = ({
 
   if (computedDirtyCount === 0 && !viewingBasket) return null;
 
-  const handleTap = onTap ?? (() => navigate("/closet/basket"));
+  const handleTap =
+    onTap ??
+    (() => navigate("/closet/basket", { state: { from: location.pathname } }));
   const handleWash = onWash ?? (() => void markLaundryDone());
 
   return (
@@ -77,7 +80,7 @@ export const BasketStrip = ({
           <>
             <div className="vera-basket-strip__title">
               <MdChevronLeft size={16} aria-hidden />
-              {t("basket.viewingTitle")}
+              {t("basket.countTitle", { count: computedDirtyCount })}
             </div>
             <div className="vera-basket-strip__sub">{t("basket.viewingSub")}</div>
           </>

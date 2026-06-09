@@ -320,6 +320,11 @@ body {
     color: #ffffff;
     border-color: transparent;
   }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
 }
 
 .vera-dirty-overlay {
