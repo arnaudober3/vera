@@ -124,13 +124,11 @@
     },
     "empty": {
       "title": "No outfit right now.",
-      "subtitle": "Add some clothes or do a laundry run to put an outfit together.",
-      "button": "Go to closet"
+      "subtitle": "Add some clothes or do a laundry run to put an outfit together."
     },
     "emptyOccasion": {
       "title": "Nothing for this occasion.",
-      "subtitle": "No clean clothes fit this occasion — pick another occasion or do laundry.",
-      "button": "Go to closet"
+      "subtitle": "No clean clothes fit this occasion — pick another occasion or do laundry."
     }
   },
   "closet": {

@@ -124,13 +124,11 @@
     },
     "empty": {
       "title": "Aucune tenue pour le moment.",
-      "subtitle": "Ajoute des vêtements ou fais une lessive pour composer une tenue.",
-      "button": "Aller au dressing"
+      "subtitle": "Ajoute des vêtements ou fais une lessive pour composer une tenue."
     },
     "emptyOccasion": {
       "title": "Rien pour cette occasion.",
-      "subtitle": "Aucun vêtement propre ne convient à cette occasion — change d'occasion ou fais une lessive.",
-      "button": "Aller au dressing"
+      "subtitle": "Aucun vêtement propre ne convient à cette occasion — change d'occasion ou fais une lessive."
     }
   },
   "closet": {
