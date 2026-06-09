@@ -1,9 +1,7 @@
 import * as React from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router";
 import {
-  FaArrowRight,
   FaCheck,
   FaCheckCircle,
   FaChevronLeft,
@@ -535,7 +533,6 @@ const AccessorySheet = ({
 // ────────── Page (deck) ──────────
 export const TodayDeck = (): React.JSX.Element => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { getImage } = useImage();
   const { items, markWorn, markClean, isItemClean } = useCloset();
   const { buildDeck, outfit } = useOutfit();
@@ -776,9 +773,6 @@ export const TodayDeck = (): React.JSX.Element => {
       cleanTops.some(matchesFilter) && cleanBottoms.some(matchesFilter);
     const occasionBlocked = hasCleanDuo && !hasFilterDuo;
     const emptyKey = occasionBlocked ? "today.emptyOccasion" : "today.empty";
-    // Bold the leading action word, mirroring the "Tap to wear" hint.
-    const ctaLabel = t(`${emptyKey}.button`);
-    const [ctaLead, ...ctaRest] = ctaLabel.split(" ");
 
     return (
       <>
@@ -815,17 +809,6 @@ export const TodayDeck = (): React.JSX.Element => {
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            className="deck-hint deck-empty-hint"
-            onClick={() => navigate("/closet")}
-          >
-            <FaArrowRight size={11} />
-            <span>
-              <b>{ctaLead}</b>
-              {ctaRest.length > 0 && ` ${ctaRest.join(" ")}`}
-            </span>
-          </button>
         </div>
         <AppFooter>
           <div className="deck-basket-slot">
