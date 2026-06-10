@@ -54,7 +54,7 @@
       "title": "Une nouvelle tenue chaque matin.",
       "subtitle": "Prends ton dressing en photo — Vera l'organise, choisit une tenue pour demain, et garde un œil sur ce qui est propre.",
       "cta": "Commencer",
-      "skip": "Plus tard"
+      "skip": "Passer"
     },
     "snap": {
       "step": "Étape 1",
@@ -72,18 +72,17 @@
       "subtitle": "Cela prend généralement quelques secondes."
     },
     "reveal": {
-      "cleanedUp": "Nettoyé",
+      "cleanedUp": "Uploadé",
       "title": "C'est tout ce qu'il faut à Vera.",
       "before": "Avant",
       "after": "Après",
-      "cleanBadge": "propre",
       "imageOriginalAlt": "Original",
       "imageCleanedAlt": "Fond supprimé",
       "detecting": "Détection…",
       "autoTag": "auto",
       "save": "Ajouter au dressing",
       "retake": "Reprendre",
-      "skip": "Passer et terminer"
+      "skip": "Terminer"
     }
   },
   "today": {
@@ -137,6 +136,7 @@
     "addItemTitle": "Ajouter un nouvel article à ton dressing",
     "addItemLimitTitle": "La limite d'articles ajoutés a été atteinte",
     "deleteAria": "Supprimer l'article",
+    "renameAria": "Renommer l'article",
     "deleteConfirm": "Es-tu sûr·e de vouloir supprimer cet article ?",
     "pinAria": "Épingler à la tenue du jour",
     "unpinAria": "Retirer l'épingle de la tenue du jour",

@@ -83,6 +83,11 @@ export function useCloset() {
     emitChange(state.filter((i) => i.id !== id));
     return id;
   };
+  const renameClothingItem = async (id: string, name: string): Promise<void> => {
+    const trimmed = name.trim();
+    if (!trimmed) return; // name is required — ignore empty input
+    emitChange(state.map((i) => (i.id === id ? { ...i, name: trimmed } : i)));
+  };
   const markLaundryDone = async (): Promise<void> => {
     emitChange(state.map((i) => ({ ...i, isClean: true })));
   };
@@ -133,6 +138,7 @@ export function useCloset() {
     items,
     addClothingItem,
     removeClothingItem,
+    renameClothingItem,
     markLaundryDone,
     markWorn,
     markClean,
