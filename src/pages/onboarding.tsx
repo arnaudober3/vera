@@ -4,10 +4,7 @@ import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FaCamera, FaCheck, FaRegImage, FaTshirt } from "react-icons/fa";
 import {
-  ALL_CATEGORIES,
-  ALL_SUBCATEGORIES,
   type ClothingItemCategory,
-  type ClothingItemSubCategory,
   type CreateClothingItem,
   subCategoryToCategory,
 } from "../models/clothing-item.ts";
@@ -47,10 +44,6 @@ export const WelcomePage = (): React.JSX.Element => {
   const [name, setName] = useState("");
   const [classification, setClassification] =
     useState<ClassificationResult | null>(null);
-  const [subCategory, setSubCategory] = useState<ClothingItemSubCategory | "">(
-    "",
-  );
-  const [classificationFailed, setClassificationFailed] = useState(false);
   const [processingError, setProcessingError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -66,8 +59,6 @@ export const WelcomePage = (): React.JSX.Element => {
     setBeforeImage(null);
     setAfterImage(null);
     setClassification(null);
-    setSubCategory("");
-    setClassificationFailed(false);
     setProcessingError(null);
     setStep("snap");
   }
@@ -99,7 +90,7 @@ export const WelcomePage = (): React.JSX.Element => {
         const result = await fashionClassifier.classifyClothing(noBgBlob);
         setClassification(result);
       } catch {
-        setClassificationFailed(true);
+        setClassification(null);
       }
 
       setStep("reveal");
@@ -111,12 +102,10 @@ export const WelcomePage = (): React.JSX.Element => {
 
   async function handleSave(): Promise<void> {
     if (!afterImage || !name.trim()) return;
-    if (classificationFailed && !subCategory) return;
 
     setIsSaving(true);
     try {
-      const resolvedSubCategory =
-        subCategory || classification?.subCategory || undefined;
+      const resolvedSubCategory = classification?.subCategory || undefined;
       const resolvedCategory: ClothingItemCategory = resolvedSubCategory
         ? subCategoryToCategory[resolvedSubCategory]
         : "top";
@@ -169,10 +158,6 @@ export const WelcomePage = (): React.JSX.Element => {
           afterImage={afterImage}
           name={name}
           onNameChange={setName}
-          classification={classification}
-          classificationFailed={classificationFailed}
-          subCategory={subCategory}
-          onSubCategoryChange={setSubCategory}
           isSaving={isSaving}
           onSave={handleSave}
           onRetake={resetForRetake}
@@ -591,8 +576,8 @@ const BeforeAfter = ({
         style={{
           aspectRatio: "1 / 1",
           borderRadius: 10,
-          background:
-            "linear-gradient(135deg, #d8c9b8 0%, #e8dccc 60%, #c9b9a4 100%)",
+          background: "#fff",
+          border: "1px solid var(--vera-surface-border)",
           position: "relative",
           overflow: "hidden",
           display: "flex",
@@ -643,22 +628,6 @@ const BeforeAfter = ({
       ) : (
         <FaTshirt size={64} color="#365f8e" />
       )}
-      <div
-        style={{
-          position: "absolute",
-          top: 6,
-          right: 6,
-          background: "var(--vera-primary)",
-          color: "#fff",
-          borderRadius: 999,
-          padding: "2px 8px",
-          fontSize: 10,
-          fontWeight: 600,
-          letterSpacing: 0.02,
-        }}
-      >
-        {t("onboarding.reveal.cleanBadge")}
-      </div>
     </div>
   );
 };
@@ -668,10 +637,6 @@ const RevealScreen = ({
   afterImage,
   name,
   onNameChange,
-  classification,
-  classificationFailed,
-  subCategory,
-  onSubCategoryChange,
   isSaving,
   onSave,
   onRetake,
@@ -681,24 +646,13 @@ const RevealScreen = ({
   afterImage: string | null;
   name: string;
   onNameChange: (value: string) => void;
-  classification: ClassificationResult | null;
-  classificationFailed: boolean;
-  subCategory: ClothingItemSubCategory | "";
-  onSubCategoryChange: (value: ClothingItemSubCategory | "") => void;
   isSaving: boolean;
   onSave: () => void;
   onRetake: () => void;
   onSkip: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const detectedLabel = classification?.subCategory
-    ? t(`subcategories.${classification.subCategory}` as const)
-    : null;
-  const canSave =
-    !!afterImage &&
-    !!name.trim() &&
-    (!classificationFailed || !!subCategory) &&
-    !isSaving;
+  const canSave = !!afterImage && !!name.trim() && !isSaving;
 
   return (
     <Stage>
@@ -795,61 +749,6 @@ const RevealScreen = ({
             onChange={(e) => onNameChange(e.target.value)}
             disabled={isSaving}
           />
-        </label>
-
-        <label style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          <span
-            style={{
-              fontSize: 12,
-              fontWeight: 600,
-              color: "var(--vera-fg-muted)",
-              textTransform: "uppercase",
-              letterSpacing: 0.04,
-            }}
-          >
-            {t("common.category")}
-          </span>
-          {classificationFailed ? (
-            <select
-              className="vera-input"
-              value={subCategory}
-              onChange={(e) =>
-                onSubCategoryChange(
-                  e.target.value as ClothingItemSubCategory | "",
-                )
-              }
-              disabled={isSaving}
-            >
-              <option disabled value="">
-                {t("common.select")}
-              </option>
-              {ALL_CATEGORIES.map((cat) => (
-                <optgroup key={cat} label={t(`categories.${cat}` as const)}>
-                  {ALL_SUBCATEGORIES.filter(
-                    (sub) => subCategoryToCategory[sub] === cat,
-                  ).map((sub) => (
-                    <option key={sub} value={sub}>
-                      {t(`subcategories.${sub}` as const)}
-                    </option>
-                  ))}
-                </optgroup>
-              ))}
-            </select>
-          ) : (
-            <div
-              className="vera-input"
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <span>{detectedLabel ?? t("onboarding.reveal.detecting")}</span>
-              <span style={{ color: "var(--vera-fg-muted)" }}>
-                {t("onboarding.reveal.autoTag")}
-              </span>
-            </div>
-          )}
         </label>
       </div>
 

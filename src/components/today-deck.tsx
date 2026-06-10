@@ -443,7 +443,9 @@ const FilterChips = ({
           type="button"
           className={`today-occasion-chip ${f === active ? "active" : ""}`}
           aria-pressed={f === active}
-          disabled={disabled || !availableFilters.has(f)}
+          // "all" is the default filter, so it stays selectable even when no
+          // clean duo is available — only the worn lock can disable it.
+          disabled={disabled || (f !== "all" && !availableFilters.has(f))}
           onClick={() => onSelect(f)}
         >
           {f === "all" ? t("today.filterAll") : t(`today.occasion.${f}`)}
