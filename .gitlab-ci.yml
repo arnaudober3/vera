@@ -1,0 +1,13 @@
+pages:
+  image: node:22
+  stage: deploy
+  script:
+    - npm ci
+    - curl -Ls https://cli.doppler.com/install.sh | sh
+    - doppler run -- npm run build
+  publish: dist
+  artifacts:
+    paths:
+      - dist
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
