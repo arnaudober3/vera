@@ -36,21 +36,28 @@ const FILTERS: Filter[] = ["all", ...ALL_OCCASIONS];
 // the phone-frame width.
 const CARD_W = 296;
 const CARD_H = 426;
-const WELL_W = 264;
-const WELL_H = 330;
+// The garment collage fills the upper card; the well is shortened so the
+// accessory shelf has a clean row along the bottom of the same card.
+const WELL_W = 268;
+// Shortened so the compact square-thumbnail accessory shelf fits inside the
+// fixed-height card below the two hero garments.
+const WELL_H = 240;
 
 type Pos = { left: number; top: number; w: number; h: number; rot: number; z: number };
-const POS: Record<"acc" | "top" | "bottom" | "shoes", Pos> = {
-  acc: { left: 0, top: 8, w: 90, h: 104, rot: -8, z: 3 },
-  top: { left: 84, top: 0, w: 176, h: 200, rot: 4, z: 2 },
-  bottom: { left: 6, top: 150, w: 152, h: 178, rot: -3, z: 4 },
-  shoes: { left: 152, top: 200, w: 112, h: 130, rot: 7, z: 5 },
+// The collage holds only the two hero garments (top + bottom). Everything else
+// the picker can add — outerwear, shoes, accessories — lives on the shelf below.
+const POS: Record<"top" | "bottom", Pos> = {
+  top: { left: 76, top: 0, w: 172, h: 192, rot: 4, z: 2 },
+  bottom: { left: 8, top: 76, w: 148, h: 160, rot: -4, z: 3 },
 };
 
-// The piece that fills the "acc" collage well: the layer takes priority over an
-// accessory on a cold day, otherwise the first accessory.
-const accWellPiece = (o: Outfit): ClothingItem | undefined =>
-  o.outerwear ?? o.accessories?.[0];
+// Everything that isn't the top/bottom hero — outerwear, shoes and accessories.
+// These are exactly the items the "Add an accessory" picker offers, and they all
+// land on the shelf so none hide behind a "+N".
+const shelfPieces = (o: Outfit): ClothingItem[] =>
+  [o.outerwear, o.shoes, ...(o.accessories ?? [])].filter(
+    (x): x is ClothingItem => Boolean(x),
+  );
 
 // ────────── Item tile (filled) ──────────
 const ItemTile = ({
@@ -104,6 +111,81 @@ const ItemTile = ({
   );
 };
 
+// ────────── Accessory shelf ──────────
+// Every accessory on a look gets its own tile on a tidy shelf along the bottom
+// of the card — none hide behind a "+N". The rare 4+ case rolls the tail into a
+// single overflow tile so the row stays clean.
+const AccessoryShelfTile = ({
+  piece,
+  imageSrc,
+  onRemove,
+}: {
+  piece: ClothingItem;
+  imageSrc: string | undefined;
+  onRemove?: () => void;
+}): React.JSX.Element => (
+  <div className="deck-shelf-tile">
+    {onRemove && (
+      <button
+        type="button"
+        className="deck-tile-remove"
+        aria-label="Remove item"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={onRemove}
+      >
+        <FaTimes />
+      </button>
+    )}
+    <div className="deck-shelf-tray" style={{ background: itemTint(piece.color) }}>
+      {imageSrc && <img src={imageSrc} alt={piece.name} loading="lazy" />}
+    </div>
+    <div className="deck-shelf-name">{piece.name}</div>
+  </div>
+);
+
+// "+N more" card — fills the final slot when the accessories don't all fit.
+// Tapping it opens a read-only view of every accessory on the look.
+const AccessoryShelfMore = ({
+  count,
+  onOpen,
+}: {
+  count: number;
+  onOpen?: () => void;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      className="deck-shelf-overflow"
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={onOpen}
+    >
+      <span className="deck-shelf-overflow-count">
+        <FaPlus size={12} />
+        {count}
+      </span>
+      <span className="deck-shelf-overflow-more">{t("today.moreLabel")}</span>
+    </button>
+  );
+};
+
+// Compact "Add" card at the end of the shelf — replaces the old chrome button.
+const AccessoryShelfAdd = ({ onAdd }: { onAdd: () => void }): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      className="deck-shelf-add"
+      aria-label={t("today.addAccessory")}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={onAdd}
+    >
+      <FaPlus size={12} />
+      <span>{t("today.addShort")}</span>
+    </button>
+  );
+};
+
 // ────────── Card face (flat collage + chrome) ──────────
 const CardFace = ({
   outfit,
@@ -114,6 +196,7 @@ const CardFace = ({
   onToggleFav,
   onAddSlot,
   onRemovePiece,
+  onShowMore,
 }: {
   outfit: Outfit;
   worn: boolean;
@@ -123,37 +206,42 @@ const CardFace = ({
   onToggleFav?: () => void;
   onAddSlot?: () => void;
   onRemovePiece?: (id: string) => void;
+  onShowMore?: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const acc = accWellPiece(outfit);
-  // Pieces beyond the single acc well (e.g. a layer + accessory both present).
-  const accBucket = [outfit.outerwear, ...(outfit.accessories ?? [])].filter(
-    (x): x is ClothingItem => Boolean(x),
-  );
-  const extraCount = Math.max(0, accBucket.length - 1);
+  const extras = shelfPieces(outfit);
+  // The "Add" affordance lives in the shelf's first slot (front, unworn card).
+  const showAdd = editable && Boolean(onAddSlot);
+
+  // The shelf is always three equal-width slots. Add takes the first slot; the
+  // accessories fill the rest, and when they don't all fit the final slot
+  // collapses to a "+N more" card that opens the read-only list.
+  type Cell =
+    | { kind: "add" }
+    | { kind: "tile"; piece: ClothingItem }
+    | { kind: "more"; count: number };
+  const cells: Cell[] = [];
+  if (showAdd) cells.push({ kind: "add" });
+  const slotsLeft = 3 - cells.length;
+  if (extras.length <= slotsLeft) {
+    extras.forEach((p) => cells.push({ kind: "tile", piece: p }));
+  } else {
+    const visible = slotsLeft - 1;
+    extras
+      .slice(0, visible)
+      .forEach((p) => cells.push({ kind: "tile", piece: p }));
+    cells.push({ kind: "more", count: extras.length - visible });
+  }
+  const showShelf = cells.length > 0;
 
   return (
     <div className={`deck-card ${worn ? "worn" : ""}`}>
       <div className="deck-card-chrome">
-        {worn ? (
+        {worn && (
           <div className="deck-worn-badge">
             <FaCheck size={11} />
             {t("today.wearingBadge")}
           </div>
-        ) : (
-          editable &&
-          onAddSlot && (
-            <button
-              type="button"
-              className="deck-add-btn"
-              aria-label={t("today.addAccessory")}
-              onPointerDown={(e) => e.stopPropagation()}
-              onClick={onAddSlot}
-            >
-              <FaPlus size={10} />
-              {t("today.addAccessory")}
-            </button>
-          )
         )}
         {onToggleFav && (
           <button
@@ -168,42 +256,44 @@ const CardFace = ({
         )}
       </div>
 
-      <div className="deck-well-wrap">
+      <div
+        className={`deck-well-wrap ${showShelf ? "deck-well-wrap--shelf" : ""}`}
+      >
         <div className="deck-well" style={{ width: WELL_W, height: WELL_H }}>
-          {acc && (
-            <ItemTile
-              piece={acc}
-              pos={POS.acc}
-              imageSrc={getImage(acc.id)}
-              onRemove={editable ? () => onRemovePiece?.(acc.id) : undefined}
-              compact
-            />
-          )}
-          {extraCount > 0 && (
-            <div className="deck-extra-badge" style={{ zIndex: POS.acc.z + 1 }}>
-              +{extraCount}
-            </div>
-          )}
-
           <ItemTile piece={outfit.top} pos={POS.top} imageSrc={getImage(outfit.top.id)} />
           <ItemTile
             piece={outfit.bottom}
             pos={POS.bottom}
             imageSrc={getImage(outfit.bottom.id)}
           />
-
-          {outfit.shoes && (
-            <ItemTile
-              piece={outfit.shoes}
-              pos={POS.shoes}
-              imageSrc={getImage(outfit.shoes.id)}
-              onRemove={
-                editable ? () => onRemovePiece?.(outfit.shoes!.id) : undefined
-              }
-            />
-          )}
         </div>
       </div>
+
+      {/* Accessory shelf — three equal-width slots: an "Add" card (editable) then
+          the look's extras, the final slot collapsing to a "+N more" card. */}
+      {showShelf && (
+        <div className="deck-shelf">
+          <div className="deck-shelf-label">{t("today.accessoriesLabel")}</div>
+          <div className="deck-shelf-row">
+            {cells.map((c) => {
+              if (c.kind === "add")
+                return <AccessoryShelfAdd key="add" onAdd={onAddSlot!} />;
+              if (c.kind === "more")
+                return (
+                  <AccessoryShelfMore key="more" count={c.count} onOpen={onShowMore} />
+                );
+              return (
+                <AccessoryShelfTile
+                  key={c.piece.id}
+                  piece={c.piece}
+                  imageSrc={getImage(c.piece.id)}
+                  onRemove={editable ? () => onRemovePiece?.(c.piece.id) : undefined}
+                />
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -250,6 +340,7 @@ const FrontCard = ({
   onToggleFav,
   onAddSlot,
   onRemovePiece,
+  onShowMore,
   onWearToggle,
   onSwiped,
 }: {
@@ -261,6 +352,7 @@ const FrontCard = ({
   onToggleFav: () => void;
   onAddSlot: () => void;
   onRemovePiece: (id: string) => void;
+  onShowMore: () => void;
   onWearToggle: () => void;
   onSwiped: () => void;
 }): React.JSX.Element => {
@@ -346,6 +438,7 @@ const FrontCard = ({
         onToggleFav={onToggleFav}
         onAddSlot={onAddSlot}
         onRemovePiece={onRemovePiece}
+        onShowMore={onShowMore}
       />
     </div>
   );
@@ -368,6 +461,7 @@ const Deck = ({
   onToggleFav,
   onAddSlot,
   onRemovePiece,
+  onShowMore,
   onWearToggle,
   onSwiped,
 }: {
@@ -383,6 +477,7 @@ const Deck = ({
   onToggleFav: () => void;
   onAddSlot: () => void;
   onRemovePiece: (id: string) => void;
+  onShowMore: () => void;
   onWearToggle: () => void;
   onSwiped: () => void;
 }): React.JSX.Element => (
@@ -411,6 +506,7 @@ const Deck = ({
         onToggleFav={onToggleFav}
         onAddSlot={onAddSlot}
         onRemovePiece={onRemovePiece}
+        onShowMore={onShowMore}
         onWearToggle={onWearToggle}
         onSwiped={onSwiped}
       />
@@ -532,6 +628,59 @@ const AccessorySheet = ({
   );
 };
 
+// ────────── Read-only accessory list (opened from the "+N more" card) ──────────
+const AccessoryListSheet = ({
+  open,
+  onClose,
+  pieces,
+  getImage,
+}: {
+  open: boolean;
+  onClose: () => void;
+  pieces: ClothingItem[];
+  getImage: (id: string) => string | undefined;
+}): React.JSX.Element | null => {
+  const { t } = useTranslation();
+  if (!open) return null;
+  return (
+    <div
+      className="fixed inset-0 z-300 flex items-end justify-center"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div
+        className="relative w-full sm:max-w-md bg-white rounded-t-2xl p-4 shadow-xl"
+        style={{ maxHeight: "70%", overflow: "auto" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-lg font-semibold">{t("today.accessoriesLabel")}</h3>
+          <button
+            className="p-2 text-gray-500"
+            onClick={onClose}
+            aria-label={t("common.close")}
+          >
+            ✕
+          </button>
+        </div>
+        <div className="today-sheet-grid">
+          {pieces.map((it) => (
+            <div key={it.id} className="today-sheet-item" aria-disabled="true">
+              <div className="today-sheet-thumb">
+                {getImage(it.id) && (
+                  <img src={getImage(it.id)} alt={it.name} loading="lazy" />
+                )}
+              </div>
+              <div className="today-sheet-name">{it.name}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ────────── Page (deck) ──────────
 export const TodayDeck = (): React.JSX.Element => {
   const { t } = useTranslation();
@@ -561,6 +710,8 @@ export const TodayDeck = (): React.JSX.Element => {
     setSelected,
   } = useTodaySession();
   const [sheetKey, setSheetKey] = useState<string | null>(null);
+  // Opens the read-only list of every accessory on the look (the "+N more" card).
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Scale the fixed-design card to fill the available height of the deck region,
   // so the card grows on taller phones and the hint stays snug beneath it. A
@@ -888,6 +1039,7 @@ export const TodayDeck = (): React.JSX.Element => {
           onToggleFav={onToggleFav}
           onAddSlot={() => setSheetKey(frontKey)}
           onRemovePiece={(id) => removePiece(frontKey, front, id)}
+          onShowMore={() => setMoreOpen(true)}
           onWearToggle={() => (worn ? void undoWear() : void commitWear(front, frontKey))}
           onSwiped={() => {
             // Dismiss a kept outfit to reveal the deck; otherwise advance it.
@@ -938,6 +1090,13 @@ export const TodayDeck = (): React.JSX.Element => {
           if (sheetKey && front) applyEdit(sheetKey, front, it);
           setSheetKey(null);
         }}
+        getImage={getImage}
+      />
+
+      <AccessoryListSheet
+        open={moreOpen}
+        onClose={() => setMoreOpen(false)}
+        pieces={shelfPieces(front)}
         getImage={getImage}
       />
     </>
