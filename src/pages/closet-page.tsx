@@ -22,6 +22,7 @@ import { FaCheck, FaChevronLeft } from "react-icons/fa";
 import { BsPin, BsPinFill } from "react-icons/bs";
 import { MdAdd } from "react-icons/md";
 import { itemTint } from "../utils/color.ts";
+import { useToast } from "../components/toast-context.ts";
 import "./closet-page.css";
 
 const CategoryFilterBar = ({
@@ -87,6 +88,7 @@ const ItemCard = ({
   const { removeClothingItem, renameClothingItem } = useCloset();
   const { outfit, clearOutfit, pinItem, unpinItem } = useOutfit();
   const navigate = useNavigate();
+  const { showToast } = useToast();
 
   const isPinned = outfit?.pinnedItemId === item.id;
   const trayBackground = itemTint(item.color);
@@ -146,7 +148,7 @@ const ItemCard = ({
     if (result) {
       navigate("/");
     } else {
-      window.alert(t("closet.pinNoMatch"));
+      showToast(t("closet.pinNoMatch"));
     }
   }
 

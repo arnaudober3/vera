@@ -1,0 +1,81 @@
+/* Toast d'erreur réutilisable — surface non bloquante qui remplace l'alerte
+   iOS native. Il se superpose exactement à l'emplacement du basket strip :
+   même boîte (largeur/centrage/min-height/bordure/rayon/ombre) et même bord
+   bas. Le bord bas du strip = padding bas du footer (safe-area + 28px) +
+   hauteur du dock (52px) + gap colonne du footer (12px) = safe-area + 92px.
+   Apparaît au-dessus du dock (z-200), dans le .vera-phone-frame, et se referme
+   seule via la barre de progression teal. */
+
+.vera-toast {
+  position: absolute;
+  z-index: 200;
+  left: 16px;
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom) + 92px);
+  max-width: 360px;
+  margin: 0 auto;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--vera-surface);
+  border: 1px solid var(--vera-surface-border);
+  border-radius: var(--vera-radius-lg);
+  padding: 13px 16px;
+  box-shadow: var(--vera-shadow-nav);
+  overflow: hidden;
+  cursor: pointer;
+  text-align: left;
+  animation: veraToastUp 0.32s var(--vera-ease) both;
+}
+
+.vera-toast__icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--vera-radius-pill);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in oklab, var(--vera-primary) 14%, #fff);
+  color: var(--vera-primary);
+}
+
+.vera-toast__message {
+  margin: 0;
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--vera-fg-strong);
+  text-wrap: pretty;
+}
+
+.vera-toast__bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--vera-primary);
+  animation: veraBar var(--vera-toast-duration, 3000ms) linear forwards;
+}
+
+@keyframes veraToastUp {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes veraBar {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
