@@ -88,6 +88,67 @@
   opacity: 1;
 }
 
+/* ── Calendar cue pill ── */
+/* The calendar pick's chip — leads the occasion row with a sparkle + time and
+   IS the selectable pill for that occasion. Solid teal with white sparkle +
+   label when active (the day's selected look); a normal chip when overridden.
+   Scrolls with the chips and keeps its width (flex-shrink: 0). */
+.today-occasion-cue {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: var(--vera-radius-pill);
+  border: 1px solid var(--vera-surface-border);
+  background: var(--vera-surface);
+  color: var(--vera-fg-muted);
+  font-family: var(--vera-font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background var(--vera-duration) var(--vera-ease),
+    color var(--vera-duration) var(--vera-ease),
+    border-color var(--vera-duration) var(--vera-ease);
+}
+
+/* Sparkle inherits the text colour so the whole pill matches the other filter
+   items — muted when unselected, white when active. */
+.today-occasion-cue svg {
+  color: currentColor;
+}
+
+.today-occasion-cue.active {
+  background: var(--vera-primary);
+  color: #ffffff;
+  border-color: transparent;
+}
+
+.today-occasion-cue:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+/* The active pick keeps its highlight even when locked (worn) or unavailable. */
+.today-occasion-cue.active:disabled {
+  opacity: 1;
+}
+
+/* Quiet-day fallback — muted, non-interactive marker (no occasion to pick). */
+.today-occasion-cue--muted {
+  cursor: default;
+  border-color: var(--vera-surface-border);
+  background: var(--vera-surface);
+  color: var(--vera-fg-muted);
+  font-weight: 500;
+}
+
+.today-occasion-cue--muted svg {
+  color: var(--vera-fg-subtle);
+}
+
 /* ── Weather pill ── */
 .today-weather-badge {
   flex-shrink: 0;

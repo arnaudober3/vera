@@ -56,6 +56,16 @@
       "cta": "Commencer",
       "skip": "Passer"
     },
+    "calendar": {
+      "step": "Agenda",
+      "title": "Habille-toi pour ta journée.",
+      "subtitle": "Connecte ton agenda et Vera t'habille pour l'occasion la plus marquante de la journée — une réunion importante, le sport, un dîner.",
+      "agendaToday": "Aujourd'hui · {{date}}",
+      "standoutNote": "Vera repère le temps fort du jour — le dîner.",
+      "privacy": "Vera lit seulement les titres et horaires des événements — rien ne quitte ton téléphone.",
+      "connect": "Connecter l'agenda",
+      "maybeLater": "Plus tard"
+    },
     "snap": {
       "step": "Étape 1",
       "title": "Photographie ton premier article.",
@@ -103,7 +113,6 @@
     "heartAddAria": "Ajouter au lookbook",
     "heartRemoveAria": "Retirer du lookbook",
     "occasionLabel": "Occasion",
-    "filterAll": "Tout",
     "wearingBadge": "Porté aujourd'hui",
     "hintTap": "Tape",
     "hintWear": "pour porter",
@@ -112,10 +121,14 @@
     "hintWorn": "Porté aujourd'hui",
     "hintWornUndo": "· tape pour annuler",
     "occasion": {
-      "casual": "Décontracté",
-      "smart": "Chic",
-      "formal": "Habillé",
-      "sport": "Sport"
+      "everyday": "Quotidien",
+      "work": "Travail",
+      "gym": "Sport",
+      "dinner": "Dîner",
+      "date-night": "Soirée"
+    },
+    "calendar": {
+      "cueFallback": "Rien de prévu aujourd'hui"
     },
     "weather": {
       "setManual": "Définir la météo",

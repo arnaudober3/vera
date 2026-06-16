@@ -13,6 +13,7 @@ import {
   FaTimes,
   FaTshirt,
 } from "react-icons/fa";
+import { MdAutoAwesome, MdEvent } from "react-icons/md";
 import NavigationBar from "./navigation-bar.tsx";
 import { BasketStrip } from "./basket-strip.tsx";
 import { AppFooter } from "./app-footer.tsx";
@@ -22,6 +23,12 @@ import { useImage } from "../hooks/image.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
 import { useLookbook } from "../hooks/lookbook.ts";
 import { useWeather } from "../hooks/weather.ts";
+import { useCalendar } from "../hooks/calendar.ts";
+import {
+  getCalendarAppliedDay,
+  setCalendarAppliedDay,
+  todayLocalDay,
+} from "../storage/calendar.ts";
 import { useTodaySession, cardKeyOf, type Filter } from "../hooks/today-session.ts";
 import type { ClothingItem } from "../models/clothing-item.ts";
 import type { Outfit } from "../models/outfit.ts";
@@ -29,7 +36,8 @@ import { ALL_OCCASIONS, fitsOccasion } from "../models/occasion.ts";
 import { itemTint } from "../utils/color.ts";
 import "./today-deck.css";
 
-const FILTERS: Filter[] = ["all", ...ALL_OCCASIONS];
+// "everyday" leads as the relaxed default and is always selectable.
+const FILTERS: Filter[] = ALL_OCCASIONS;
 
 // Card + collage geometry (mirrors the design prototype). The collage well is a
 // fixed-size canvas so the overlapping tiles keep their composition regardless of
@@ -531,22 +539,60 @@ const FilterChips = ({
   disabled?: boolean;
 }): React.JSX.Element => {
   const { t } = useTranslation();
+  const { connected, todayEvent } = useCalendar();
+
+  // When the calendar picks an occasion, that occasion leads the row as the cue
+  // pill (sparkle + time) and IS the selectable chip for it — so the pick is the
+  // selected pill, never duplicated by a plain chip beside it. The remaining
+  // occasions follow as override chips.
+  const cueOccasion = connected ? (todayEvent?.occasion ?? null) : null;
+  const ordered: Filter[] = cueOccasion
+    ? [cueOccasion, ...FILTERS.filter((f) => f !== cueOccasion)]
+    : FILTERS;
+
+  // "everyday" is the relaxed default, so it stays selectable even when no clean
+  // duo is available — only the worn lock can disable it.
+  const isDisabled = (f: Filter): boolean =>
+    disabled || (f !== "everyday" && !availableFilters.has(f));
+
   return (
     <div className="today-occasions" role="group" aria-label={t("today.occasionLabel")}>
-      {FILTERS.map((f) => (
-        <button
-          key={f}
-          type="button"
-          className={`today-occasion-chip ${f === active ? "active" : ""}`}
-          aria-pressed={f === active}
-          // "all" is the default filter, so it stays selectable even when no
-          // clean duo is available — only the worn lock can disable it.
-          disabled={disabled || (f !== "all" && !availableFilters.has(f))}
-          onClick={() => onSelect(f)}
-        >
-          {f === "all" ? t("today.filterAll") : t(`today.occasion.${f}`)}
-        </button>
-      ))}
+      {/* Quiet-day fallback — a muted, non-selectable marker (no occasion to
+          pick). Connected days with an event use the cue pill below instead. */}
+      {connected && !todayEvent && (
+        <span className="today-occasion-cue today-occasion-cue--muted">
+          <MdEvent size={13} aria-hidden />
+          {t("today.calendar.cueFallback")}
+        </span>
+      )}
+      {ordered.map((f) =>
+        f === cueOccasion ? (
+          <button
+            key={f}
+            type="button"
+            className={`today-occasion-cue ${f === active ? "active" : ""}`}
+            aria-pressed={f === active}
+            // The calendar pick stays selectable (only the worn lock disables
+            // it) so it's always the occasion you can return to.
+            disabled={disabled}
+            onClick={() => onSelect(f)}
+          >
+            <MdAutoAwesome size={13} aria-hidden />
+            {t(`today.occasion.${f}`)} · {todayEvent?.time}
+          </button>
+        ) : (
+          <button
+            key={f}
+            type="button"
+            className={`today-occasion-chip ${f === active ? "active" : ""}`}
+            aria-pressed={f === active}
+            disabled={isDisabled(f)}
+            onClick={() => onSelect(f)}
+          >
+            {t(`today.occasion.${f}`)}
+          </button>
+        ),
+      )}
     </div>
   );
 };
@@ -713,6 +759,20 @@ export const TodayDeck = (): React.JSX.Element => {
   // Opens the read-only list of every accessory on the look (the "+N more" card).
   const [moreOpen, setMoreOpen] = useState(false);
 
+  // Calendar sync biases the deck toward the day's pick, selecting that occasion
+  // so the cue pill is the active selection. Applied at most once per day so a
+  // manual chip override afterwards sticks (and survives the deck's route-level
+  // remount), then the selection is left to the user.
+  const { connected: calendarConnected, todayEvent } = useCalendar();
+  useEffect(() => {
+    if (!calendarConnected) return;
+    const today = todayLocalDay();
+    if (getCalendarAppliedDay() === today) return;
+    setFilter(todayEvent ? todayEvent.occasion : "everyday");
+    setCalendarAppliedDay(today);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendarConnected, todayEvent]);
+
   // Scale the fixed-design card to fill the available height of the deck region,
   // so the card grows on taller phones and the hint stays snug beneath it. A
   // callback ref wires up the observer the moment the region mounts (which only
@@ -769,8 +829,7 @@ export const TodayDeck = (): React.JSX.Element => {
       (i) => i.category === "bottom" && isItemClean(i.id),
     );
     const hasDuo = (f: Filter): boolean => {
-      const fits = (i: ClothingItem): boolean =>
-        f === "all" || fitsOccasion(i, f);
+      const fits = (i: ClothingItem): boolean => fitsOccasion(i, f);
       return cleanTops.some(fits) && cleanBottoms.some(fits);
     };
     return new Set(FILTERS.filter(hasDuo));
@@ -921,7 +980,7 @@ export const TodayDeck = (): React.JSX.Element => {
     );
     const hasCleanDuo = cleanTops.length > 0 && cleanBottoms.length > 0;
     const matchesFilter = (i: ClothingItem): boolean =>
-      filter === "all" || fitsOccasion(i, filter);
+      fitsOccasion(i, filter);
     const hasFilterDuo =
       cleanTops.some(matchesFilter) && cleanBottoms.some(matchesFilter);
     const occasionBlocked = hasCleanDuo && !hasFilterDuo;

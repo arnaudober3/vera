@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FaCamera, FaCheck, FaRegImage, FaTshirt } from "react-icons/fa";
+import { MdAutoAwesome, MdCalendarToday, MdLockOutline } from "react-icons/md";
 import {
   type ClothingItemCategory,
   type CreateClothingItem,
@@ -21,15 +22,18 @@ import {
   processImageToBase64,
 } from "../services/image-processing.ts";
 import { markOnboardingComplete } from "../storage/onboarding.ts";
+import { MOCK_AGENDA } from "../models/calendar.ts";
+import { useCalendar } from "../hooks/calendar.ts";
 import "./onboarding.css";
 
-const STEP_TOTAL = 4;
-type Step = "welcome" | "snap" | "processing" | "reveal";
+const STEP_TOTAL = 5;
+type Step = "welcome" | "snap" | "processing" | "reveal" | "calendar";
 const stepIndex: Record<Step, number> = {
   welcome: 0,
   snap: 1,
   processing: 2,
   reveal: 3,
+  calendar: 4,
 };
 
 export const WelcomePage = (): React.JSX.Element => {
@@ -53,6 +57,13 @@ export const WelcomePage = (): React.JSX.Element => {
   function finishAndExit(target: string): void {
     markOnboardingComplete();
     navigate(target, { replace: true });
+  }
+
+  // Final exit once the (last) calendar step is done — lands on the closet with
+  // the just-onboarded flag so it can welcome the freshly-added first item.
+  function completeOnboarding(): void {
+    markOnboardingComplete();
+    navigate("/closet", { state: { justOnboarded: true }, replace: true });
   }
 
   function resetForRetake(): void {
@@ -125,8 +136,9 @@ export const WelcomePage = (): React.JSX.Element => {
         imageData: afterImage,
       });
 
-      markOnboardingComplete();
-      navigate("/closet", { state: { justOnboarded: true }, replace: true });
+      // First item is in — move on to the calendar step (the final one) rather
+      // than exiting onboarding here.
+      setStep("calendar");
     } finally {
       setIsSaving(false);
     }
@@ -163,6 +175,9 @@ export const WelcomePage = (): React.JSX.Element => {
           onRetake={resetForRetake}
           onSkip={() => finishAndExit("/closet")}
         />
+      )}
+      {step === "calendar" && (
+        <CalendarConnectScreen onDone={completeOnboarding} />
       )}
 
       <input
@@ -385,6 +400,172 @@ const WelcomeScreen = ({
         </button>
         <SkipLink onClick={onSkip} label={t("onboarding.welcome.skip")} />
         <StepDots active={stepIndex.welcome} />
+      </div>
+    </Stage>
+  );
+};
+
+const CalendarConnectScreen = ({
+  onDone,
+}: {
+  onDone: () => void;
+}): React.JSX.Element => {
+  const { t, i18n } = useTranslation();
+  const { connect } = useCalendar();
+
+  const todayLabel = (() => {
+    const s = new Date().toLocaleDateString(i18n.language || "en", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  })();
+
+  const handleConnect = (): void => {
+    connect();
+    onDone();
+  };
+
+  return (
+    <Stage>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
+        <div className="vera-eyebrow" style={{ color: "var(--vera-primary)" }}>
+          {t("onboarding.calendar.step")}
+        </div>
+        <div className="vera-display" style={{ fontSize: 34 }}>
+          {t("onboarding.calendar.title")}
+        </div>
+        <div
+          style={{
+            color: "var(--vera-fg-muted)",
+            fontSize: 15,
+            lineHeight: 1.5,
+            marginTop: 2,
+          }}
+        >
+          {t("onboarding.calendar.subtitle")}
+        </div>
+      </div>
+
+      {/* Agenda preview — shows how today's events map to occasions, with the
+          day's standout (dinner) marked as the pick. */}
+      <div className="vera-card" style={{ padding: 0, overflow: "hidden", marginTop: 4 }}>
+        <div
+          style={{
+            padding: "10px 14px",
+            borderBottom: "1px solid var(--vera-gray-100)",
+            fontSize: 12,
+            fontWeight: 600,
+            color: "var(--vera-fg-muted)",
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+          }}
+        >
+          <MdCalendarToday size={13} color="var(--vera-primary)" />
+          {t("onboarding.calendar.agendaToday", { date: todayLabel })}
+        </div>
+        {MOCK_AGENDA.map((row, i, a) => (
+          <div
+            key={row.time}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "11px 14px",
+              borderBottom:
+                i < a.length - 1 ? "1px solid var(--vera-gray-100)" : "0",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--vera-fg-default)",
+                width: 38,
+              }}
+            >
+              {row.time}
+            </span>
+            <span
+              style={{
+                fontSize: 14,
+                color: "var(--vera-fg-strong)",
+                flex: 1,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {row.title}
+            </span>
+            {row.occasion && (
+              <span
+                className={`vera-chip ${row.standout ? "active" : ""}`}
+                style={{
+                  padding: "3px 10px",
+                  fontSize: 12,
+                  gap: row.standout ? 5 : 0,
+                }}
+              >
+                {row.standout && <MdAutoAwesome size={11} />}
+                {t(`today.occasion.${row.occasion}`)}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      <div
+        style={{
+          marginTop: 11,
+          display: "flex",
+          alignItems: "center",
+          gap: 7,
+          fontSize: 13,
+          color: "var(--vera-fg-muted)",
+          lineHeight: 1.4,
+        }}
+      >
+        <MdAutoAwesome size={13} color="var(--vera-primary)" />
+        {t("onboarding.calendar.standoutNote")}
+      </div>
+
+      <div
+        style={{
+          marginTop: 9,
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 8,
+          fontSize: 13,
+          color: "var(--vera-fg-muted)",
+          lineHeight: 1.45,
+        }}
+      >
+        <MdLockOutline
+          size={14}
+          color="var(--vera-fg-subtle)"
+          style={{ marginTop: 2, flexShrink: 0 }}
+        />
+        {t("onboarding.calendar.privacy")}
+      </div>
+
+      <div
+        style={{
+          marginTop: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          paddingBottom: 4,
+        }}
+      >
+        <button type="button" className="vera-btn-primary" onClick={handleConnect}>
+          <MdCalendarToday />
+          {t("onboarding.calendar.connect")}
+        </button>
+        <SkipLink onClick={onDone} label={t("onboarding.calendar.maybeLater")} />
+        <StepDots active={stepIndex.calendar} />
       </div>
     </Stage>
   );

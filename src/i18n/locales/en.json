@@ -56,6 +56,16 @@
       "cta": "Get started",
       "skip": "Skip"
     },
+    "calendar": {
+      "step": "Calendar",
+      "title": "Dress for your day.",
+      "subtitle": "Connect your calendar and Vera dresses you for the day's most relevant occasion — a big meeting, the gym, dinner out.",
+      "agendaToday": "Today · {{date}}",
+      "standoutNote": "Vera marks today's standout — dinner.",
+      "privacy": "Vera only reads event titles and times — it never leaves your phone.",
+      "connect": "Connect calendar",
+      "maybeLater": "Maybe later"
+    },
     "snap": {
       "step": "Step 1",
       "title": "Snap your first item.",
@@ -103,7 +113,6 @@
     "heartAddAria": "Add to lookbook",
     "heartRemoveAria": "Remove from lookbook",
     "occasionLabel": "Occasion",
-    "filterAll": "All",
     "wearingBadge": "Wearing today",
     "hintTap": "Tap",
     "hintWear": "to wear",
@@ -112,10 +121,14 @@
     "hintWorn": "Wearing this today",
     "hintWornUndo": "· tap to undo",
     "occasion": {
-      "casual": "Casual",
-      "smart": "Smart",
-      "formal": "Formal",
-      "sport": "Sport"
+      "everyday": "Everyday",
+      "work": "Work",
+      "gym": "Gym",
+      "dinner": "Dinner",
+      "date-night": "Date night"
+    },
+    "calendar": {
+      "cueFallback": "Nothing on today"
     },
     "weather": {
       "setManual": "Set weather",
