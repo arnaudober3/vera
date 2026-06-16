@@ -59,11 +59,13 @@
     "calendar": {
       "step": "Agenda",
       "title": "Habille-toi pour ta journée.",
-      "subtitle": "Connecte ton agenda et Vera t'habille pour l'occasion la plus marquante de la journée — une réunion importante, le sport, un dîner.",
+      "subtitle": "Importe ton agenda et Vera t'habille pour l'occasion la plus marquante de la journée — une réunion importante, le sport, un dîner.",
       "agendaToday": "Aujourd'hui · {{date}}",
       "standoutNote": "Vera repère le temps fort du jour — le dîner.",
-      "privacy": "Vera lit seulement les titres et horaires des événements — rien ne quitte ton téléphone.",
-      "connect": "Connecter l'agenda",
+      "privacy": "Ton fichier agenda est lu sur ton téléphone — rien n'est envoyé.",
+      "connect": "Importer mon agenda",
+      "importing": "Lecture de ton agenda…",
+      "importError": "Impossible de lire ce fichier agenda. Exporte un .ics et réessaie.",
       "maybeLater": "Plus tard"
     },
     "snap": {

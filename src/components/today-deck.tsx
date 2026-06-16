@@ -522,6 +522,34 @@ const Deck = ({
   </div>
 );
 
+// ────────── Calendar cue row ──────────
+// Sits above the filter bar. Shows the day's event (title + time) the calendar
+// picked, or a muted "no event today" marker. Read-only — the occasion it maps
+// to is reflected as the active chip in the filter bar below.
+const CalendarCueRow = (): React.JSX.Element | null => {
+  const { t } = useTranslation();
+  const { connected, todayEvent } = useCalendar();
+  if (!connected) return null;
+  return (
+    <div className="today-cal-cue-row">
+      {todayEvent ? (
+        <span className="today-occasion-cue">
+          <MdAutoAwesome size={13} aria-hidden />
+          <span className="today-occasion-cue__title">{todayEvent.title}</span>
+          {todayEvent.time ? (
+            <span className="today-occasion-cue__time">· {todayEvent.time}</span>
+          ) : null}
+        </span>
+      ) : (
+        <span className="today-occasion-cue today-occasion-cue--muted">
+          <MdEvent size={13} aria-hidden />
+          {t("today.calendar.cueFallback")}
+        </span>
+      )}
+    </div>
+  );
+};
+
 // ────────── Filter chips ──────────
 const FilterChips = ({
   active,
@@ -539,60 +567,22 @@ const FilterChips = ({
   disabled?: boolean;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const { connected, todayEvent } = useCalendar();
-
-  // When the calendar picks an occasion, that occasion leads the row as the cue
-  // pill (sparkle + time) and IS the selectable chip for it — so the pick is the
-  // selected pill, never duplicated by a plain chip beside it. The remaining
-  // occasions follow as override chips.
-  const cueOccasion = connected ? (todayEvent?.occasion ?? null) : null;
-  const ordered: Filter[] = cueOccasion
-    ? [cueOccasion, ...FILTERS.filter((f) => f !== cueOccasion)]
-    : FILTERS;
-
-  // "everyday" is the relaxed default, so it stays selectable even when no clean
-  // duo is available — only the worn lock can disable it.
-  const isDisabled = (f: Filter): boolean =>
-    disabled || (f !== "everyday" && !availableFilters.has(f));
-
   return (
     <div className="today-occasions" role="group" aria-label={t("today.occasionLabel")}>
-      {/* Quiet-day fallback — a muted, non-selectable marker (no occasion to
-          pick). Connected days with an event use the cue pill below instead. */}
-      {connected && !todayEvent && (
-        <span className="today-occasion-cue today-occasion-cue--muted">
-          <MdEvent size={13} aria-hidden />
-          {t("today.calendar.cueFallback")}
-        </span>
-      )}
-      {ordered.map((f) =>
-        f === cueOccasion ? (
-          <button
-            key={f}
-            type="button"
-            className={`today-occasion-cue ${f === active ? "active" : ""}`}
-            aria-pressed={f === active}
-            // The calendar pick stays selectable (only the worn lock disables
-            // it) so it's always the occasion you can return to.
-            disabled={disabled}
-            onClick={() => onSelect(f)}
-          >
-            <MdAutoAwesome size={13} aria-hidden />
-            {t(`today.occasion.${f}`)} · {todayEvent?.time}
-          </button>
-        ) : (
-          <button
-            key={f}
-            type="button"
-            className={`today-occasion-chip ${f === active ? "active" : ""}`}
-            aria-pressed={f === active}
-            disabled={isDisabled(f)}
-            onClick={() => onSelect(f)}
-          >
-            {t(`today.occasion.${f}`)}
-          </button>
-        ),
-      )}
+      {FILTERS.map((f) => (
+        <button
+          key={f}
+          type="button"
+          className={`today-occasion-chip ${f === active ? "active" : ""}`}
+          aria-pressed={f === active}
+          // "everyday" is the relaxed default, so it stays selectable even when
+          // no clean duo is available — only the worn lock can disable it.
+          disabled={disabled || (f !== "everyday" && !availableFilters.has(f))}
+          onClick={() => onSelect(f)}
+        >
+          {t(`today.occasion.${f}`)}
+        </button>
+      ))}
     </div>
   );
 };
@@ -768,10 +758,16 @@ export const TodayDeck = (): React.JSX.Element => {
     if (!calendarConnected) return;
     const today = todayLocalDay();
     if (getCalendarAppliedDay() === today) return;
-    setFilter(todayEvent ? todayEvent.occasion : "everyday");
+    // Only select the picked occasion if it's actually wearable today (its chip
+    // isn't disabled — i.e. a clean duo fits it); otherwise stay on the neutral
+    // everyday default. The event still shows in the cue row either way.
+    const pick: Filter = todayEvent ? todayEvent.occasion : "everyday";
+    const selectable = pick === "everyday" || availableFilters.has(pick);
+    setFilter(selectable ? pick : "everyday");
     setCalendarAppliedDay(today);
+    // Depend on the primitive occasion (todayEvent is a fresh object each render).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendarConnected, todayEvent]);
+  }, [calendarConnected, todayEvent?.occasion]);
 
   // Scale the fixed-design card to fill the available height of the deck region,
   // so the card grows on taller phones and the hint stays snug beneath it. A
@@ -988,6 +984,7 @@ export const TodayDeck = (): React.JSX.Element => {
 
     return (
       <>
+        <CalendarCueRow />
         <FilterChips
           active={filter}
           onSelect={setFilter}
@@ -1062,6 +1059,7 @@ export const TodayDeck = (): React.JSX.Element => {
 
   return (
     <>
+      <CalendarCueRow />
       <FilterChips
         active={filter}
         onSelect={setFilter}

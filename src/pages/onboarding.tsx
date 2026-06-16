@@ -42,7 +42,9 @@ export const WelcomePage = (): React.JSX.Element => {
   const { addClothingItem } = useCloset();
   const { saveImage } = useImage();
 
-  const [step, setStep] = useState<Step>("welcome");
+  // TEMP (test calendar sync): démarre direct sur l'étape calendrier,
+  // bypassant welcome + snap/processing/reveal. Remettre "welcome" après.
+  const [step, setStep] = useState<Step>("calendar");
   const [beforeImage, setBeforeImage] = useState<string | null>(null);
   const [afterImage, setAfterImage] = useState<string | null>(null);
   const [name, setName] = useState("");
@@ -411,7 +413,10 @@ const CalendarConnectScreen = ({
   onDone: () => void;
 }): React.JSX.Element => {
   const { t, i18n } = useTranslation();
-  const { connect } = useCalendar();
+  const { importIcs } = useCalendar();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
 
   const todayLabel = (() => {
     const s = new Date().toLocaleDateString(i18n.language || "en", {
@@ -422,10 +427,19 @@ const CalendarConnectScreen = ({
     return s.charAt(0).toUpperCase() + s.slice(1);
   })();
 
-  const handleConnect = (): void => {
-    connect();
-    onDone();
-  };
+  async function handleFile(file: File | undefined): Promise<void> {
+    if (!file) return;
+    setImporting(true);
+    setImportError(null);
+    try {
+      await importIcs(file);
+      onDone();
+    } catch {
+      setImportError(t("onboarding.calendar.importError"));
+    } finally {
+      setImporting(false);
+    }
+  }
 
   return (
     <Stage>
@@ -551,6 +565,19 @@ const CalendarConnectScreen = ({
         {t("onboarding.calendar.privacy")}
       </div>
 
+      {importError ? (
+        <div
+          style={{
+            marginTop: 8,
+            color: "#b91c1c",
+            fontSize: 13,
+            textAlign: "center",
+          }}
+        >
+          {importError}
+        </div>
+      ) : null}
+
       <div
         style={{
           marginTop: "auto",
@@ -560,13 +587,28 @@ const CalendarConnectScreen = ({
           paddingBottom: 4,
         }}
       >
-        <button type="button" className="vera-btn-primary" onClick={handleConnect}>
+        <button
+          type="button"
+          className="vera-btn-primary"
+          onClick={() => fileInputRef.current?.click()}
+          disabled={importing}
+        >
           <MdCalendarToday />
-          {t("onboarding.calendar.connect")}
+          {importing
+            ? t("onboarding.calendar.importing")
+            : t("onboarding.calendar.connect")}
         </button>
         <SkipLink onClick={onDone} label={t("onboarding.calendar.maybeLater")} />
         <StepDots active={stepIndex.calendar} />
       </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".ics,text/calendar"
+        style={{ display: "none" }}
+        onChange={(e) => void handleFile(e.target.files?.[0])}
+      />
     </Stage>
   );
 };

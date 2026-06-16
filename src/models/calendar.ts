@@ -8,6 +8,17 @@ export type CalendarEvent = {
   occasion: Occasion;
 };
 
+// A parsed + recurrence-expanded event kept locally after an .ics import. Dated
+// (local YYYY-MM-DD) so "today's event" is recomputed each day from one import;
+// `startMs` orders events within a day; `time` is "" for all-day events.
+export type StoredCalendarEvent = {
+  date: string;
+  time: string;
+  title: string;
+  occasion: Occasion;
+  startMs: number;
+};
+
 // A row in the onboarding agenda preview. `occasion` is null for events that
 // don't drive a look (e.g. lunch); `standout` marks the day's most relevant one.
 export type AgendaItem = {
@@ -17,17 +28,8 @@ export type AgendaItem = {
   standout: boolean;
 };
 
-// Local-first PWAs can't read the device calendar, so the "synced" day is
-// mocked. This is the single pick the engine would surface on Today — the day's
-// most relevant occasion.
-export const MOCK_TODAY_EVENT: CalendarEvent = {
-  title: "Dinner with friends",
-  time: "7:30 PM",
-  occasion: "dinner",
-};
-
 // The illustrative day shown in the onboarding preview, so the user sees how
-// events map to occasions before connecting. The standout (dinner) is the pick.
+// events map to occasions before importing. The standout (dinner) is the pick.
 export const MOCK_AGENDA: AgendaItem[] = [
   { time: "9:00", title: "Team standup", occasion: "work", standout: false },
   { time: "1:00", title: "Lunch", occasion: null, standout: false },
@@ -38,3 +40,71 @@ export const MOCK_AGENDA: AgendaItem[] = [
     standout: true,
   },
 ];
+
+// Keyword heuristics (FR + EN) mapping an event title to an occasion. Order
+// matters: the first rule that matches wins. Anything unmatched is "everyday"
+// (a neutral, non-dressable day).
+const escapeRe = (s: string): string => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const OCCASION_RULES: { occasion: Occasion; words: string[] }[] = [
+  {
+    occasion: "gym",
+    words: [
+      "gym", "workout", "work-out", "fitness", "sport", "yoga", "pilates",
+      "run", "running", "jog", "jogging", "muscu", "training", "entrainement",
+      "entraînement", "crossfit", "swim", "natation", "padel", "tennis",
+    ],
+  },
+  {
+    occasion: "dinner",
+    words: ["dinner", "dîner", "diner", "souper", "restaurant", "resto"],
+  },
+  {
+    occasion: "date-night",
+    words: [
+      "date night", "date-night", "drinks", "apéro", "apero", "cocktail",
+      "cocktails", "soirée", "soiree", "party", "anniversaire", "birthday",
+      "concert", "theatre", "théâtre", "opera", "opéra", "cinema", "cinéma",
+    ],
+  },
+  {
+    occasion: "work",
+    words: [
+      "work", "travail", "boulot", "bureau", "office", "meeting", "réunion",
+      "reunion", "standup", "stand-up", "call", "appel", "sync", "review",
+      "1:1", "interview", "entretien", "client", "presentation", "présentation",
+      "demo", "démo", "webinar", "conference", "conférence", "kickoff",
+      "kick-off", "onboarding", "workshop", "atelier",
+    ],
+  },
+];
+
+const OCCASION_MATCHERS: { occasion: Occasion; re: RegExp }[] = OCCASION_RULES.map(
+  ({ occasion, words }) => ({
+    occasion,
+    re: new RegExp(`\\b(${words.map(escapeRe).join("|")})\\b`, "i"),
+  }),
+);
+
+export const eventToOccasion = (title: string): Occasion => {
+  for (const { occasion, re } of OCCASION_MATCHERS) {
+    if (re.test(title)) return occasion;
+  }
+  return "everyday";
+};
+
+// The day's pick Vera surfaces on Today. Prefers a "dressable" occasion
+// (anything but everyday) so the outfit is biased meaningfully; among the
+// candidates it takes the latest event of the day, which naturally surfaces the
+// evening dinner/date. If the day has only everyday events (e.g. "beach day"),
+// it still returns the latest one so the event is shown — the deck just stays on
+// the neutral everyday look. Returns null only when there's no event at all.
+export const pickMostRelevant = (
+  events: StoredCalendarEvent[],
+): CalendarEvent | null => {
+  if (events.length === 0) return null;
+  const dressable = events.filter((e) => e.occasion !== "everyday");
+  const pool = dressable.length > 0 ? dressable : events;
+  const top = pool.reduce((a, b) => (b.startMs >= a.startMs ? b : a));
+  return { title: top.title, time: top.time, occasion: top.occasion };
+};

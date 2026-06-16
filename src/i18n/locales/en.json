@@ -59,11 +59,13 @@
     "calendar": {
       "step": "Calendar",
       "title": "Dress for your day.",
-      "subtitle": "Connect your calendar and Vera dresses you for the day's most relevant occasion — a big meeting, the gym, dinner out.",
+      "subtitle": "Import your calendar and Vera dresses you for the day's most relevant occasion — a big meeting, the gym, dinner out.",
       "agendaToday": "Today · {{date}}",
       "standoutNote": "Vera marks today's standout — dinner.",
-      "privacy": "Vera only reads event titles and times — it never leaves your phone.",
-      "connect": "Connect calendar",
+      "privacy": "Your calendar file is read on your phone — nothing is uploaded.",
+      "connect": "Import my calendar",
+      "importing": "Reading your calendar…",
+      "importError": "We couldn't read that calendar file. Export an .ics and try again.",
       "maybeLater": "Maybe later"
     },
     "snap": {
