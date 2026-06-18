@@ -5,6 +5,7 @@ import { ClosetPage } from "./pages/closet-page.tsx";
 import { LookbookPage } from "./pages/lookbook-page.tsx";
 import { WelcomePage } from "./pages/onboarding.tsx";
 import { isOnboardingComplete } from "./storage/onboarding.ts";
+import { ToastProvider } from "./components/toast-provider.tsx";
 
 const RootRoute = () =>
   isOnboardingComplete() ? <TodayPage /> : <Navigate to="/welcome" replace />;
@@ -12,15 +13,17 @@ const RootRoute = () =>
 function App() {
   return (
     <div className="vera-phone-frame vera-bg-app">
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<RootRoute />} />
-          <Route path="/welcome" element={<WelcomePage />} />
-          <Route path="/closet" element={<ClosetPage />} />
-          <Route path="/closet/basket" element={<ClosetPage />} />
-          <Route path="/lookbook" element={<LookbookPage />} />
-        </Routes>
-      </BrowserRouter>
+      <ToastProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<RootRoute />} />
+            <Route path="/welcome" element={<WelcomePage />} />
+            <Route path="/closet" element={<ClosetPage />} />
+            <Route path="/closet/basket" element={<ClosetPage />} />
+            <Route path="/lookbook" element={<LookbookPage />} />
+          </Routes>
+        </BrowserRouter>
+      </ToastProvider>
     </div>
   );
 }
