@@ -50,6 +50,7 @@
     "earring": "Boucles d'oreilles"
   },
   "onboarding": {
+    "stepIndicator": "Étape {{current}} sur {{total}}",
     "welcome": {
       "title": "Une nouvelle tenue chaque matin.",
       "subtitle": "Prends ton dressing en photo — Vera l'organise, choisit une tenue pour demain, et garde un œil sur ce qui est propre.",
@@ -57,19 +58,16 @@
       "skip": "Passer"
     },
     "calendar": {
-      "step": "Agenda",
       "title": "Habille-toi pour ta journée.",
-      "subtitle": "Importe ton agenda et Vera t'habille pour l'occasion la plus marquante de la journée — une réunion importante, le sport, un dîner.",
+      "subtitle": "Connecte ton agenda et Vera t'habille pour <b>l'occasion la plus marquante de la journée</b> — une réunion importante, le sport, un dîner.",
       "agendaToday": "Aujourd'hui · {{date}}",
-      "standoutNote": "Vera repère le temps fort du jour — le dîner.",
-      "privacy": "Ton fichier agenda est lu sur ton téléphone — rien n'est envoyé.",
-      "connect": "Importer mon agenda",
-      "importing": "Lecture de ton agenda…",
-      "importError": "Impossible de lire ce fichier agenda. Exporte un .ics et réessaie.",
+      "standoutNote": "Vera repère le temps fort du jour <b>— le dîner</b>.",
+      "privacy": "Vera lit seulement les titres et horaires de tes événements — ils ne quittent jamais ton téléphone.",
+      "connect": "Connecter mon agenda",
+      "connecting": "Connexion…",
       "maybeLater": "Plus tard"
     },
     "snap": {
-      "step": "Étape 1",
       "title": "Photographie ton premier article.",
       "subtitle": "Pose un haut à plat sur une surface unie. Vera retire le fond automatiquement.",
       "tipLight": "Bonne lumière, fond uni",
@@ -84,7 +82,6 @@
       "subtitle": "Cela prend généralement quelques secondes."
     },
     "reveal": {
-      "cleanedUp": "Uploadé",
       "title": "C'est tout ce qu'il faut à Vera.",
       "before": "Avant",
       "after": "Après",

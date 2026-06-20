@@ -50,6 +50,7 @@
     "earring": "Earrings"
   },
   "onboarding": {
+    "stepIndicator": "Step {{current}} of {{total}}",
     "welcome": {
       "title": "A fresh outfit every morning.",
       "subtitle": "Snap your closet — Vera organises it, picks an outfit for tomorrow, and tracks what's clean.",
@@ -57,19 +58,16 @@
       "skip": "Skip"
     },
     "calendar": {
-      "step": "Calendar",
       "title": "Dress for your day.",
-      "subtitle": "Import your calendar and Vera dresses you for the day's most relevant occasion — a big meeting, the gym, dinner out.",
+      "subtitle": "Connect your calendar and Vera dresses you for the <b>day's most relevant occasion</b> — a big meeting, the gym, dinner out.",
       "agendaToday": "Today · {{date}}",
-      "standoutNote": "Vera marks today's standout — dinner.",
-      "privacy": "Your calendar file is read on your phone — nothing is uploaded.",
-      "connect": "Import my calendar",
-      "importing": "Reading your calendar…",
-      "importError": "We couldn't read that calendar file. Export an .ics and try again.",
+      "standoutNote": "Vera marks today's standout <b>— dinner</b>.",
+      "privacy": "Vera only reads event titles and times — it never leaves your phone.",
+      "connect": "Connect calendar",
+      "connecting": "Connecting…",
       "maybeLater": "Maybe later"
     },
     "snap": {
-      "step": "Step 1",
       "title": "Snap your first item.",
       "subtitle": "Lay a top flat on a plain surface. Vera removes the background automatically.",
       "tipLight": "Good light, plain background",
@@ -84,7 +82,6 @@
       "subtitle": "This usually takes a few seconds."
     },
     "reveal": {
-      "cleanedUp": "Uploaded",
       "title": "That's all Vera needs.",
       "before": "Before",
       "after": "After",

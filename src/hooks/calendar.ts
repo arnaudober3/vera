@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import {
+  mockTodayEvents,
   pickMostRelevant,
   type CalendarEvent,
   type StoredCalendarEvent,
 } from "../models/calendar.ts";
-import { parseIcs } from "../services/ics-calendar.ts";
 import {
   isCalendarConnected,
   markCalendarConnected,
@@ -16,7 +16,7 @@ import {
 } from "../storage/calendar.ts";
 
 // Private singleton state reused through the app (mirrors occasion.ts). Kept in
-// sync so an import during onboarding is reflected the moment Today mounts.
+// sync so connecting during onboarding is reflected the moment Today mounts.
 let connected = isCalendarConnected();
 let events: StoredCalendarEvent[] = getStoredEvents();
 const listeners = new Set<() => void>();
@@ -39,18 +39,19 @@ export function useCalendar() {
     };
   }, []);
 
-  // Parse an imported .ics entirely on-device, persist the expanded events, and
-  // mark the calendar connected. Throws on an invalid file (handled by caller).
-  const importIcs = async (file: File): Promise<{ count: number }> => {
-    const parsed = await parseIcs(file);
-    events = parsed;
-    setStoredEvents(parsed);
+  // Mock calendar connection: simulate the round-trip, then persist today's
+  // illustrative events so Today derives the pick. Stands in for the real Google
+  // Calendar integration (coming later) — no on-device parsing yet.
+  const connect = async (): Promise<void> => {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    const mocked = mockTodayEvents();
+    events = mocked;
+    setStoredEvents(mocked);
     markCalendarConnected();
     connected = true;
     // Re-apply the fresh pick to the deck even if already applied today.
     clearCalendarAppliedDay();
     notify();
-    return { count: parsed.length };
   };
 
   const clear = (): void => {
@@ -63,7 +64,7 @@ export function useCalendar() {
   return {
     connected,
     todayEvent: currentTodayEvent(),
-    importIcs,
+    connect,
     clear,
   };
 }

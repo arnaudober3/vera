@@ -29,7 +29,7 @@ export type AgendaItem = {
 };
 
 // The illustrative day shown in the onboarding preview, so the user sees how
-// events map to occasions before importing. The standout (dinner) is the pick.
+// events map to occasions before connecting. The standout (dinner) is the pick.
 export const MOCK_AGENDA: AgendaItem[] = [
   { time: "9:00", title: "Team standup", occasion: "work", standout: false },
   { time: "1:00", title: "Lunch", occasion: null, standout: false },
@@ -40,6 +40,42 @@ export const MOCK_AGENDA: AgendaItem[] = [
     standout: true,
   },
 ];
+
+// Wall-clock for each MOCK_AGENDA row (parallel by index), used to stamp today's
+// mocked events with ascending times so the dinner ends up the latest dressable
+// one — i.e. the pick. Display time is the 12h label shown on Today's cue.
+const MOCK_TIMES: { hour: number; minute: number; time: string }[] = [
+  { hour: 9, minute: 0, time: "9:00 AM" },
+  { hour: 13, minute: 0, time: "1:00 PM" },
+  { hour: 19, minute: 30, time: "7:30 PM" },
+];
+
+// Mocked "connected calendar": MOCK_AGENDA projected onto today, in the same
+// StoredCalendarEvent shape a real import produces — so Today derives the dinner
+// pick and biases the deck exactly as it would from real events. Temporary
+// stand-in until Google Calendar is wired up.
+export const mockTodayEvents = (): StoredCalendarEvent[] => {
+  const now = new Date();
+  return MOCK_AGENDA.map((row, i) => {
+    const { hour, minute, time } = MOCK_TIMES[i] ?? MOCK_TIMES[0];
+    const start = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      hour,
+      minute,
+    );
+    const m = `${start.getMonth() + 1}`.padStart(2, "0");
+    const day = `${start.getDate()}`.padStart(2, "0");
+    return {
+      date: `${start.getFullYear()}-${m}-${day}`,
+      time,
+      title: row.title,
+      occasion: row.occasion ?? "everyday",
+      startMs: start.getTime(),
+    };
+  });
+};
 
 // Keyword heuristics (FR + EN) mapping an event title to an occasion. Order
 // matters: the first rule that matches wins. Anything unmatched is "everyday"
