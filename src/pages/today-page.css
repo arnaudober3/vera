@@ -88,6 +88,56 @@
   opacity: 1;
 }
 
+/* ── Calendar cue row ── */
+/* A read-only pill above the filter bar showing the day's event (title + time)
+   the calendar picked. The occasion it maps to is reflected by the active chip
+   in the filter bar below. */
+.today-cal-cue-row {
+  flex-shrink: 0;
+  padding: 12px 20px 0;
+}
+
+/* Understated, informational pill (same treatment whether it carries an event
+   or the "no event today" marker) — the teal lives on the active filter chip,
+   not here. The sparkle keeps a small teal accent to read as "calendar". */
+.today-occasion-cue {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 6px 14px;
+  border-radius: var(--vera-radius-pill);
+  border: 1px solid var(--vera-surface-border);
+  background: var(--vera-surface);
+  color: var(--vera-fg-muted);
+  font-family: var(--vera-font-sans);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Sparkle + time keep their size; the title flexes and truncates. */
+.today-occasion-cue svg {
+  color: var(--vera-primary);
+  flex-shrink: 0;
+}
+
+.today-occasion-cue__title {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.today-occasion-cue__time {
+  flex-shrink: 0;
+}
+
+/* Quiet day — same pill, neutral calendar icon (no event to accent). */
+.today-occasion-cue--muted svg {
+  color: var(--vera-fg-subtle);
+}
+
 /* ── Weather pill ── */
 .today-weather-badge {
   flex-shrink: 0;

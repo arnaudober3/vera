@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import type { Outfit } from "../models/outfit.ts";
-import type { Occasion } from "../models/occasion.ts";
+import { ALL_OCCASIONS, type Occasion } from "../models/occasion.ts";
 import { getSessionId } from "../storage/session.ts";
 import { todayKey, lsGet, lsSet } from "../storage/local-store.ts";
 
 // Shared deck UI types — defined here so both the hook and TodayDeck use one
-// definition rather than redeclaring them.
-export type Filter = Occasion | "all";
+// definition rather than redeclaring them. The filter is just the active
+// occasion; "everyday" is the relaxed, fits-everything default.
+export type Filter = Occasion;
 export type WornState = { cardKey: string; recordId: string; snapshot: Outfit };
 
 // Canonical key for an outfit's top/bottom duo — identifies a deck card and the
@@ -39,13 +40,18 @@ const todayString = (): string => {
 };
 
 const defaults = (): TodaySession => ({
-  filter: "all",
+  filter: "everyday",
   index: 0,
   edits: {},
   worn: null,
   selected: null,
   day: todayString(),
 });
+
+// Guards a persisted filter against the pre-rename occasion set (old "all"/
+// "casual"/… values), which are no longer valid Filters.
+const isFilter = (value: unknown): value is Filter =>
+  ALL_OCCASIONS.includes(value as Occasion);
 
 // Private singleton state reused through the app
 let state: TodaySession = defaults();
@@ -59,8 +65,12 @@ const initialize = (): void => {
 
   const sessionId = getSessionId();
   const stored = lsGet<TodaySession>(todayKey(sessionId), defaults());
-  // A stale-day load is treated as a fresh deck (daily reset).
-  state = stored.day === todayString() ? stored : defaults();
+  // A stale-day load — or a filter from the pre-rename occasion set — is
+  // treated as a fresh deck (daily reset / migration).
+  state =
+    stored.day === todayString() && isFilter(stored.filter)
+      ? stored
+      : defaults();
 
   isInitialized = true;
 };

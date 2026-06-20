@@ -282,8 +282,8 @@ export const useOutfit = () => {
     // On a cold or rainy day, suggest a layer: attach the best colour-matching
     // outerwear if the user hasn't already pinned/added one.
     if (weather && needsOuterwear(weather) && !finalOutfit.outerwear) {
-      // Keep the suggested layer occasion-appropriate too (no sport jacket on
-      // a formal day); skip the layer if nothing suitable is available.
+      // Keep the suggested layer occasion-appropriate too (no gym layer on a
+      // dinner day); skip the layer if nothing suitable is available.
       const availableOuterwear = availableItems.filter(
         (i) => i.category === "outerwear" && fitsOccasion(i, occasion),
       );
@@ -352,7 +352,7 @@ export const useOutfit = () => {
   // top × bottom product is tiny). The deck is local to the page: this never
   // touches the singleton state nor calls emitChange.
   const buildDeck = (
-    filter: Occasion | "all",
+    filter: Occasion,
     deckSize = 10,
     pinnedId?: string,
   ): Outfit[] => {
@@ -360,8 +360,8 @@ export const useOutfit = () => {
       (i) => i.isClean || !isWashable(i.category),
     );
 
-    const matchesFilter = (i: ClothingItem): boolean =>
-      filter === "all" || fitsOccasion(i, filter);
+    // "everyday" fits every item, so this naturally yields the unfiltered deck.
+    const matchesFilter = (i: ClothingItem): boolean => fitsOccasion(i, filter);
 
     // Resolve the active pin. Dropped silently if the item is no longer
     // available (deleted/dirty) — mirrors generateOutfit.

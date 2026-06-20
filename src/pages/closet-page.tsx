@@ -430,7 +430,7 @@ export const ClosetPage = (): React.JSX.Element => {
       </div>
 
       {showOnboardingToast && (
-        <div className="mx-auto max-w-4xl px-4 pb-2 w-full shrink-0">
+        <div className="mx-auto max-w-4xl px-4 pt-3 pb-2 w-full shrink-0">
           <OnboardingToast
             onDismiss={() => setShowOnboardingToast(false)}
           />

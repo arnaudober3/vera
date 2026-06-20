@@ -1,8 +1,9 @@
 import * as React from "react";
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { FaCamera, FaCheck, FaRegImage, FaTshirt } from "react-icons/fa";
+import { MdAutoAwesome, MdCalendarToday, MdLockOutline } from "react-icons/md";
 import {
   type ClothingItemCategory,
   type CreateClothingItem,
@@ -21,16 +22,36 @@ import {
   processImageToBase64,
 } from "../services/image-processing.ts";
 import { markOnboardingComplete } from "../storage/onboarding.ts";
+import { MOCK_AGENDA } from "../models/calendar.ts";
+import { useCalendar } from "../hooks/calendar.ts";
 import "./onboarding.css";
 
-const STEP_TOTAL = 4;
-type Step = "welcome" | "snap" | "processing" | "reveal";
-const stepIndex: Record<Step, number> = {
-  welcome: 0,
-  snap: 1,
-  processing: 2,
-  reveal: 3,
-};
+type Step = "welcome" | "snap" | "processing" | "reveal" | "calendar";
+
+// The numbered steps shown in the eyebrow ("Step X of 3"). The welcome splash is
+// an intro and the processing screen is a transient loader, so neither is counted.
+const NUMBERED_STEPS: Step[] = ["snap", "reveal", "calendar"];
+const NUMBERED_TOTAL = NUMBERED_STEPS.length;
+const stepNumber = (step: Step): number => NUMBERED_STEPS.indexOf(step) + 1;
+
+// Debug mode (VITE_ENABLE_DEBUG=true): the intro still shows, but "Get started"
+// skips the snap → process flow and jumps to the reveal step with mocked
+// before/after images so the later screens can be reviewed quickly. Off in
+// normal builds.
+const DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
+
+// Stand-in before/after images (debug only) so the reveal screen shows a real
+// garment instead of the placeholder icon.
+const GARMENT_PATH =
+  "M30 20 L42 14 Q50 22 58 14 L70 20 L82 30 L74 38 L70 34 L70 82 Q70 86 66 86 L34 86 Q30 86 30 82 L30 34 L26 38 L18 30 Z";
+const garmentSvg = (background: string): string =>
+  `data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">` +
+      (background ? `<rect width="100" height="100" fill="${background}"/>` : "") +
+      `<path d="${GARMENT_PATH}" fill="#e7e1d4" stroke="rgba(0,0,0,0.08)" stroke-width="1"/></svg>`,
+  )}`;
+const MOCK_BEFORE_IMAGE = garmentSvg("#d8d3c4");
+const MOCK_AFTER_IMAGE = garmentSvg("");
 
 export const WelcomePage = (): React.JSX.Element => {
   const navigate = useNavigate();
@@ -39,8 +60,12 @@ export const WelcomePage = (): React.JSX.Element => {
   const { saveImage } = useImage();
 
   const [step, setStep] = useState<Step>("welcome");
-  const [beforeImage, setBeforeImage] = useState<string | null>(null);
-  const [afterImage, setAfterImage] = useState<string | null>(null);
+  const [beforeImage, setBeforeImage] = useState<string | null>(
+    DEBUG ? MOCK_BEFORE_IMAGE : null,
+  );
+  const [afterImage, setAfterImage] = useState<string | null>(
+    DEBUG ? MOCK_AFTER_IMAGE : null,
+  );
   const [name, setName] = useState("");
   const [classification, setClassification] =
     useState<ClassificationResult | null>(null);
@@ -53,6 +78,13 @@ export const WelcomePage = (): React.JSX.Element => {
   function finishAndExit(target: string): void {
     markOnboardingComplete();
     navigate(target, { replace: true });
+  }
+
+  // Final exit once the (last) calendar step is done — lands on the closet with
+  // the just-onboarded flag so it can welcome the freshly-added first item.
+  function completeOnboarding(): void {
+    markOnboardingComplete();
+    navigate("/closet", { state: { justOnboarded: true }, replace: true });
   }
 
   function resetForRetake(): void {
@@ -125,8 +157,9 @@ export const WelcomePage = (): React.JSX.Element => {
         imageData: afterImage,
       });
 
-      markOnboardingComplete();
-      navigate("/closet", { state: { justOnboarded: true }, replace: true });
+      // First item is in — move on to the calendar step (the final one) rather
+      // than exiting onboarding here.
+      setStep("calendar");
     } finally {
       setIsSaving(false);
     }
@@ -140,7 +173,7 @@ export const WelcomePage = (): React.JSX.Element => {
     <div className="vera-onboarding">
       {step === "welcome" && (
         <WelcomeScreen
-          onNext={() => setStep("snap")}
+          onNext={() => setStep(DEBUG ? "reveal" : "snap")}
           onSkip={() => finishAndExit("/closet")}
         />
       )}
@@ -163,6 +196,9 @@ export const WelcomePage = (): React.JSX.Element => {
           onRetake={resetForRetake}
           onSkip={() => finishAndExit("/closet")}
         />
+      )}
+      {step === "calendar" && (
+        <CalendarConnectScreen onDone={completeOnboarding} />
       )}
 
       <input
@@ -187,46 +223,45 @@ export const WelcomePage = (): React.JSX.Element => {
 const Stage = ({
   children,
   padding = 24,
+  paddingTop = 16,
+  paddingBottom = 24,
+  gap = 18,
 }: {
   children: React.ReactNode;
   padding?: number;
+  paddingTop?: number;
+  paddingBottom?: number;
+  gap?: number;
 }): React.JSX.Element => (
   <div
     style={{
       minHeight: "100%",
       display: "flex",
       flexDirection: "column",
-      paddingTop: 60,
-      paddingBottom: 44,
+      paddingTop,
+      paddingBottom,
       paddingLeft: padding,
       paddingRight: padding,
       boxSizing: "border-box",
-      gap: 18,
+      gap,
     }}
   >
     {children}
   </div>
 );
 
-const StepDots = ({ active }: { active: number }): React.JSX.Element => (
-  <div style={{ display: "flex", gap: 6, justifyContent: "center" }}>
-    {Array.from({ length: STEP_TOTAL }).map((_, i) => (
-      <div
-        key={i}
-        style={{
-          width: i === active ? 22 : 6,
-          height: 6,
-          borderRadius: 3,
-          background:
-            i === active
-              ? "var(--vera-primary)"
-              : "var(--vera-gray-300)",
-          transition: "width var(--vera-duration) var(--vera-ease)",
-        }}
-      />
-    ))}
-  </div>
-);
+// "Step X of 3" eyebrow, shown at the top of every numbered onboarding step.
+const StepEyebrow = ({ step }: { step: Step }): React.JSX.Element => {
+  const { t } = useTranslation();
+  return (
+    <div className="vera-eyebrow" style={{ color: "var(--vera-primary)" }}>
+      {t("onboarding.stepIndicator", {
+        current: stepNumber(step),
+        total: NUMBERED_TOTAL,
+      })}
+    </div>
+  );
+};
 
 const SkipLink = ({
   onClick,
@@ -384,7 +419,209 @@ const WelcomeScreen = ({
           {t("onboarding.welcome.cta")}
         </button>
         <SkipLink onClick={onSkip} label={t("onboarding.welcome.skip")} />
-        <StepDots active={stepIndex.welcome} />
+      </div>
+    </Stage>
+  );
+};
+
+const CalendarConnectScreen = ({
+  onDone,
+}: {
+  onDone: () => void;
+}): React.JSX.Element => {
+  const { t, i18n } = useTranslation();
+  const { connect } = useCalendar();
+  const [connecting, setConnecting] = useState(false);
+
+  const todayLabel = (() => {
+    const s = new Date().toLocaleDateString(i18n.language || "en", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  })();
+
+  async function handleConnect(): Promise<void> {
+    setConnecting(true);
+    try {
+      await connect();
+      onDone();
+    } finally {
+      setConnecting(false);
+    }
+  }
+
+  return (
+    <Stage gap={12}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
+        <StepEyebrow step="calendar" />
+        <div className="vera-display" style={{ fontSize: 38, lineHeight: 1.02 }}>
+          {t("onboarding.calendar.title")}
+        </div>
+        <div
+          style={{
+            color: "var(--vera-fg-muted)",
+            fontSize: 15,
+            lineHeight: 1.5,
+            marginTop: 2,
+          }}
+        >
+          <Trans
+            i18nKey="onboarding.calendar.subtitle"
+            components={{
+              b: (
+                <strong
+                  style={{ color: "var(--vera-fg-default)", fontWeight: 600 }}
+                />
+              ),
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Agenda preview — shows how today's events map to occasions, with the
+          day's standout (dinner) marked as the pick. */}
+      <div
+        className="vera-card"
+        style={{ padding: 0, overflow: "hidden", textAlign: "left" }}
+      >
+        <div
+          style={{
+            padding: "10px 14px",
+            borderBottom: "1px solid var(--vera-gray-100)",
+            fontSize: 12,
+            fontWeight: 600,
+            color: "var(--vera-fg-muted)",
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+          }}
+        >
+          <MdCalendarToday size={13} color="var(--vera-primary)" />
+          {t("onboarding.calendar.agendaToday", { date: todayLabel })}
+        </div>
+        {MOCK_AGENDA.map((row, i, a) => (
+          <div
+            key={row.time}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 10,
+              padding: "11px 14px",
+              borderBottom:
+                i < a.length - 1 ? "1px solid var(--vera-gray-100)" : "0",
+            }}
+          >
+            <span
+              style={{
+                fontSize: 13,
+                fontWeight: 600,
+                color: "var(--vera-fg-default)",
+                width: 38,
+              }}
+            >
+              {row.time}
+            </span>
+            <span
+              style={{
+                fontSize: 14,
+                color: "var(--vera-fg-strong)",
+                flex: 1,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+              }}
+            >
+              {row.title}
+            </span>
+            {row.occasion && (
+              <span
+                className={`vera-chip ${row.standout ? "active" : ""}`}
+                style={{
+                  padding: "3px 10px",
+                  fontSize: 12,
+                  gap: row.standout ? 5 : 0,
+                  cursor: "default",
+                }}
+              >
+                {row.standout && <MdAutoAwesome size={11} />}
+                {t(`today.occasion.${row.occasion}`)}
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Both notes share one wrapper so the Stage's inter-child gap doesn't
+          push them apart — keeps them tight together as in the design. */}
+      <div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 7,
+            fontSize: 13,
+            color: "var(--vera-fg-muted)",
+            lineHeight: 1.4,
+          }}
+        >
+          <MdAutoAwesome size={13} color="var(--vera-primary)" />
+          <span>
+            <Trans
+              i18nKey="onboarding.calendar.standoutNote"
+              components={{
+                b: (
+                  <strong
+                    style={{ color: "var(--vera-fg-default)", fontWeight: 600 }}
+                  />
+                ),
+              }}
+            />
+          </span>
+        </div>
+
+        <div
+          style={{
+            marginTop: 9,
+            display: "flex",
+            alignItems: "flex-start",
+            gap: 8,
+            fontSize: 13,
+            color: "var(--vera-fg-muted)",
+            lineHeight: 1.45,
+          }}
+        >
+          <MdLockOutline
+            size={14}
+            color="var(--vera-fg-subtle)"
+            style={{ marginTop: 2, flexShrink: 0 }}
+          />
+          {t("onboarding.calendar.privacy")}
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginTop: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          paddingBottom: 4,
+        }}
+      >
+        <button
+          type="button"
+          className="vera-btn-primary"
+          onClick={() => void handleConnect()}
+          disabled={connecting}
+        >
+          <MdCalendarToday />
+          {connecting
+            ? t("onboarding.calendar.connecting")
+            : t("onboarding.calendar.connect")}
+        </button>
+        <SkipLink onClick={onDone} label={t("onboarding.calendar.maybeLater")} />
       </div>
     </Stage>
   );
@@ -405,9 +642,7 @@ const SnapScreen = ({
   return (
     <Stage>
       <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
-        <div className="vera-eyebrow" style={{ color: "var(--vera-primary)" }}>
-          {t("onboarding.snap.step")}
-        </div>
+        <StepEyebrow step="snap" />
         <div className="vera-display" style={{ fontSize: 34 }}>
           {t("onboarding.snap.title")}
         </div>
@@ -489,7 +724,6 @@ const SnapScreen = ({
           {t("onboarding.snap.chooseFromPhotos")}
         </button>
         <SkipLink onClick={onSkip} label={t("onboarding.snap.skip")} />
-        <StepDots active={stepIndex.snap} />
       </div>
     </Stage>
   );
@@ -553,9 +787,6 @@ const ProcessingScreen = (): React.JSX.Element => {
         }}
       >
         {t("onboarding.processing.subtitle")}
-      </div>
-      <div style={{ marginTop: 20 }}>
-        <StepDots active={stepIndex.processing} />
       </div>
       <style>{`@keyframes vera-spin { to { transform: rotate(360deg); } }`}</style>
     </div>
@@ -657,19 +888,7 @@ const RevealScreen = ({
   return (
     <Stage>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "0 4px" }}>
-        <div
-          className="vera-eyebrow"
-          style={{
-            color: "var(--vera-primary)",
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            whiteSpace: "nowrap",
-          }}
-        >
-          <FaCheck size={12} />
-          <span>{t("onboarding.reveal.cleanedUp")}</span>
-        </div>
+        <StepEyebrow step="reveal" />
         <div className="vera-display" style={{ fontSize: 30 }}>
           {t("onboarding.reveal.title")}
         </div>
@@ -778,7 +997,6 @@ const RevealScreen = ({
           {t("onboarding.reveal.retake")}
         </button>
         <SkipLink onClick={onSkip} label={t("onboarding.reveal.skip")} />
-        <StepDots active={stepIndex.reveal} />
       </div>
     </Stage>
   );
