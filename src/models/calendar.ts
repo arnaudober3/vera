@@ -8,8 +8,8 @@ export type CalendarEvent = {
   occasion: Occasion;
 };
 
-// A parsed + recurrence-expanded event kept locally after an .ics import. Dated
-// (local YYYY-MM-DD) so "today's event" is recomputed each day from one import;
+// A recurrence-expanded event kept locally after a calendar fetch. Dated (local
+// YYYY-MM-DD) so "today's event" is recomputed each day from one fetched window;
 // `startMs` orders events within a day; `time` is "" for all-day events.
 export type StoredCalendarEvent = {
   date: string;
@@ -17,6 +17,15 @@ export type StoredCalendarEvent = {
   title: string;
   occasion: Occasion;
   startMs: number;
+};
+
+// The minimal event shape returned by the Google Calendar backend functions
+// (see functions/api/google). `startIso` is a date-time for timed events or a
+// YYYY-MM-DD date for all-day ones; occasion mapping happens here, not server-side.
+export type RawCalendarEvent = {
+  title: string;
+  startIso: string;
+  allDay: boolean;
 };
 
 // A row in the onboarding agenda preview. `occasion` is null for events that
@@ -144,3 +153,43 @@ export const pickMostRelevant = (
   const top = pool.reduce((a, b) => (b.startMs >= a.startMs ? b : a));
   return { title: top.title, time: top.time, occasion: top.occasion };
 };
+
+const localDayStamp = (d: Date): string => {
+  const m = `${d.getMonth() + 1}`.padStart(2, "0");
+  const day = `${d.getDate()}`.padStart(2, "0");
+  return `${d.getFullYear()}-${m}-${day}`;
+};
+
+// Normalize the backend's raw Google events into the StoredCalendarEvent shape
+// the rest of the app already consumes: stamp the local day, format a 12h time
+// label (empty for all-day), and map the title to an occasion here — keeping the
+// occasion heuristics single-sourced on the frontend.
+export const rawEventsToStored = (
+  raw: RawCalendarEvent[],
+): StoredCalendarEvent[] =>
+  raw.map((ev) => {
+    if (ev.allDay) {
+      // "YYYY-MM-DD" parsed as a local date so a UTC midnight doesn't shift the
+      // day backwards in negative-offset timezones.
+      const [y, m, d] = ev.startIso.split("-").map(Number);
+      const start = new Date(y, (m ?? 1) - 1, d ?? 1);
+      return {
+        date: localDayStamp(start),
+        time: "",
+        title: ev.title,
+        occasion: eventToOccasion(ev.title),
+        startMs: start.getTime(),
+      };
+    }
+    const start = new Date(ev.startIso);
+    return {
+      date: localDayStamp(start),
+      time: start.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+      }),
+      title: ev.title,
+      occasion: eventToOccasion(ev.title),
+      startMs: start.getTime(),
+    };
+  });

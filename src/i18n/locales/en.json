@@ -62,10 +62,12 @@
       "subtitle": "Connect your calendar and Vera dresses you for the <b>day's most relevant occasion</b> — a big meeting, the gym, dinner out.",
       "agendaToday": "Today · {{date}}",
       "standoutNote": "Vera marks today's standout <b>— dinner</b>.",
-      "privacy": "Vera only reads event titles and times — it never leaves your phone.",
+      "privacy": "Vera only reads your event titles and times — never their contents — and never stores them.",
       "connect": "Connect calendar",
       "connecting": "Connecting…",
-      "maybeLater": "Maybe later"
+      "maybeLater": "Maybe later",
+      "error": "Couldn't connect your calendar. Please try again.",
+      "popupBlocked": "Your browser blocked the sign-in window. Allow popups — or open the app in your browser — and try again."
     },
     "snap": {
       "title": "Snap your first item.",
@@ -246,5 +248,8 @@
     "monthsAgo": "{{count}} months ago",
     "yearAgo": "a year ago",
     "yearsAgo": "{{count}} years ago"
+  },
+  "calendarCallback": {
+    "close": "You can close this window."
   }
 }

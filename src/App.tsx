@@ -4,6 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { ClosetPage } from "./pages/closet-page.tsx";
 import { LookbookPage } from "./pages/lookbook-page.tsx";
 import { WelcomePage } from "./pages/onboarding.tsx";
+import { GoogleCallbackPage } from "./pages/google-callback.tsx";
 import { isOnboardingComplete } from "./storage/onboarding.ts";
 import { ToastProvider } from "./components/toast-provider.tsx";
 
@@ -21,6 +22,7 @@ function App() {
             <Route path="/closet" element={<ClosetPage />} />
             <Route path="/closet/basket" element={<ClosetPage />} />
             <Route path="/lookbook" element={<LookbookPage />} />
+            <Route path="/google/callback" element={<GoogleCallbackPage />} />
           </Routes>
         </BrowserRouter>
       </ToastProvider>
