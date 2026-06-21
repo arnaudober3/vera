@@ -24,6 +24,7 @@ import {
 import { markOnboardingComplete } from "../storage/onboarding.ts";
 import { MOCK_AGENDA } from "../models/calendar.ts";
 import { useCalendar } from "../hooks/calendar.ts";
+import { GoogleCalendarError } from "../services/google-calendar.ts";
 import "./onboarding.css";
 
 type Step = "welcome" | "snap" | "processing" | "reveal" | "calendar";
@@ -432,6 +433,7 @@ const CalendarConnectScreen = ({
   const { t, i18n } = useTranslation();
   const { connect } = useCalendar();
   const [connecting, setConnecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const todayLabel = (() => {
     const s = new Date().toLocaleDateString(i18n.language || "en", {
@@ -444,9 +446,27 @@ const CalendarConnectScreen = ({
 
   async function handleConnect(): Promise<void> {
     setConnecting(true);
+    setError(null);
     try {
       await connect();
       onDone();
+    } catch (err) {
+      if (err instanceof GoogleCalendarError) {
+        // Surface the precise reason so failures are diagnosable in the console.
+        console.warn("Calendar connect failed:", err.reason, err.message);
+        // Closing the popup is a deliberate cancel — no error, just let them retry.
+        if (err.reason === "cancelled") return;
+        setError(
+          t(
+            err.reason === "popup_blocked"
+              ? "onboarding.calendar.popupBlocked"
+              : "onboarding.calendar.error",
+          ),
+        );
+      } else {
+        console.warn("Calendar connect failed:", err);
+        setError(t("onboarding.calendar.error"));
+      }
     } finally {
       setConnecting(false);
     }
@@ -610,6 +630,19 @@ const CalendarConnectScreen = ({
           paddingBottom: 4,
         }}
       >
+        {error && (
+          <div
+            role="alert"
+            style={{
+              fontSize: 13,
+              color: "var(--vera-danger, #b91c1c)",
+              textAlign: "center",
+              lineHeight: 1.4,
+            }}
+          >
+            {error}
+          </div>
+        )}
         <button
           type="button"
           className="vera-btn-primary"

@@ -62,10 +62,12 @@
       "subtitle": "Connecte ton agenda et Vera t'habille pour <b>l'occasion la plus marquante de la journée</b> — une réunion importante, le sport, un dîner.",
       "agendaToday": "Aujourd'hui · {{date}}",
       "standoutNote": "Vera repère le temps fort du jour <b>— le dîner</b>.",
-      "privacy": "Vera lit seulement les titres et horaires de tes événements — ils ne quittent jamais ton téléphone.",
+      "privacy": "Vera lit seulement les titres et horaires de tes événements — jamais leur contenu — et ne les conserve jamais.",
       "connect": "Connecter mon agenda",
       "connecting": "Connexion…",
-      "maybeLater": "Plus tard"
+      "maybeLater": "Plus tard",
+      "error": "Impossible de connecter ton agenda. Réessaie.",
+      "popupBlocked": "Ton navigateur a bloqué la fenêtre de connexion. Autorise les popups — ou ouvre l'app dans ton navigateur — puis réessaie."
     },
     "snap": {
       "title": "Photographie ton premier article.",
@@ -246,5 +248,8 @@
     "monthsAgo": "il y a {{count}} mois",
     "yearAgo": "il y a un an",
     "yearsAgo": "il y a {{count}} ans"
+  },
+  "calendarCallback": {
+    "close": "Tu peux fermer cette fenêtre."
   }
 }

@@ -25,6 +25,43 @@ export const setStoredEvents = (events: StoredCalendarEvent[]): void => {
   lsSet(calendarEventsKey(getSessionId()), events);
 };
 
+const calendarRefreshTokenKey = (sessionId: string): string =>
+  `vera:calendarRefreshToken:${sessionId}`;
+
+// The Google OAuth refresh token, persisted so the app can silently re-fetch a
+// fresh event window each day without re-prompting. Trade-off accepted with the
+// app's local-first model (mirrors the client-side API keys already in use).
+export const getCalendarRefreshToken = (): string | null =>
+  localStorage.getItem(calendarRefreshTokenKey(getSessionId()));
+
+export const setCalendarRefreshToken = (token: string): void => {
+  localStorage.setItem(calendarRefreshTokenKey(getSessionId()), token);
+};
+
+const calendarFetchedDayKey = (sessionId: string): string =>
+  `vera:calendarFetchedDay:${sessionId}`;
+
+// The local day (YYYY-MM-DD) the event window was last fetched from Google. Used
+// to trigger one silent refresh per new calendar day.
+export const getCalendarFetchedDay = (): string | null =>
+  localStorage.getItem(calendarFetchedDayKey(getSessionId()));
+
+export const setCalendarFetchedDay = (day: string): void => {
+  localStorage.setItem(calendarFetchedDayKey(getSessionId()), day);
+};
+
+const calendarFetchedAtKey = (sessionId: string): string =>
+  `vera:calendarFetchedAt:${sessionId}`;
+
+// Epoch ms of the last successful event fetch. Throttles the refresh-on-return
+// so rapidly re-focusing the app doesn't re-hit Google each time. 0 if never.
+export const getCalendarFetchedAt = (): number =>
+  Number(localStorage.getItem(calendarFetchedAtKey(getSessionId())) ?? 0);
+
+export const setCalendarFetchedAt = (ms: number): void => {
+  localStorage.setItem(calendarFetchedAtKey(getSessionId()), String(ms));
+};
+
 // Local-day stamp (YYYY-MM-DD), matching today-session's daily-reset key so the
 // calendar pick re-applies on each new calendar day.
 export const todayLocalDay = (): string => {
@@ -53,11 +90,14 @@ export const clearCalendarAppliedDay = (): void => {
   localStorage.removeItem(calendarAppliedDayKey(getSessionId()));
 };
 
-// Full disconnect — drops stored events, the connected flag and the applied
-// stamp.
+// Full disconnect — drops stored events, the connected flag, the applied stamp,
+// the refresh token and the fetched-day stamp.
 export const clearCalendar = (): void => {
   const sessionId = getSessionId();
   lsRemove(calendarEventsKey(sessionId));
   localStorage.removeItem(calendarConnectedKey(sessionId));
   localStorage.removeItem(calendarAppliedDayKey(sessionId));
+  localStorage.removeItem(calendarRefreshTokenKey(sessionId));
+  localStorage.removeItem(calendarFetchedDayKey(sessionId));
+  localStorage.removeItem(calendarFetchedAtKey(sessionId));
 };
