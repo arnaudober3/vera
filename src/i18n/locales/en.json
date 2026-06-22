@@ -50,50 +50,77 @@
     "earring": "Earrings"
   },
   "onboarding": {
-    "stepIndicator": "Step {{current}} of {{total}}",
     "welcome": {
-      "title": "A fresh outfit every morning.",
-      "subtitle": "Snap your closet — Vera organises it, picks an outfit for tomorrow, and tracks what's clean.",
-      "cta": "Get started",
-      "skip": "Skip"
+      "title": "Add two pieces. Vera builds the outfit.",
+      "subtitle": "It takes about a minute. Snap a top and a bottom — Vera puts together your first outfit on the spot.",
+      "cta": "Add my first piece",
+      "skip": "Look around"
+    },
+    "addPiece": {
+      "optional": "Optional",
+      "openCamera": "Open camera",
+      "choosePhotos": "Choose from photos",
+      "snapHint": "Snap it or pick a photo",
+      "tidying": "Tidying up…",
+      "ready": "ready",
+      "processError": "We couldn't process that photo. Try a different one.",
+      "skip": "Skip",
+      "top": {
+        "step": "1 of 2",
+        "title": "Add a top.",
+        "hint": "Snap it or pick a photo — Vera cleans up the background for you.",
+        "next": "Next: add a bottom"
+      },
+      "bottom": {
+        "step": "2 of 2",
+        "title": "Now a bottom.",
+        "hint": "One more and Vera puts them together into an outfit.",
+        "next": "See my outfit"
+      },
+      "more": {
+        "title": "Add another piece.",
+        "hint": "A pair of shoes, a jacket — anything. More pieces, more outfits.",
+        "next": "Add to closet"
+      }
+    },
+    "outfit": {
+      "eyebrow": "Two pieces in",
+      "title": "Here's your first outfit.",
+      "top": "Top",
+      "bottom": "Bottom",
+      "body": "That's the whole idea. Add a few more pieces and Vera mixes a fresh outfit for you every morning.",
+      "cta": "I'm wearing this"
+    },
+    "levelup": {
+      "title": "Want Vera to do even more?",
+      "subtitle": "Both can wait — your closet already works.",
+      "addTitle": "Add a few more pieces",
+      "addBody": "The more Vera knows, the more outfits it can put together.",
+      "addAction": "Add pieces",
+      "calTitle": "Connect your calendar",
+      "calBody": "Vera dresses you for what's ahead — meetings, gym, dinner out.",
+      "calAction": "Connect",
+      "done": "Done",
+      "finish": "Go to my closet"
     },
     "calendar": {
-      "title": "Dress for your day.",
-      "subtitle": "Connect your calendar and Vera dresses you for the <b>day's most relevant occasion</b> — a big meeting, the gym, dinner out.",
-      "agendaToday": "Today · {{date}}",
-      "standoutNote": "Vera marks today's standout <b>— dinner</b>.",
+      "title": "Dress for what's ahead.",
+      "subtitle": "Connect Google Calendar and Vera reads your day, then leans your outfit to match.",
+      "ex1When": "Tomorrow, 9:00",
+      "ex1What": "Client pitch",
+      "ex1Cue": "Formal",
+      "ex2When": "Wed, 18:30",
+      "ex2What": "Five-a-side",
+      "ex2Cue": "Sport",
+      "ex3When": "Fri, 20:00",
+      "ex3What": "Dinner out",
+      "ex3Cue": "Smart",
       "privacy": "Vera only reads your event titles and times — never their contents — and never stores them.",
-      "connect": "Connect calendar",
+      "connect": "Connect Google Calendar",
       "connecting": "Connecting…",
-      "maybeLater": "Maybe later",
+      "skip": "Skip",
       "error": "Couldn't connect your calendar. Please try again.",
       "popupBlocked": "Your browser blocked the sign-in window. Allow popups — or open the app in your browser — and try again."
-    },
-    "snap": {
-      "title": "Snap your first item.",
-      "subtitle": "Lay a top flat on a plain surface. Vera removes the background automatically.",
-      "tipLight": "Good light, plain background",
-      "tipOne": "One item per photo",
-      "openCamera": "Open camera",
-      "chooseFromPhotos": "Choose from photos",
-      "skip": "I'll do it later",
-      "processError": "We couldn't process that photo. Try a different one."
-    },
-    "processing": {
-      "title": "Removing the background…",
-      "subtitle": "This usually takes a few seconds."
-    },
-    "reveal": {
-      "title": "That's all Vera needs.",
-      "before": "Before",
-      "after": "After",
-      "imageOriginalAlt": "Original",
-      "imageCleanedAlt": "Background removed",
-      "detecting": "Detecting…",
-      "autoTag": "auto",
-      "save": "Save to closet",
-      "retake": "Retake",
-      "skip": "Finish"
     }
   },
   "today": {
