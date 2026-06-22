@@ -50,50 +50,77 @@
     "earring": "Boucles d'oreilles"
   },
   "onboarding": {
-    "stepIndicator": "Étape {{current}} sur {{total}}",
     "welcome": {
-      "title": "Une nouvelle tenue chaque matin.",
-      "subtitle": "Prends ton dressing en photo — Vera l'organise, choisit une tenue pour demain, et garde un œil sur ce qui est propre.",
-      "cta": "Commencer",
-      "skip": "Passer"
+      "title": "Ajoutez deux pièces. Vera compose la tenue.",
+      "subtitle": "Cela prend environ une minute. Photographiez un haut et un bas — Vera compose votre première tenue dans la foulée.",
+      "cta": "Ajouter ma première pièce",
+      "skip": "Explorer"
+    },
+    "addPiece": {
+      "optional": "Optionnel",
+      "openCamera": "Ouvrir l'appareil photo",
+      "choosePhotos": "Choisir une photo",
+      "snapHint": "Prenez une photo ou choisissez-en une",
+      "tidying": "Nettoyage…",
+      "ready": "prêt",
+      "processError": "Nous n'avons pas pu traiter cette photo. Essayez-en une autre.",
+      "skip": "Passer",
+      "top": {
+        "step": "1 sur 2",
+        "title": "Ajoutez un haut.",
+        "hint": "Photographiez-le ou choisissez une photo — Vera détoure l'arrière-plan pour vous.",
+        "next": "Suivant : ajouter un bas"
+      },
+      "bottom": {
+        "step": "2 sur 2",
+        "title": "Maintenant un bas.",
+        "hint": "Encore un et Vera les assemble en une tenue.",
+        "next": "Voir ma tenue"
+      },
+      "more": {
+        "title": "Ajoutez une autre pièce.",
+        "hint": "Une paire de chaussures, une veste — n'importe quoi. Plus de pièces, plus de tenues.",
+        "next": "Ajouter au dressing"
+      }
+    },
+    "outfit": {
+      "eyebrow": "Deux pièces ajoutées",
+      "title": "Voici votre première tenue.",
+      "top": "Haut",
+      "bottom": "Bas",
+      "body": "C'est tout le principe. Ajoutez quelques pièces de plus et Vera vous compose une tenue fraîche chaque matin.",
+      "cta": "Je porte ça"
+    },
+    "levelup": {
+      "title": "Envie que Vera en fasse encore plus ?",
+      "subtitle": "Les deux peuvent attendre — votre dressing fonctionne déjà.",
+      "addTitle": "Ajoutez quelques pièces de plus",
+      "addBody": "Plus Vera en sait, plus elle peut composer de tenues.",
+      "addAction": "Ajouter des pièces",
+      "calTitle": "Connectez votre agenda",
+      "calBody": "Vera vous habille selon votre journée — réunions, sport, dîner.",
+      "calAction": "Connecter",
+      "done": "Terminé",
+      "finish": "Aller à mon dressing"
     },
     "calendar": {
-      "title": "Habille-toi pour ta journée.",
-      "subtitle": "Connecte ton agenda et Vera t'habille pour <b>l'occasion la plus marquante de la journée</b> — une réunion importante, le sport, un dîner.",
-      "agendaToday": "Aujourd'hui · {{date}}",
-      "standoutNote": "Vera repère le temps fort du jour <b>— le dîner</b>.",
-      "privacy": "Vera lit seulement les titres et horaires de tes événements — jamais leur contenu — et ne les conserve jamais.",
-      "connect": "Connecter mon agenda",
+      "title": "Habillez-vous pour ce qui vous attend.",
+      "subtitle": "Connectez Google Agenda et Vera lit votre journée, puis adapte votre tenue en conséquence.",
+      "ex1When": "Demain, 9:00",
+      "ex1What": "Présentation client",
+      "ex1Cue": "Formel",
+      "ex2When": "Mer, 18:30",
+      "ex2What": "Foot à cinq",
+      "ex2Cue": "Sport",
+      "ex3When": "Ven, 20:00",
+      "ex3What": "Dîner dehors",
+      "ex3Cue": "Chic",
+      "privacy": "Vera lit uniquement les titres et horaires de vos événements — jamais leur contenu — et ne les conserve jamais.",
+      "connect": "Connecter Google Agenda",
       "connecting": "Connexion…",
-      "maybeLater": "Plus tard",
-      "error": "Impossible de connecter ton agenda. Réessaie.",
-      "popupBlocked": "Ton navigateur a bloqué la fenêtre de connexion. Autorise les popups — ou ouvre l'app dans ton navigateur — puis réessaie."
-    },
-    "snap": {
-      "title": "Photographie ton premier article.",
-      "subtitle": "Pose un haut à plat sur une surface unie. Vera retire le fond automatiquement.",
-      "tipLight": "Bonne lumière, fond uni",
-      "tipOne": "Un article par photo",
-      "openCamera": "Ouvrir l'appareil photo",
-      "chooseFromPhotos": "Choisir dans la galerie",
-      "skip": "Plus tard",
-      "processError": "Impossible de traiter cette photo. Essaie-en une autre."
-    },
-    "processing": {
-      "title": "Suppression du fond…",
-      "subtitle": "Cela prend généralement quelques secondes."
-    },
-    "reveal": {
-      "title": "C'est tout ce qu'il faut à Vera.",
-      "before": "Avant",
-      "after": "Après",
-      "imageOriginalAlt": "Original",
-      "imageCleanedAlt": "Fond supprimé",
-      "detecting": "Détection…",
-      "autoTag": "auto",
-      "save": "Ajouter au dressing",
-      "retake": "Reprendre",
-      "skip": "Terminer"
+      "skip": "Passer",
+      "error": "Impossible de connecter votre agenda. Veuillez réessayer.",
+      "popupBlocked": "Votre navigateur a bloqué la fenêtre de connexion. Autorisez les pop-ups — ou ouvrez l'app dans votre navigateur — puis réessayez."
     }
   },
   "today": {

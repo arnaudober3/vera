@@ -1,7 +1,7 @@
 /* Onboarding-only styles. Design tokens now live globally in App.css.
    This file holds: the onboarding screen wrapper, onboarding-only display
-   classes (eyebrow, skip-link, serif display), the dark camera screen,
-   and onboarding-specific button/card sizing. */
+   classes (eyebrow, skip-link, serif display), and onboarding-specific
+   button/card sizing. */
 
 .vera-onboarding {
   background: var(--vera-bg-app);
@@ -62,11 +62,4 @@
   line-height: 1.05;
   letter-spacing: -0.01em;
   color: var(--vera-fg-strong);
-}
-
-.vera-onboarding-processing {
-  background: #0c0c0c;
-  color: #fff;
-  flex: 1;
-  min-height: 0;
 }
