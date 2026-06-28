@@ -51,38 +51,90 @@
   },
   "onboarding": {
     "welcome": {
-      "title": "Une nouvelle tenue chaque matin.",
-      "subtitle": "Prends ton dressing en photo — Vera l'organise, choisit une tenue pour demain, et garde un œil sur ce qui est propre.",
-      "cta": "Commencer",
-      "skip": "Passer"
+      "title": "Ajoutez deux pièces. Vera compose la tenue.",
+      "subtitle": "Cela prend environ une minute. Photographiez un haut et un bas — Vera compose votre première tenue dans la foulée.",
+      "cta": "Ajouter ma première pièce",
+      "skip": "Explorer"
     },
-    "snap": {
-      "step": "Étape 1",
-      "title": "Photographie ton premier article.",
-      "subtitle": "Pose un haut à plat sur une surface unie. Vera retire le fond automatiquement.",
-      "tipLight": "Bonne lumière, fond uni",
-      "tipOne": "Un article par photo",
+    "addPiece": {
+      "optional": "Optionnel",
       "openCamera": "Ouvrir l'appareil photo",
-      "chooseFromPhotos": "Choisir dans la galerie",
-      "skip": "Plus tard",
-      "processError": "Impossible de traiter cette photo. Essaie-en une autre."
+      "choosePhotos": "Choisir une photo",
+      "snapHint": "Prenez une photo ou choisissez-en une",
+      "tidying": "Nettoyage…",
+      "ready": "prêt",
+      "processError": "Nous n'avons pas pu traiter cette photo. Essayez-en une autre.",
+      "skip": "Passer",
+      "top": {
+        "step": "1 sur 2",
+        "title": "Ajoutez un haut.",
+        "hint": "Photographiez-le ou choisissez une photo — Vera détoure l'arrière-plan pour vous.",
+        "next": "Suivant : ajouter un bas"
+      },
+      "bottom": {
+        "step": "2 sur 2",
+        "title": "Maintenant un bas.",
+        "hint": "Encore un et Vera les assemble en une tenue.",
+        "next": "Voir ma tenue"
+      },
+      "more": {
+        "title": "Ajoutez une autre pièce.",
+        "hint": "Une paire de chaussures, une veste — n'importe quoi. Plus de pièces, plus de tenues.",
+        "next": "Ajouter au dressing"
+      }
     },
-    "processing": {
-      "title": "Suppression du fond…",
-      "subtitle": "Cela prend généralement quelques secondes."
+    "outfit": {
+      "eyebrow": "Deux pièces ajoutées",
+      "title": "Voici votre première tenue.",
+      "top": "Haut",
+      "bottom": "Bas",
+      "body": "C'est tout le principe. Ajoutez quelques pièces de plus et Vera vous compose une tenue fraîche chaque matin.",
+      "cta": "Je porte ça"
     },
-    "reveal": {
-      "cleanedUp": "Uploadé",
-      "title": "C'est tout ce qu'il faut à Vera.",
-      "before": "Avant",
-      "after": "Après",
-      "imageOriginalAlt": "Original",
-      "imageCleanedAlt": "Fond supprimé",
-      "detecting": "Détection…",
-      "autoTag": "auto",
-      "save": "Ajouter au dressing",
-      "retake": "Reprendre",
-      "skip": "Terminer"
+    "levelup": {
+      "title": "Envie que Vera en fasse encore plus ?",
+      "subtitle": "Les deux peuvent attendre — votre dressing fonctionne déjà.",
+      "addTitle": "Ajoutez quelques pièces de plus",
+      "addBody": "Plus Vera en sait, plus elle peut composer de tenues.",
+      "addAction": "Ajouter des pièces",
+      "calTitle": "Connectez votre agenda",
+      "calBody": "Vera vous habille selon votre journée — réunions, sport, dîner.",
+      "calAction": "Connecter",
+      "notifTitle": "Notifications de tenue",
+      "notifBody": "Vera vous envoie une suggestion de tenue chaque matin selon votre journée.",
+      "notifAction": "Activer",
+      "done": "Terminé",
+      "finish": "Aller à mon dressing"
+    },
+    "calendar": {
+      "title": "Habillez-vous pour ce qui vous attend.",
+      "subtitle": "Connectez Google Agenda et Vera lit votre journée, puis adapte votre tenue en conséquence.",
+      "ex1When": "Demain, 9:00",
+      "ex1What": "Présentation client",
+      "ex1Cue": "Formel",
+      "ex2When": "Mer, 18:30",
+      "ex2What": "Foot à cinq",
+      "ex2Cue": "Sport",
+      "ex3When": "Ven, 20:00",
+      "ex3What": "Dîner dehors",
+      "ex3Cue": "Chic",
+      "privacy": "Vera lit uniquement les titres et horaires de vos événements — jamais leur contenu — et ne les conserve jamais.",
+      "connect": "Connecter Google Agenda",
+      "connecting": "Connexion…",
+      "skip": "Passer",
+      "error": "Impossible de connecter votre agenda. Veuillez réessayer.",
+      "popupBlocked": "Votre navigateur a bloqué la fenêtre de connexion. Autorisez les pop-ups — ou ouvrez l'app dans votre navigateur — puis réessayez."
+    },
+    "notifications": {
+      "title": "Un nouveau look, chaque matin.",
+      "subtitle": "Recevez une notification quotidienne avec votre tenue du matin, pour passer moins de temps devant le miroir.",
+      "body": "Vera n'envoie qu'une notification par jour, généralement juste avant votre réveil.",
+      "cta": "Activer les notifications",
+      "requesting": "Activation…",
+      "skip": "Passer",
+      "denied": "Les notifications sont bloquées. Vous pouvez les activer dans les réglages de votre navigateur.",
+      "unsupported": "Votre navigateur ne prend pas en charge les notifications.",
+      "error": "Une erreur est survenue. Veuillez réessayer."
     }
   },
   "today": {
@@ -103,7 +155,6 @@
     "heartAddAria": "Ajouter au lookbook",
     "heartRemoveAria": "Retirer du lookbook",
     "occasionLabel": "Occasion",
-    "filterAll": "Tout",
     "wearingBadge": "Porté aujourd'hui",
     "hintTap": "Tape",
     "hintWear": "pour porter",
@@ -112,10 +163,14 @@
     "hintWorn": "Porté aujourd'hui",
     "hintWornUndo": "· tape pour annuler",
     "occasion": {
-      "casual": "Décontracté",
-      "smart": "Chic",
-      "formal": "Habillé",
-      "sport": "Sport"
+      "everyday": "Quotidien",
+      "work": "Travail",
+      "gym": "Sport",
+      "dinner": "Dîner",
+      "date-night": "Soirée"
+    },
+    "calendar": {
+      "cueFallback": "Rien de prévu aujourd'hui"
     },
     "weather": {
       "setManual": "Définir la météo",
@@ -234,5 +289,8 @@
     "monthsAgo": "il y a {{count}} mois",
     "yearAgo": "il y a un an",
     "yearsAgo": "il y a {{count}} ans"
+  },
+  "calendarCallback": {
+    "close": "Tu peux fermer cette fenêtre."
   }
 }

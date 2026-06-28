@@ -65,6 +65,42 @@ export const subCategoryToCategory: Record<
   earring: "accessories",
 };
 
+// Friendly nouns for auto-naming a piece during onboarding ("Navy tee",
+// "Beige chinos"). Keyed by detected sub-category, with a per-category fallback
+// used when classification is unavailable.
+export const subCategoryToNoun: Record<ClothingItemSubCategory, string> = {
+  "t-shirt": "tee",
+  shirt: "shirt",
+  sweater: "sweater",
+  jacket: "jacket",
+  coat: "coat",
+  hoodie: "hoodie",
+  pants: "chinos",
+  joggers: "joggers",
+  jeans: "jeans",
+  shorts: "shorts",
+  skirt: "skirt",
+  sneakers: "sneakers",
+  boots: "boots",
+  sandals: "sandals",
+  dress_shoes: "dress shoes",
+  bag: "bag",
+  belt: "belt",
+  scarf: "scarf",
+  hat: "hat",
+  watch: "watch",
+  ring: "ring",
+  earring: "earrings",
+};
+
+export const categoryToNoun: Record<ClothingItemCategory, string> = {
+  top: "top",
+  bottom: "bottoms",
+  outerwear: "jacket",
+  shoes: "shoes",
+  accessories: "piece",
+};
+
 export const ALL_SUBCATEGORIES: ClothingItemSubCategory[] = Object.keys(
   subCategoryToCategory,
 ) as ClothingItemSubCategory[];

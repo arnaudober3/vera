@@ -430,10 +430,22 @@ export const ClosetPage = (): React.JSX.Element => {
       </div>
 
       {showOnboardingToast && (
-        <div className="mx-auto max-w-4xl px-4 pb-2 w-full shrink-0">
-          <OnboardingToast
-            onDismiss={() => setShowOnboardingToast(false)}
-          />
+        // Float above the nav dock, matching the error toast's placement
+        // (.vera-toast): fixed to the phone frame — its transform makes it the
+        // containing block, so ClosetPage's overflow-hidden never clips it.
+        <div
+          style={{
+            position: "fixed",
+            left: 16,
+            right: 16,
+            bottom: "calc(env(safe-area-inset-bottom) + 92px)",
+            maxWidth: 360,
+            margin: "0 auto",
+            zIndex: 200,
+            animation: "veraToastUp 0.32s var(--vera-ease) both",
+          }}
+        >
+          <OnboardingToast onDismiss={() => setShowOnboardingToast(false)} />
         </div>
       )}
 

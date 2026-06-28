@@ -1,11 +1,16 @@
 import { useState, useEffect } from "react";
-import { type Occasion } from "../models/occasion.ts";
+import { ALL_OCCASIONS, type Occasion } from "../models/occasion.ts";
 import { getSessionId } from "../storage/session.ts";
 import { lsGet, lsSet } from "../storage/local-store.ts";
 
 const occasionKey = (sessionId: string): string => `vera:occasion:${sessionId}`;
 
-const DEFAULT_OCCASION: Occasion = "casual";
+const DEFAULT_OCCASION: Occasion = "everyday";
+
+// Guards against values persisted before the occasions were renamed (e.g. the
+// old "casual"/"smart" set), which are no longer valid Occasions.
+const isOccasion = (value: unknown): value is Occasion =>
+  ALL_OCCASIONS.includes(value as Occasion);
 
 // Private singleton state reused through the app (mirrors closet.ts / outfit.ts).
 let state: Occasion = DEFAULT_OCCASION;
@@ -16,7 +21,8 @@ const initialize = (): void => {
   if (isInitialized) {
     return;
   }
-  state = lsGet<Occasion>(occasionKey(getSessionId()), DEFAULT_OCCASION);
+  const stored = lsGet<Occasion>(occasionKey(getSessionId()), DEFAULT_OCCASION);
+  state = isOccasion(stored) ? stored : DEFAULT_OCCASION;
   isInitialized = true;
 };
 initialize();

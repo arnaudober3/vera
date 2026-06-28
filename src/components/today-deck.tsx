@@ -13,6 +13,7 @@ import {
   FaTimes,
   FaTshirt,
 } from "react-icons/fa";
+import { MdAutoAwesome, MdEvent } from "react-icons/md";
 import NavigationBar from "./navigation-bar.tsx";
 import { BasketStrip } from "./basket-strip.tsx";
 import { AppFooter } from "./app-footer.tsx";
@@ -22,6 +23,12 @@ import { useImage } from "../hooks/image.ts";
 import { useOutfitHistory } from "../hooks/outfit-history.ts";
 import { useLookbook } from "../hooks/lookbook.ts";
 import { useWeather } from "../hooks/weather.ts";
+import { useCalendar } from "../hooks/calendar.ts";
+import {
+  getCalendarAppliedDay,
+  setCalendarAppliedDay,
+  todayLocalDay,
+} from "../storage/calendar.ts";
 import { useTodaySession, cardKeyOf, type Filter } from "../hooks/today-session.ts";
 import type { ClothingItem } from "../models/clothing-item.ts";
 import type { Outfit } from "../models/outfit.ts";
@@ -29,7 +36,8 @@ import { ALL_OCCASIONS, fitsOccasion } from "../models/occasion.ts";
 import { itemTint } from "../utils/color.ts";
 import "./today-deck.css";
 
-const FILTERS: Filter[] = ["all", ...ALL_OCCASIONS];
+// "everyday" leads as the relaxed default and is always selectable.
+const FILTERS: Filter[] = ALL_OCCASIONS;
 
 // Card + collage geometry (mirrors the design prototype). The collage well is a
 // fixed-size canvas so the overlapping tiles keep their composition regardless of
@@ -514,6 +522,34 @@ const Deck = ({
   </div>
 );
 
+// ────────── Calendar cue row ──────────
+// Sits above the filter bar. Shows the day's event (title + time) the calendar
+// picked, or a muted "no event today" marker. Read-only — the occasion it maps
+// to is reflected as the active chip in the filter bar below.
+const CalendarCueRow = (): React.JSX.Element | null => {
+  const { t } = useTranslation();
+  const { connected, todayEvent } = useCalendar();
+  if (!connected) return null;
+  return (
+    <div className="today-cal-cue-row">
+      {todayEvent ? (
+        <span className="today-occasion-cue">
+          <MdAutoAwesome size={13} aria-hidden />
+          <span className="today-occasion-cue__title">{todayEvent.title}</span>
+          {todayEvent.time ? (
+            <span className="today-occasion-cue__time">· {todayEvent.time}</span>
+          ) : null}
+        </span>
+      ) : (
+        <span className="today-occasion-cue today-occasion-cue--muted">
+          <MdEvent size={13} aria-hidden />
+          {t("today.calendar.cueFallback")}
+        </span>
+      )}
+    </div>
+  );
+};
+
 // ────────── Filter chips ──────────
 const FilterChips = ({
   active,
@@ -539,12 +575,12 @@ const FilterChips = ({
           type="button"
           className={`today-occasion-chip ${f === active ? "active" : ""}`}
           aria-pressed={f === active}
-          // "all" is the default filter, so it stays selectable even when no
-          // clean duo is available — only the worn lock can disable it.
-          disabled={disabled || (f !== "all" && !availableFilters.has(f))}
+          // "everyday" is the relaxed default, so it stays selectable even when
+          // no clean duo is available — only the worn lock can disable it.
+          disabled={disabled || (f !== "everyday" && !availableFilters.has(f))}
           onClick={() => onSelect(f)}
         >
-          {f === "all" ? t("today.filterAll") : t(`today.occasion.${f}`)}
+          {t(`today.occasion.${f}`)}
         </button>
       ))}
     </div>
@@ -713,6 +749,26 @@ export const TodayDeck = (): React.JSX.Element => {
   // Opens the read-only list of every accessory on the look (the "+N more" card).
   const [moreOpen, setMoreOpen] = useState(false);
 
+  // Calendar sync biases the deck toward the day's pick, selecting that occasion
+  // so the cue pill is the active selection. Applied at most once per day so a
+  // manual chip override afterwards sticks (and survives the deck's route-level
+  // remount), then the selection is left to the user.
+  const { connected: calendarConnected, todayEvent } = useCalendar();
+  useEffect(() => {
+    if (!calendarConnected) return;
+    const today = todayLocalDay();
+    if (getCalendarAppliedDay() === today) return;
+    // Only select the picked occasion if it's actually wearable today (its chip
+    // isn't disabled — i.e. a clean duo fits it); otherwise stay on the neutral
+    // everyday default. The event still shows in the cue row either way.
+    const pick: Filter = todayEvent ? todayEvent.occasion : "everyday";
+    const selectable = pick === "everyday" || availableFilters.has(pick);
+    setFilter(selectable ? pick : "everyday");
+    setCalendarAppliedDay(today);
+    // Depend on the primitive occasion (todayEvent is a fresh object each render).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [calendarConnected, todayEvent?.occasion]);
+
   // Scale the fixed-design card to fill the available height of the deck region,
   // so the card grows on taller phones and the hint stays snug beneath it. A
   // callback ref wires up the observer the moment the region mounts (which only
@@ -769,8 +825,7 @@ export const TodayDeck = (): React.JSX.Element => {
       (i) => i.category === "bottom" && isItemClean(i.id),
     );
     const hasDuo = (f: Filter): boolean => {
-      const fits = (i: ClothingItem): boolean =>
-        f === "all" || fitsOccasion(i, f);
+      const fits = (i: ClothingItem): boolean => fitsOccasion(i, f);
       return cleanTops.some(fits) && cleanBottoms.some(fits);
     };
     return new Set(FILTERS.filter(hasDuo));
@@ -921,7 +976,7 @@ export const TodayDeck = (): React.JSX.Element => {
     );
     const hasCleanDuo = cleanTops.length > 0 && cleanBottoms.length > 0;
     const matchesFilter = (i: ClothingItem): boolean =>
-      filter === "all" || fitsOccasion(i, filter);
+      fitsOccasion(i, filter);
     const hasFilterDuo =
       cleanTops.some(matchesFilter) && cleanBottoms.some(matchesFilter);
     const occasionBlocked = hasCleanDuo && !hasFilterDuo;
@@ -929,6 +984,7 @@ export const TodayDeck = (): React.JSX.Element => {
 
     return (
       <>
+        <CalendarCueRow />
         <FilterChips
           active={filter}
           onSelect={setFilter}
@@ -1003,6 +1059,7 @@ export const TodayDeck = (): React.JSX.Element => {
 
   return (
     <>
+      <CalendarCueRow />
       <FilterChips
         active={filter}
         onSelect={setFilter}
