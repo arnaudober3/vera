@@ -44,6 +44,12 @@ export function useNotifications() {
     return result;
   };
 
+  const enableDailyReminder = async (): Promise<void> => {
+    await notificationService.enableDailyReminder();
+    currentStatus = notificationService.permissionStatus;
+    notify();
+  };
+
   const dismissPrompt = (): void => {
     setNotificationPromptDismissed(true);
     promptDismissed = true;
@@ -55,6 +61,7 @@ export function useNotifications() {
     permissionStatus: currentStatus,
     promptDismissed,
     requestPermission,
+    enableDailyReminder,
     dismissPrompt,
   };
 }

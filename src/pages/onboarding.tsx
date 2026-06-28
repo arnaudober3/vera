@@ -1224,7 +1224,7 @@ const NotificationScreen = ({
   onSkip: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const { supported, requestPermission } = useNotifications();
+  const { supported, enableDailyReminder } = useNotifications();
   const [requesting, setRequesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -1236,12 +1236,8 @@ const NotificationScreen = ({
     setRequesting(true);
     setError(null);
     try {
-      const status = await requestPermission();
-      if (status === "denied") {
-        setError(t("onboarding.notifications.denied"));
-      } else {
-        onDone();
-      }
+      await enableDailyReminder();
+      onDone();
     } catch {
       setError(t("onboarding.notifications.error"));
     } finally {
