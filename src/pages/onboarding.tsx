@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FaCamera, FaCheck, FaRegImage, FaTshirt } from "react-icons/fa";
-import { MdAdd, MdCalendarToday, MdLockOutline } from "react-icons/md";
+import { MdAdd, MdCalendarToday, MdLockOutline, MdNotifications } from "react-icons/md";
 import { PiPants, PiSneaker } from "react-icons/pi";
 import {
   type ClothingItemCategory,
@@ -27,6 +27,7 @@ import {
 import { colorName } from "../utils/color.ts";
 import { markOnboardingComplete } from "../storage/onboarding.ts";
 import { useCalendar } from "../hooks/calendar.ts";
+import { useNotifications } from "../hooks/notifications.ts";
 import { GoogleCalendarError } from "../services/google-calendar.ts";
 import "./onboarding.css";
 
@@ -40,7 +41,8 @@ type Step =
   | "outfit"
   | "levelup"
   | "add-more"
-  | "calendar";
+  | "calendar"
+  | "notifications";
 
 // The kind of piece a capture screen handles — drives the glyph, colour and the
 // default category when classification is unavailable.
@@ -134,6 +136,7 @@ export const WelcomePage = (): React.JSX.Element => {
           connected={connected}
           onAddPieces={() => setStep("add-more")}
           onConnect={() => setStep("calendar")}
+          onNotifications={() => setStep("notifications")}
           onFinish={completeOnboarding}
         />
       )}
@@ -158,6 +161,13 @@ export const WelcomePage = (): React.JSX.Element => {
             setConnected(true);
             setStep("levelup");
           }}
+          onSkip={() => setStep("levelup")}
+        />
+      )}
+
+      {step === "notifications" && (
+        <NotificationScreen
+          onDone={() => setStep("levelup")}
           onSkip={() => setStep("levelup")}
         />
       )}
@@ -928,15 +938,20 @@ const LevelUpScreen = ({
   connected,
   onAddPieces,
   onConnect,
+  onNotifications,
   onFinish,
 }: {
   addedMore: boolean;
   connected: boolean;
   onAddPieces: () => void;
   onConnect: () => void;
+  onNotifications: () => void;
   onFinish: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
+  const { permissionStatus } = useNotifications();
+  const notificationsDone = permissionStatus === "granted" || permissionStatus === "denied";
+
   return (
     <Stage>
       <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "0 4px" }}>
@@ -970,6 +985,14 @@ const LevelUpScreen = ({
           action={t("onboarding.levelup.calAction")}
           done={connected}
           onAction={onConnect}
+        />
+        <AskCard
+          icon={<MdNotifications size={20} color="var(--vera-primary)" />}
+          title={t("onboarding.levelup.notifTitle")}
+          body={t("onboarding.levelup.notifBody")}
+          action={t("onboarding.levelup.notifAction")}
+          done={notificationsDone}
+          onAction={onNotifications}
         />
       </div>
 
@@ -1186,6 +1209,129 @@ const CalendarScreen = ({
           {connecting
             ? t("onboarding.calendar.connecting")
             : t("onboarding.calendar.connect")}
+        </button>
+      </div>
+    </Stage>
+  );
+};
+
+// ── Screen 4c · Notifications (optional) ───────────────────────
+const NotificationScreen = ({
+  onDone,
+  onSkip,
+}: {
+  onDone: () => void;
+  onSkip: () => void;
+}): React.JSX.Element => {
+  const { t } = useTranslation();
+  const { supported, requestPermission } = useNotifications();
+  const [requesting, setRequesting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleRequest(): Promise<void> {
+    if (!supported) {
+      setError(t("onboarding.notifications.unsupported"));
+      return;
+    }
+    setRequesting(true);
+    setError(null);
+    try {
+      const status = await requestPermission();
+      if (status === "denied") {
+        setError(t("onboarding.notifications.denied"));
+      } else {
+        onDone();
+      }
+    } catch {
+      setError(t("onboarding.notifications.error"));
+    } finally {
+      setRequesting(false);
+    }
+  }
+
+  return (
+    <Stage gap={14}>
+      <SkipTopRight onClick={onSkip} label={t("onboarding.notifications.skip")} />
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
+        <Eyebrow>
+          <MdNotifications size={13} color="var(--vera-primary)" />
+          {t("onboarding.addPiece.optional")}
+        </Eyebrow>
+        <SerifTitle size={30}>{t("onboarding.notifications.title")}</SerifTitle>
+        <div
+          style={{
+            color: "var(--vera-fg-muted)",
+            fontSize: 15,
+            lineHeight: 1.5,
+            marginTop: 2,
+          }}
+        >
+          {t("onboarding.notifications.subtitle")}
+        </div>
+      </div>
+
+      <div
+        className="vera-card"
+        style={{
+          padding: 24,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: 16,
+          textAlign: "center",
+        }}
+      >
+        <div
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: 20,
+            background: "rgba(101,170,167,0.12)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <MdNotifications size={32} color="var(--vera-primary)" />
+        </div>
+        <div style={{ fontSize: 14, color: "var(--vera-fg-muted)", lineHeight: 1.5 }}>
+          {t("onboarding.notifications.body")}
+        </div>
+      </div>
+
+      <div
+        style={{
+          marginTop: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: 12,
+          paddingBottom: 4,
+        }}
+      >
+        {error && (
+          <div
+            role="alert"
+            style={{
+              fontSize: 13,
+              color: "var(--vera-danger, #b91c1c)",
+              textAlign: "center",
+              lineHeight: 1.4,
+            }}
+          >
+            {error}
+          </div>
+        )}
+        <button
+          type="button"
+          className="vera-btn-primary"
+          onClick={() => void handleRequest()}
+          disabled={requesting}
+        >
+          <MdNotifications />
+          {requesting
+            ? t("onboarding.notifications.requesting")
+            : t("onboarding.notifications.cta")}
         </button>
       </div>
     </Stage>

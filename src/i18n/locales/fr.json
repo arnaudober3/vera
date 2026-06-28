@@ -100,6 +100,9 @@
       "calTitle": "Connectez votre agenda",
       "calBody": "Vera vous habille selon votre journée — réunions, sport, dîner.",
       "calAction": "Connecter",
+      "notifTitle": "Notifications de tenue",
+      "notifBody": "Vera vous envoie une suggestion de tenue chaque matin selon votre journée.",
+      "notifAction": "Activer",
       "done": "Terminé",
       "finish": "Aller à mon dressing"
     },
@@ -121,6 +124,17 @@
       "skip": "Passer",
       "error": "Impossible de connecter votre agenda. Veuillez réessayer.",
       "popupBlocked": "Votre navigateur a bloqué la fenêtre de connexion. Autorisez les pop-ups — ou ouvrez l'app dans votre navigateur — puis réessayez."
+    },
+    "notifications": {
+      "title": "Un nouveau look, chaque matin.",
+      "subtitle": "Recevez une notification quotidienne avec votre tenue du matin, pour passer moins de temps devant le miroir.",
+      "body": "Vera n'envoie qu'une notification par jour, généralement juste avant votre réveil.",
+      "cta": "Activer les notifications",
+      "requesting": "Activation…",
+      "skip": "Passer",
+      "denied": "Les notifications sont bloquées. Vous pouvez les activer dans les réglages de votre navigateur.",
+      "unsupported": "Votre navigateur ne prend pas en charge les notifications.",
+      "error": "Une erreur est survenue. Veuillez réessayer."
     }
   },
   "today": {
