@@ -1,8 +1,14 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { clientsClaim } from "workbox-core";
-import { getLastNotifiedDay, setLastNotifiedDay } from "./storage/sw-store";
 import {
+  getDirtySinceDay,
+  getLastNotifiedDay,
+  setLastNotifiedDay,
+} from "./storage/sw-store";
+import {
+  formatDate,
+  getDayDiff,
   getNotificationContent,
   shouldNotify,
 } from "./utils/notification-logic";
@@ -27,8 +33,22 @@ async function checkAndNotify() {
     return;
   }
 
+  const today = formatDate(now);
+  const dirtySinceDay = await getDirtySinceDay();
+  let showLaundryHint = false;
+
+  if (dirtySinceDay) {
+    const diff = getDayDiff(today, dirtySinceDay);
+    if (diff >= 2) {
+      showLaundryHint = true;
+    }
+  }
+
   // Determine locale
-  const content = getNotificationContent(self.navigator.language || "en");
+  const content = getNotificationContent(
+    self.navigator.language || "en",
+    showLaundryHint,
+  );
 
   await self.registration.showNotification(content.title, {
     body: content.body,
@@ -39,10 +59,6 @@ async function checkAndNotify() {
     },
   });
 
-  const year = now.getFullYear();
-  const month = (now.getMonth() + 1).toString().padStart(2, "0");
-  const day = now.getDate().toString().padStart(2, "0");
-  const today = `${year}-${month}-${day}`;
   await setLastNotifiedDay(today);
 }
 

@@ -5,6 +5,7 @@ import "./notification-test.css";
 export function NotificationTest() {
   const [permission, setPermission] = useState(Notification.permission);
   const [log, setLog] = useState<string[]>([]);
+  const [showLaundryHint, setShowLaundryHint] = useState(false);
 
   const addLog = (message: string) => {
     setLog((prev) => [
@@ -31,7 +32,7 @@ export function NotificationTest() {
     }
 
     try {
-      const content = getNotificationContent(lang);
+      const content = getNotificationContent(lang, showLaundryHint);
       addLog(`Sending ${lang.toUpperCase()} notification...`);
 
       const notification = new Notification(content.title, {
@@ -80,6 +81,14 @@ export function NotificationTest() {
       <section className="debug-section">
         <h2>Actions</h2>
         <div className="debug-actions">
+          <label className="debug-checkbox">
+            <input
+              type="checkbox"
+              checked={showLaundryHint}
+              onChange={(e) => setShowLaundryHint(e.target.checked)}
+            />
+            Show laundry hint
+          </label>
           <button className="vera-btn-primary" onClick={requestPermission}>
             Request Permission
           </button>

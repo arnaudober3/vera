@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { getNotificationContent, shouldNotify } from "./notification-logic.ts";
+import {
+  formatDate,
+  getDayDiff,
+  getNotificationContent,
+  shouldNotify,
+} from "./notification-logic.ts";
 
 describe("notification-logic", () => {
   beforeEach(() => {
@@ -39,6 +44,68 @@ describe("notification-logic", () => {
     it("should return English content for empty locale string", () => {
       const content = getNotificationContent("");
       expect(content.title).toBe("Check today's suggestion");
+    });
+  });
+
+  describe("getNotificationContent with laundry hint", () => {
+    it("should append English laundry hint when showLaundryHint is true", () => {
+      const content = getNotificationContent("en", true);
+      expect(content.body).toContain("(time for a laundry?)");
+      expect(content.body).toContain("Looking for some outfit ideas for today?");
+    });
+
+    it("should append French laundry hint when showLaundryHint is true", () => {
+      const content = getNotificationContent("fr", true);
+      expect(content.body).toContain("(C’est l’heure de la lessive ?)");
+      expect(content.body).toContain(
+        "Tu cherches des idées de tenues pour aujourd’hui ?",
+      );
+    });
+
+    it("should fallback to English laundry hint for unknown locale", () => {
+      const content = getNotificationContent("de", true);
+      expect(content.body).toContain("(time for a laundry?)");
+    });
+  });
+
+  describe("formatDate", () => {
+    it("should format date as YYYY-MM-DD", () => {
+      const date = new Date("2026-06-28T10:00:00");
+      expect(formatDate(date)).toBe("2026-06-28");
+    });
+
+    it("should pad single digit month and day", () => {
+      const date = new Date("2026-01-05T10:00:00");
+      expect(formatDate(date)).toBe("2026-01-05");
+    });
+  });
+
+  describe("getDayDiff", () => {
+    it("should return 0 for same day", () => {
+      expect(getDayDiff("2026-06-28", "2026-06-28")).toBe(0);
+    });
+
+    it("should return 1 for next day", () => {
+      expect(getDayDiff("2026-06-29", "2026-06-28")).toBe(1);
+    });
+
+    it("should return 2 for two days after", () => {
+      expect(getDayDiff("2026-06-30", "2026-06-28")).toBe(2);
+    });
+
+    it("should handle month rollover", () => {
+      expect(getDayDiff("2026-07-01", "2026-06-30")).toBe(1);
+      expect(getDayDiff("2026-07-02", "2026-06-30")).toBe(2);
+    });
+
+    it("should handle year rollover", () => {
+      expect(getDayDiff("2027-01-01", "2026-12-31")).toBe(1);
+      expect(getDayDiff("2027-01-02", "2026-12-30")).toBe(3);
+    });
+
+    it("should handle leap years", () => {
+      expect(getDayDiff("2024-03-01", "2024-02-28")).toBe(2);
+      expect(getDayDiff("2024-03-01", "2024-02-29")).toBe(1);
     });
   });
 
