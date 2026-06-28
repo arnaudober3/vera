@@ -8,6 +8,12 @@ import {
 } from "../models/clothing-item";
 import { closetKey, lsGet, lsSet } from "../storage/local-store.ts";
 import { getSessionId } from "../storage/session.ts";
+import { formatDate } from "../utils/notification-logic.ts";
+import {
+  clearDirtySinceDay,
+  getDirtySinceDay,
+  setDirtySinceDay,
+} from "../storage/sw-store.ts";
 
 const ITEMS_UPLOAD_LIMIT = 10;
 
@@ -73,30 +79,30 @@ export function useCloset() {
       imageId: itemId,
     };
 
-    emitChange([newItem, ...state]);
+    await emitChange([newItem, ...state]);
 
     return newItem;
   };
   const removeClothingItem = async (id: string): Promise<string> => {
     await removeLookbookEntriesWithItem(id);
     await removeHistoryEntriesWithItem(id);
-    emitChange(state.filter((i) => i.id !== id));
+    await emitChange(state.filter((i) => i.id !== id));
     return id;
   };
   const renameClothingItem = async (id: string, name: string): Promise<void> => {
     const trimmed = name.trim();
     if (!trimmed) return; // name is required — ignore empty input
-    emitChange(state.map((i) => (i.id === id ? { ...i, name: trimmed } : i)));
+    await emitChange(state.map((i) => (i.id === id ? { ...i, name: trimmed } : i)));
   };
   const markLaundryDone = async (): Promise<void> => {
-    emitChange(state.map((i) => ({ ...i, isClean: true })));
+    await emitChange(state.map((i) => ({ ...i, isClean: true })));
   };
   const markWorn = async (item: ClothingItem): Promise<ClothingItem> => {
     if (!isWashable(item.category)) {
       return item;
     }
 
-    emitChange(
+    await emitChange(
       state.map((i) => (item.id === i.id ? { ...i, isClean: false } : i)),
     );
 
@@ -110,7 +116,7 @@ export function useCloset() {
       return item;
     }
 
-    emitChange(
+    await emitChange(
       state.map((i) => (item.id === i.id ? { ...i, isClean: true } : i)),
     );
 
@@ -128,10 +134,23 @@ export function useCloset() {
     return state.length >= ITEMS_UPLOAD_LIMIT;
   };
 
-  function emitChange(newItems: ClothingItem[]): void {
+  async function emitChange(newItems: ClothingItem[]): Promise<void> {
     state = newItems;
     lsSet(closetKey(getSessionId()), newItems);
     listeners.forEach((listener) => listener(newItems));
+
+    const dirtyWashableCount = newItems.filter(
+      (i) => isWashable(i.category) && !i.isClean,
+    ).length;
+
+    if (dirtyWashableCount > 0) {
+      const existing = await getDirtySinceDay();
+      if (!existing) {
+        await setDirtySinceDay(formatDate(new Date()));
+      }
+    } else {
+      await clearDirtySinceDay();
+    }
   }
 
   return {

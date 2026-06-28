@@ -100,6 +100,9 @@
       "calTitle": "Connect your calendar",
       "calBody": "Vera dresses you for what's ahead — meetings, gym, dinner out.",
       "calAction": "Connect",
+      "notifTitle": "Daily outfit notifications",
+      "notifBody": "Vera pokes you each morning with a fresh outfit idea based on your day.",
+      "notifAction": "Enable",
       "done": "Done",
       "finish": "Go to my closet"
     },
@@ -121,6 +124,17 @@
       "skip": "Skip",
       "error": "Couldn't connect your calendar. Please try again.",
       "popupBlocked": "Your browser blocked the sign-in window. Allow popups — or open the app in your browser — and try again."
+    },
+    "notifications": {
+      "title": "A fresh look, every morning.",
+      "subtitle": "Get a daily notification with your morning outfit, so you can spend less time in front of the mirror.",
+      "body": "Vera only sends one notification a day, usually just before you wake up.",
+      "cta": "Enable notifications",
+      "requesting": "Enabling…",
+      "skip": "Skip",
+      "denied": "Notifications are blocked. You can enable them in your browser settings.",
+      "unsupported": "Your browser doesn't support notifications.",
+      "error": "Something went wrong. Please try again."
     }
   },
   "today": {

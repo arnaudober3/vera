@@ -8,6 +8,8 @@
     "pages:dev": "wrangler pages dev --port 8788",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
+    "test": "vitest",
+    "test:run": "vitest run",
     "preview": "npm run build && wrangler pages dev --port 8788",
     "deploy": "npm run build && wrangler deploy"
   },
@@ -42,6 +44,7 @@
     "typescript-eslint": "^8.39.1",
     "vite": "^7.3.2",
     "vite-plugin-pwa": "^1.0.2",
+    "vitest": "^4.1.9",
     "wrangler": "^4.90.0"
   }
 }
