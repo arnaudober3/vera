@@ -1,4 +1,4 @@
-import type { RawCalendarEvent } from "../models/calendar.ts";
+import type {RawCalendarEvent} from "../models/calendar.ts";
 
 // Google Calendar OAuth client. The consent screen opens in a popup; the popup
 // lands on /google/callback (same origin), which postMessages the auth code
@@ -57,6 +57,30 @@ const pkceChallenge = async (verifier: string): Promise<string> => {
 
 const redirectUri = (): string => `${window.location.origin}/google/callback`;
 
+// Pure builder for the Google consent URL. Extracted so the OAuth params can be
+// asserted in tests and so connectViaPopup can defer building it until after the
+// popup is already open (see the synchronous-open note there).
+export const buildAuthUrl = (
+  clientId: string,
+  redirectUri: string,
+  challenge: string,
+  state: string,
+): string => {
+  const params = new URLSearchParams({
+    client_id: clientId,
+    redirect_uri: redirectUri,
+    response_type: "code",
+    scope: SCOPE,
+    access_type: "offline",
+    prompt: "consent",
+    include_granted_scopes: "true",
+    state,
+    code_challenge: challenge,
+    code_challenge_method: "S256",
+  });
+  return `${AUTH_ENDPOINT}?${params.toString()}`;
+};
+
 class GoogleCalendarService {
   private clientId: string = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
@@ -74,25 +98,14 @@ class GoogleCalendarService {
       );
     }
 
-    const verifier = randomToken();
-    const state = randomToken();
-    const challenge = await pkceChallenge(verifier);
-
-    const params = new URLSearchParams({
-      client_id: this.clientId,
-      redirect_uri: redirectUri(),
-      response_type: "code",
-      scope: SCOPE,
-      access_type: "offline",
-      prompt: "consent",
-      include_granted_scopes: "true",
-      state,
-      code_challenge: challenge,
-      code_challenge_method: "S256",
-    });
-
+    // Open the popup synchronously, in the same tick as the click, BEFORE any
+    // await. The PKCE digest below yields the event loop; if window.open ran
+    // after it, the call would fall outside the click's user-activation window
+    // and popup blockers (iOS Safari, installed PWAs) would return null. We open
+    // to a blank URL first and navigate it to the auth URL once the challenge
+    // resolves.
     const popup = window.open(
-      `${AUTH_ENDPOINT}?${params.toString()}`,
+      "",
       "vera-google-oauth",
       "width=500,height=650,menubar=no,toolbar=no",
     );
@@ -103,8 +116,26 @@ class GoogleCalendarService {
       );
     }
 
-    const code = await this.awaitCode(popup, state);
-    return this.exchange(code, verifier);
+    try {
+      const verifier = randomToken();
+      const state = randomToken();
+      const challenge = await pkceChallenge(verifier);
+
+      popup.location.href = buildAuthUrl(
+        this.clientId,
+        redirectUri(),
+        challenge,
+        state,
+      );
+
+      const code = await this.awaitCode(popup, state);
+      return await this.exchange(code, verifier);
+    } catch (err) {
+      // If the challenge/exchange throws after the popup was opened, close it so
+      // no orphan window is left behind, then rethrow.
+      if (!popup.closed) popup.close();
+      throw err;
+    }
   }
 
   // Silent daily refresh: trade the stored refresh token for a fresh window.
@@ -195,11 +226,10 @@ class GoogleCalendarService {
         detail.error ?? `Token exchange failed (${res.status}).`,
       );
     }
-    const data = (await res.json()) as {
+    return (await res.json()) as {
       refreshToken: string;
       events: RawCalendarEvent[];
     };
-    return data;
   }
 }
 
