@@ -3,7 +3,13 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FaCamera, FaCheck, FaRegImage, FaTshirt } from "react-icons/fa";
-import { MdAdd, MdCalendarToday, MdLockOutline, MdNotifications } from "react-icons/md";
+import {
+  MdAdd,
+  MdCalendarToday,
+  MdChevronLeft,
+  MdLockOutline,
+  MdNotifications,
+} from "react-icons/md";
 import { PiPants, PiSneaker } from "react-icons/pi";
 import {
   type ClothingItemCategory,
@@ -29,20 +35,13 @@ import { markOnboardingComplete } from "../storage/onboarding.ts";
 import { useCalendar } from "../hooks/calendar.ts";
 import { useNotifications } from "../hooks/notifications.ts";
 import { GoogleCalendarError } from "../services/google-calendar.ts";
+import { type Step, previousStep } from "../models/onboarding-nav.ts";
 import "./onboarding.css";
 
 // Value-first onboarding: Promise → add a top (1/2) → add a bottom (2/2) →
 // your first outfit (the "aha") → optional level-up asks → exit to the closet.
 // Background removal happens inline on the capture card; everything is skippable.
-type Step =
-  | "welcome"
-  | "add-top"
-  | "add-bottom"
-  | "outfit"
-  | "levelup"
-  | "add-more"
-  | "calendar"
-  | "notifications";
+// The Step union and back-navigation targets live in ../models/onboarding-nav.ts.
 
 // The kind of piece a capture screen handles — drives the glyph, colour and the
 // default category when classification is unavailable.
@@ -66,18 +65,35 @@ const capitalize = (s: string): string =>
 // outfit → levelup). The optional detours (add-more, calendar) show no dots.
 const DOT_TOTAL = 5;
 
+// Stage top padding for screens that render the top-left Back control. The
+// Back/Skip controls sit at top: 52 and are ~34px tall, so the (left-aligned)
+// header content must start below ~86px or the Back label overlaps the
+// step/eyebrow text. The default 56 only worked when the top-left was empty.
+const STAGE_TOP_WITH_BACK = 92;
+
 export const WelcomePage = (): React.JSX.Element => {
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>("welcome");
   const [topImage, setTopImage] = useState<string | null>(null);
   const [bottomImage, setBottomImage] = useState<string | null>(null);
+  // The closet ids saved for each linear capture slot, so going back and
+  // re-capturing replaces the earlier piece instead of duplicating it.
+  const [topItemId, setTopItemId] = useState<string | null>(null);
+  const [bottomItemId, setBottomItemId] = useState<string | null>(null);
   const [addedMore, setAddedMore] = useState(false);
   const [connected, setConnected] = useState(false);
 
   function finishAndExit(target: string): void {
     markOnboardingComplete();
     navigate(target, { replace: true });
+  }
+
+  // Navigate to the current step's back target. No-op on steps without one
+  // (welcome, levelup), which render no back control in the first place.
+  function goBack(): void {
+    const prev = previousStep(step);
+    if (prev) setStep(prev);
   }
 
   // Final exit once the user is done — lands on the closet with the
@@ -101,10 +117,13 @@ export const WelcomePage = (): React.JSX.Element => {
           key="add-top"
           kind="top"
           dotIndex={1}
-          onComplete={(image) => {
+          existingItemId={topItemId}
+          onComplete={(image, itemId) => {
             setTopImage(image);
+            setTopItemId(itemId);
             setStep("add-bottom");
           }}
+          onBack={goBack}
           onSkip={() => finishAndExit("/closet")}
         />
       )}
@@ -114,10 +133,13 @@ export const WelcomePage = (): React.JSX.Element => {
           key="add-bottom"
           kind="bottom"
           dotIndex={2}
-          onComplete={(image) => {
+          existingItemId={bottomItemId}
+          onComplete={(image, itemId) => {
             setBottomImage(image);
+            setBottomItemId(itemId);
             setStep("outfit");
           }}
+          onBack={goBack}
           onSkip={() => finishAndExit("/closet")}
         />
       )}
@@ -127,6 +149,7 @@ export const WelcomePage = (): React.JSX.Element => {
           topImage={topImage}
           bottomImage={bottomImage}
           onNext={() => setStep("levelup")}
+          onBack={goBack}
         />
       )}
 
@@ -151,6 +174,7 @@ export const WelcomePage = (): React.JSX.Element => {
             setAddedMore(true);
             setStep("levelup");
           }}
+          onBack={goBack}
           onSkip={() => setStep("levelup")}
         />
       )}
@@ -161,6 +185,7 @@ export const WelcomePage = (): React.JSX.Element => {
             setConnected(true);
             setStep("levelup");
           }}
+          onBack={goBack}
           onSkip={() => setStep("levelup")}
         />
       )}
@@ -168,6 +193,7 @@ export const WelcomePage = (): React.JSX.Element => {
       {step === "notifications" && (
         <NotificationScreen
           onDone={() => setStep("levelup")}
+          onBack={goBack}
           onSkip={() => setStep("levelup")}
         />
       )}
@@ -246,6 +272,47 @@ const SkipTopRight = ({
       zIndex: 5,
     }}
   >
+    {label}
+  </button>
+);
+
+// Top-left back affordance, mirroring SkipTopRight. Rendered on every step with
+// a PREV_STEP target; disabled (muted, non-interactive) while a capture step is
+// processing a photo or saving so back can't interrupt work in flight.
+const BackTopLeft = ({
+  onClick,
+  label,
+  disabled = false,
+}: {
+  onClick: () => void;
+  label: string;
+  disabled?: boolean;
+}): React.JSX.Element => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={disabled}
+    aria-label={label}
+    style={{
+      position: "absolute",
+      top: 52,
+      left: 16,
+      display: "flex",
+      alignItems: "center",
+      gap: 2,
+      background: "transparent",
+      border: 0,
+      color: "var(--vera-fg-muted)",
+      fontFamily: "inherit",
+      fontSize: 13,
+      fontWeight: 500,
+      padding: 8,
+      cursor: disabled ? "default" : "pointer",
+      opacity: disabled ? 0.4 : 1,
+      zIndex: 5,
+    }}
+  >
+    <MdChevronLeft size={18} />
     {label}
   </button>
 );
@@ -424,17 +491,23 @@ const AddPieceScreen = ({
   kind,
   dotIndex,
   optional = false,
+  existingItemId = null,
   onComplete,
+  onBack,
   onSkip,
 }: {
   kind: PieceKind;
   dotIndex: number | null;
   optional?: boolean;
-  onComplete: (image: string) => void;
+  // Id previously saved for this slot, replaced on the next save. Null/omitted
+  // for the additive add-more slot, which never replaces.
+  existingItemId?: string | null;
+  onComplete: (image: string, itemId: string) => void;
+  onBack?: () => void;
   onSkip: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const { addClothingItem } = useCloset();
+  const { addClothingItem, removeClothingItem } = useCloset();
   const { saveImage } = useImage();
 
   const [phase, setPhase] = useState<Phase>("empty");
@@ -509,9 +582,20 @@ const AddPieceScreen = ({
         imageData: afterImage,
       };
 
+      // Replace the piece saved earlier for this slot (from a prior visit via
+      // back) so the closet holds one item per slot. A failed cleanup is logged
+      // but never blocks saving the new piece — worst case is one orphan.
+      if (existingItemId) {
+        try {
+          await removeClothingItem(existingItemId);
+        } catch (err) {
+          console.warn("Failed to remove replaced onboarding piece:", err);
+        }
+      }
+
       const saved = await addClothingItem(item);
       await saveImage({ id: saved.imageId || saved.id, imageData: afterImage });
-      onComplete(afterImage);
+      onComplete(afterImage, saved.id);
     } finally {
       setSaving(false);
     }
@@ -520,7 +604,14 @@ const AddPieceScreen = ({
   const c = `onboarding.addPiece.${kind === "bottom" ? "bottom" : kind === "shoes" ? "more" : "top"}`;
 
   return (
-    <Stage paddingTop={56}>
+    <Stage paddingTop={onBack ? STAGE_TOP_WITH_BACK : 56}>
+      {onBack && (
+        <BackTopLeft
+          onClick={onBack}
+          label={t("onboarding.back")}
+          disabled={phase === "removing" || saving}
+        />
+      )}
       <SkipTopRight onClick={onSkip} label={t("onboarding.addPiece.skip")} />
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
@@ -772,10 +863,12 @@ const OutfitScreen = ({
   topImage,
   bottomImage,
   onNext,
+  onBack,
 }: {
   topImage: string | null;
   bottomImage: string | null;
   onNext: () => void;
+  onBack?: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
   const [shown, setShown] = useState(false);
@@ -785,7 +878,10 @@ const OutfitScreen = ({
   }, []);
 
   return (
-    <Stage>
+    <Stage paddingTop={onBack ? STAGE_TOP_WITH_BACK : 56}>
+      {onBack && (
+        <BackTopLeft onClick={onBack} label={t("onboarding.back")} />
+      )}
       <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "0 4px" }}>
         <Eyebrow>
           <FaCheck size={11} color="var(--vera-primary)" />
@@ -1017,9 +1113,11 @@ const LevelUpScreen = ({
 // ── Screen 4b · Connect calendar (optional, post-value) ──────────
 const CalendarScreen = ({
   onConnected,
+  onBack,
   onSkip,
 }: {
   onConnected: () => void;
+  onBack?: () => void;
   onSkip: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
@@ -1061,7 +1159,10 @@ const CalendarScreen = ({
   }
 
   return (
-    <Stage gap={14}>
+    <Stage gap={14} paddingTop={onBack ? STAGE_TOP_WITH_BACK : 56}>
+      {onBack && (
+        <BackTopLeft onClick={onBack} label={t("onboarding.back")} />
+      )}
       <SkipTopRight onClick={onSkip} label={t("onboarding.calendar.skip")} />
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
@@ -1218,9 +1319,11 @@ const CalendarScreen = ({
 // ── Screen 4c · Notifications (optional) ───────────────────────
 const NotificationScreen = ({
   onDone,
+  onBack,
   onSkip,
 }: {
   onDone: () => void;
+  onBack?: () => void;
   onSkip: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
@@ -1246,7 +1349,10 @@ const NotificationScreen = ({
   }
 
   return (
-    <Stage gap={14}>
+    <Stage gap={14} paddingTop={onBack ? STAGE_TOP_WITH_BACK : 56}>
+      {onBack && (
+        <BackTopLeft onClick={onBack} label={t("onboarding.back")} />
+      )}
       <SkipTopRight onClick={onSkip} label={t("onboarding.notifications.skip")} />
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
