@@ -4,9 +4,35 @@ export type NotificationPermissionStatus =
   | "granted"
   | "denied";
 
+// Max time we wait for `navigator.serviceWorker.ready` before giving up. The
+// reminder ping is best-effort: readiness only settles once a worker becomes
+// active for the scope, which may never happen (registration failed/blocked/not
+// yet installed). Bounding it keeps enableDailyReminder()/bootstrap() from
+// hanging the UI.
+const SERVICE_WORKER_READY_TIMEOUT_MS = 3000;
+
 class NotificationService {
   get isSupported(): boolean {
     return typeof window !== "undefined" && "Notification" in window;
+  }
+
+  /**
+   * Wait for the service worker to become ready, but never block longer than
+   * SERVICE_WORKER_READY_TIMEOUT_MS. Any timeout or rejection is swallowed and
+   * resolves to null so the caller can continue without pinging the worker.
+   */
+  private async readyRegistrationOrNull(): Promise<ServiceWorkerRegistration | null> {
+    if (!("serviceWorker" in navigator)) return null;
+
+    const timeout = new Promise<null>((resolve) => {
+      setTimeout(() => resolve(null), SERVICE_WORKER_READY_TIMEOUT_MS);
+    });
+
+    try {
+      return await Promise.race([navigator.serviceWorker.ready, timeout]);
+    } catch {
+      return null;
+    }
   }
 
   get permissionStatus(): NotificationPermissionStatus {
@@ -29,12 +55,10 @@ class NotificationService {
     const permission = await this.requestPermission();
     if (permission !== "granted") return;
 
-    if ("serviceWorker" in navigator) {
-      const registration = await navigator.serviceWorker.ready;
-      if (registration) {
-        // Ping the SW to perform an initial check
-        registration.active?.postMessage({ type: "CHECK_REMINDERS" });
-      }
+    const registration = await this.readyRegistrationOrNull();
+    if (registration) {
+      // Ping the SW to perform an initial check
+      registration.active?.postMessage({ type: "CHECK_REMINDERS" });
     }
   }
 
@@ -42,11 +66,9 @@ class NotificationService {
     if (!this.isSupported) return;
 
     if (this.permissionStatus === "granted") {
-      if ("serviceWorker" in navigator) {
-        const registration = await navigator.serviceWorker.ready;
-        if (registration) {
-          registration.active?.postMessage({ type: "CHECK_REMINDERS" });
-        }
+      const registration = await this.readyRegistrationOrNull();
+      if (registration) {
+        registration.active?.postMessage({ type: "CHECK_REMINDERS" });
       }
     }
   }
