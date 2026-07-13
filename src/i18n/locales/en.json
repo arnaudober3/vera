@@ -293,5 +293,9 @@
   },
   "calendarCallback": {
     "close": "You can close this window."
+  },
+  "update": {
+    "title": "A new version of Vera is ready.",
+    "reload": "Reload"
   }
 }
