@@ -36,6 +36,10 @@ import { useCalendar } from "../hooks/calendar.ts";
 import { useNotifications } from "../hooks/notifications.ts";
 import { GoogleCalendarError } from "../services/google-calendar.ts";
 import { type Step, previousStep } from "../models/onboarding-nav.ts";
+import {
+  isNotificationSectionDone,
+  notificationCtaAction,
+} from "../models/notification-onboarding.ts";
 import "./onboarding.css";
 
 // Value-first onboarding: Promise → add a top (1/2) → add a bottom (2/2) →
@@ -1046,7 +1050,7 @@ const LevelUpScreen = ({
 }): React.JSX.Element => {
   const { t } = useTranslation();
   const { permissionStatus } = useNotifications();
-  const notificationsDone = permissionStatus === "granted" || permissionStatus === "denied";
+  const notificationsDone = isNotificationSectionDone(permissionStatus);
 
   return (
     <Stage>
@@ -1327,15 +1331,26 @@ const NotificationScreen = ({
   onSkip: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const { supported, enableDailyReminder } = useNotifications();
+  const { permissionStatus, enableDailyReminder } = useNotifications();
   const [requesting, setRequesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function handleRequest(): Promise<void> {
-    if (!supported) {
+    const action = notificationCtaAction(permissionStatus);
+
+    if (action === "unsupported") {
       setError(t("onboarding.notifications.unsupported"));
       return;
     }
+
+    // Already denied: the browser won't re-show the native prompt, so requesting
+    // again would silently no-op and bounce straight back to the hub. Guide the
+    // user to re-enable in their browser settings instead of navigating away.
+    if (action === "blocked") {
+      setError(t("onboarding.notifications.denied"));
+      return;
+    }
+
     setRequesting(true);
     setError(null);
     try {
