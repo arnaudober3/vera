@@ -1,0 +1,47 @@
+/* Update-available prompt — non-blocking surface that sits at the same spot as
+   the error toast (above the dock, inside the .vera-phone-frame). Unlike the
+   error toast it carries no progress bar and never auto-dismisses; it stays
+   until the user taps reload or relaunches the app. */
+
+.vera-update-toast {
+  position: absolute;
+  z-index: 200;
+  left: 16px;
+  right: 16px;
+  bottom: calc(env(safe-area-inset-bottom) + 92px);
+  max-width: 360px;
+  margin: 0 auto;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--vera-surface);
+  border: 1px solid var(--vera-surface-border);
+  border-radius: var(--vera-radius-lg);
+  padding: 13px 16px;
+  box-shadow: var(--vera-shadow-nav);
+  text-align: left;
+  animation: veraToastUp 0.32s var(--vera-ease) both;
+}
+
+.vera-update-toast__message {
+  margin: 0;
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.4;
+  font-weight: 500;
+  color: var(--vera-fg-strong);
+  text-wrap: pretty;
+}
+
+.vera-update-toast__action {
+  flex: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--vera-primary);
+  border-radius: var(--vera-radius-pill);
+  padding: 9px 16px;
+}

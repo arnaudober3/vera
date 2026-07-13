@@ -7,6 +7,7 @@ import { WelcomePage } from "./pages/onboarding.tsx";
 import { GoogleCallbackPage } from "./pages/google-callback.tsx";
 import { isOnboardingComplete } from "./storage/onboarding.ts";
 import { ToastProvider } from "./components/toast-provider.tsx";
+import { UpdatePrompt } from "./components/update-prompt.tsx";
 import { NotificationTest } from "./pages/notification-test.tsx";
 
 const RootRoute = () =>
@@ -18,6 +19,9 @@ function App() {
   return (
     <div className="vera-phone-frame vera-bg-app">
       <ToastProvider>
+        {/* Mounted once, outside the router, so the update-available prompt is
+            available on every route. */}
+        <UpdatePrompt />
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<RootRoute />} />

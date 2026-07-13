@@ -21,8 +21,9 @@ precacheAndRoute(self.__WB_MANIFEST);
 // Clean up old caches from previous versions
 cleanupOutdatedCaches();
 
-// Immediately take control of all clients
-await self.skipWaiting();
+// Take control of clients once this SW activates. We no longer skipWaiting()
+// at the top level: a waiting SW stays waiting so the app can prompt the user,
+// and only calls self.skipWaiting() in response to a SKIP_WAITING message.
 clientsClaim();
 
 async function checkAndNotify() {
@@ -89,6 +90,11 @@ self.addEventListener("notificationclick", (event) => {
 self.addEventListener("message", (event) => {
   if (event.data && event.data.type === "CHECK_REMINDERS") {
     event.waitUntil(checkAndNotify());
+  }
+  // The update prompt posts SKIP_WAITING when the user chooses to reload, so a
+  // waiting SW activates on demand instead of silently on the next load.
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
   }
 });
 

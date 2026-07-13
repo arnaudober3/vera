@@ -20,3 +20,21 @@ describe("onboarding locale keys", () => {
     expect(fr.onboarding.back.length).toBeGreaterThan(0);
   });
 });
+
+// Guards the update-available prompt strings so the reload prompt renders real
+// copy (no i18next missing-key fallback) in both locales.
+describe("update locale keys", () => {
+  it("exposes update.title and update.reload in English", () => {
+    expect(typeof en.update.title).toBe("string");
+    expect(en.update.title.length).toBeGreaterThan(0);
+    expect(typeof en.update.reload).toBe("string");
+    expect(en.update.reload.length).toBeGreaterThan(0);
+  });
+
+  it("exposes update.title and update.reload in French", () => {
+    expect(typeof fr.update.title).toBe("string");
+    expect(fr.update.title.length).toBeGreaterThan(0);
+    expect(typeof fr.update.reload).toBe("string");
+    expect(fr.update.reload.length).toBeGreaterThan(0);
+  });
+});
