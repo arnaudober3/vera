@@ -1,8 +1,6 @@
 import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 import {VitePWA} from "vite-plugin-pwa";
-import {cloudflare} from "@cloudflare/vite-plugin";
-
 
 // Minimal typing for the Node `process` global (config runs in Node), so we can
 // read FUNCTIONS_TARGET without pulling in @types/node.
@@ -38,7 +36,7 @@ export default defineConfig({
             },
         },
     },
-    plugins: [cloudflare(), react(), VitePWA({
+    plugins: [react(), VitePWA({
         strategies: 'injectManifest',
         srcDir: 'src',
         filename: 'sw.ts',
