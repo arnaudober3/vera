@@ -3,32 +3,18 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   FaCheck,
-  FaCheckCircle,
   FaChevronLeft,
   FaChevronRight,
   FaHandPointer,
-  FaHeart,
   FaPlus,
-  FaRegHeart,
   FaTimes,
   FaTshirt,
 } from "react-icons/fa";
-import { MdAutoAwesome, MdEvent } from "react-icons/md";
 import NavigationBar from "./navigation-bar.tsx";
-import { BasketStrip } from "./basket-strip.tsx";
 import { AppFooter } from "./app-footer.tsx";
 import { useOutfit } from "../hooks/outfit.ts";
 import { useCloset } from "../hooks/closet.ts";
 import { useImage } from "../hooks/image.ts";
-import { useOutfitHistory } from "../hooks/outfit-history.ts";
-import { useLookbook } from "../hooks/lookbook.ts";
-import { useWeather } from "../hooks/weather.ts";
-import { useCalendar } from "../hooks/calendar.ts";
-import {
-  getCalendarAppliedDay,
-  setCalendarAppliedDay,
-  todayLocalDay,
-} from "../storage/calendar.ts";
 import { useTodaySession, cardKeyOf, type Filter } from "../hooks/today-session.ts";
 import type { ClothingItem } from "../models/clothing-item.ts";
 import type { Outfit } from "../models/outfit.ts";
@@ -197,28 +183,22 @@ const AccessoryShelfAdd = ({ onAdd }: { onAdd: () => void }): React.JSX.Element 
 // ────────── Card face (flat collage + chrome) ──────────
 const CardFace = ({
   outfit,
-  worn,
-  fav,
   getImage,
   editable,
-  onToggleFav,
   onAddSlot,
   onRemovePiece,
   onShowMore,
 }: {
   outfit: Outfit;
-  worn: boolean;
-  fav: boolean;
   getImage: (id: string) => string | undefined;
   editable: boolean;
-  onToggleFav?: () => void;
   onAddSlot?: () => void;
   onRemovePiece?: (id: string) => void;
   onShowMore?: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
   const extras = shelfPieces(outfit);
-  // The "Add" affordance lives in the shelf's first slot (front, unworn card).
+  // The "Add" affordance lives in the shelf's first slot (front card only).
   const showAdd = editable && Boolean(onAddSlot);
 
   // The shelf is always three equal-width slots. Add takes the first slot; the
@@ -243,27 +223,7 @@ const CardFace = ({
   const showShelf = cells.length > 0;
 
   return (
-    <div className={`deck-card ${worn ? "worn" : ""}`}>
-      <div className="deck-card-chrome">
-        {worn && (
-          <div className="deck-worn-badge">
-            <FaCheck size={11} />
-            {t("today.wearingBadge")}
-          </div>
-        )}
-        {onToggleFav && (
-          <button
-            type="button"
-            className={`deck-heart ${fav ? "active" : ""}`}
-            aria-label={fav ? t("today.heartRemoveAria") : t("today.heartAddAria")}
-            onPointerDown={(e) => e.stopPropagation()}
-            onClick={onToggleFav}
-          >
-            {fav ? <FaHeart size={13} /> : <FaRegHeart size={13} />}
-          </button>
-        )}
-      </div>
-
+    <div className="deck-card">
       <div
         className={`deck-well-wrap ${showShelf ? "deck-well-wrap--shelf" : ""}`}
       >
@@ -327,13 +287,7 @@ const PeekCard = ({
         opacity: depth === 1 ? 0.7 : 0.45,
       }}
     >
-      <CardFace
-        outfit={outfit}
-        worn={false}
-        fav={false}
-        getImage={getImage}
-        editable={false}
-      />
+      <CardFace outfit={outfit} getImage={getImage} editable={false} />
     </div>
   );
 };
@@ -341,27 +295,19 @@ const PeekCard = ({
 // ────────── Front (interactive) card ──────────
 const FrontCard = ({
   outfit,
-  worn,
-  fav,
   getImage,
   swipeEnabled,
-  onToggleFav,
   onAddSlot,
   onRemovePiece,
   onShowMore,
-  onWearToggle,
   onSwiped,
 }: {
   outfit: Outfit;
-  worn: boolean;
-  fav: boolean;
   getImage: (id: string) => string | undefined;
   swipeEnabled: boolean;
-  onToggleFav: () => void;
   onAddSlot: () => void;
   onRemovePiece: (id: string) => void;
   onShowMore: () => void;
-  onWearToggle: () => void;
   onSwiped: () => void;
 }): React.JSX.Element => {
   const [dx, setDx] = useState(0);
@@ -393,9 +339,10 @@ const FrontCard = ({
     if (!st.current.down || flyDir) return;
     st.current.down = false;
     setDragging(false);
-    // A press without movement is a tap → toggle "worn".
+    // A press without movement is a tap — the card carries no tap action, so
+    // just settle it back. The `moved` threshold still guards against a
+    // micro-drag being read as a swipe.
     if (!st.current.moved) {
-      onWearToggle();
       setDx(0);
       return;
     }
@@ -439,11 +386,8 @@ const FrontCard = ({
     >
       <CardFace
         outfit={outfit}
-        worn={worn}
-        fav={fav}
         getImage={getImage}
-        editable={!worn}
-        onToggleFav={onToggleFav}
+        editable
         onAddSlot={onAddSlot}
         onRemovePiece={onRemovePiece}
         onShowMore={onShowMore}
@@ -461,32 +405,24 @@ const Deck = ({
   frontKey,
   peekA,
   peekB,
-  worn,
-  fav,
   scale,
   getImage,
   swipeEnabled,
-  onToggleFav,
   onAddSlot,
   onRemovePiece,
   onShowMore,
-  onWearToggle,
   onSwiped,
 }: {
   front: Outfit;
   frontKey: string;
   peekA?: Outfit;
   peekB?: Outfit;
-  worn: boolean;
-  fav: boolean;
   scale: number;
   getImage: (id: string) => string | undefined;
   swipeEnabled: boolean;
-  onToggleFav: () => void;
   onAddSlot: () => void;
   onRemovePiece: (id: string) => void;
   onShowMore: () => void;
-  onWearToggle: () => void;
   onSwiped: () => void;
 }): React.JSX.Element => (
   <div
@@ -507,64 +443,28 @@ const Deck = ({
       <FrontCard
         key={frontKey}
         outfit={front}
-        worn={worn}
-        fav={fav}
         getImage={getImage}
         swipeEnabled={swipeEnabled}
-        onToggleFav={onToggleFav}
         onAddSlot={onAddSlot}
         onRemovePiece={onRemovePiece}
         onShowMore={onShowMore}
-        onWearToggle={onWearToggle}
         onSwiped={onSwiped}
       />
     </div>
   </div>
 );
 
-// ────────── Calendar cue row ──────────
-// Sits above the filter bar. Shows the day's event (title + time) the calendar
-// picked, or a muted "no event today" marker. Read-only — the occasion it maps
-// to is reflected as the active chip in the filter bar below.
-const CalendarCueRow = (): React.JSX.Element | null => {
-  const { t } = useTranslation();
-  const { connected, todayEvent } = useCalendar();
-  if (!connected) return null;
-  return (
-    <div className="today-cal-cue-row">
-      {todayEvent ? (
-        <span className="today-occasion-cue">
-          <MdAutoAwesome size={13} aria-hidden />
-          <span className="today-occasion-cue__title">{todayEvent.title}</span>
-          {todayEvent.time ? (
-            <span className="today-occasion-cue__time">· {todayEvent.time}</span>
-          ) : null}
-        </span>
-      ) : (
-        <span className="today-occasion-cue today-occasion-cue--muted">
-          <MdEvent size={13} aria-hidden />
-          {t("today.calendar.cueFallback")}
-        </span>
-      )}
-    </div>
-  );
-};
-
 // ────────── Filter chips ──────────
 const FilterChips = ({
   active,
   onSelect,
   availableFilters,
-  disabled = false,
 }: {
   active: Filter;
   onSelect: (f: Filter) => void;
-  // Filters with no available outfit (no clean duo for that occasion) are
-  // disabled so the user can't land on an empty deck.
+  // Filters with no available outfit (no duo for that occasion) are disabled so
+  // the user can't land on an empty deck.
   availableFilters: Set<Filter>;
-  // Disabled while an outfit is worn: the deck can't regenerate, so the filter
-  // is locked until the wear is undone.
-  disabled?: boolean;
 }): React.JSX.Element => {
   const { t } = useTranslation();
   return (
@@ -576,8 +476,8 @@ const FilterChips = ({
           className={`today-occasion-chip ${f === active ? "active" : ""}`}
           aria-pressed={f === active}
           // "everyday" is the relaxed default, so it stays selectable even when
-          // no clean duo is available — only the worn lock can disable it.
-          disabled={disabled || (f !== "everyday" && !availableFilters.has(f))}
+          // no duo is available.
+          disabled={f !== "everyday" && !availableFilters.has(f)}
           onClick={() => onSelect(f)}
         >
           {t(`today.occasion.${f}`)}
@@ -721,53 +621,19 @@ const AccessoryListSheet = ({
 export const TodayDeck = (): React.JSX.Element => {
   const { t } = useTranslation();
   const { getImage } = useImage();
-  const { items, markWorn, markClean, isItemClean } = useCloset();
+  const { items } = useCloset();
   const { buildDeck, outfit } = useOutfit();
-  const { weather } = useWeather();
-  const { recordOutfit, removeOutfitRecord } = useOutfitHistory();
-  const {
-    lookbook,
-    recordWear,
-    isInLookbook,
-    addToLookbook,
-    removeFromLookbookByOutfit,
-  } = useLookbook();
-
   const {
     filter,
     index,
     edits,
-    worn,
-    selected,
     setFilter,
     setIndex,
     setEdits,
-    setWorn,
-    setSelected,
   } = useTodaySession();
   const [sheetKey, setSheetKey] = useState<string | null>(null);
   // Opens the read-only list of every accessory on the look (the "+N more" card).
   const [moreOpen, setMoreOpen] = useState(false);
-
-  // Calendar sync biases the deck toward the day's pick, selecting that occasion
-  // so the cue pill is the active selection. Applied at most once per day so a
-  // manual chip override afterwards sticks (and survives the deck's route-level
-  // remount), then the selection is left to the user.
-  const { connected: calendarConnected, todayEvent } = useCalendar();
-  useEffect(() => {
-    if (!calendarConnected) return;
-    const today = todayLocalDay();
-    if (getCalendarAppliedDay() === today) return;
-    // Only select the picked occasion if it's actually wearable today (its chip
-    // isn't disabled — i.e. a clean duo fits it); otherwise stay on the neutral
-    // everyday default. The event still shows in the cue row either way.
-    const pick: Filter = todayEvent ? todayEvent.occasion : "everyday";
-    const selectable = pick === "everyday" || availableFilters.has(pick);
-    setFilter(selectable ? pick : "everyday");
-    setCalendarAppliedDay(today);
-    // Depend on the primitive occasion (todayEvent is a fresh object each render).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [calendarConnected, todayEvent?.occasion]);
 
   // Scale the fixed-design card to fill the available height of the deck region,
   // so the card grows on taller phones and the hint stays snug beneath it. A
@@ -806,43 +672,24 @@ export const TodayDeck = (): React.JSX.Element => {
   // An active pin (set from the closet) locks its garment into every deck card,
   // so swiping to regenerate only varies the rest of the outfit.
   const pinnedItemId = outfit?.pinnedItemId;
-  const _deck = useMemo(
+  const deck = useMemo(
     () => buildDeck(filter, 10, pinnedItemId),
     // buildDeck is recreated each render; rebuild only on the real inputs.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [items, filter, weather?.fetchedAt, pinnedItemId],
+    [items, filter, pinnedItemId],
   );
-  const deck =
-    import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _deck) : _deck;
 
-  // A filter has an available outfit when a clean top and a clean bottom both
-  // fit its occasion — the same duo logic that drives the empty state below.
+  // A filter has an available outfit when a top and a bottom both fit its
+  // occasion — the same duo logic that drives the empty state below.
   const availableFilters = useMemo(() => {
-    const cleanTops = items.filter(
-      (i) => i.category === "top" && isItemClean(i.id),
-    );
-    const cleanBottoms = items.filter(
-      (i) => i.category === "bottom" && isItemClean(i.id),
-    );
+    const tops = items.filter((i) => i.category === "top");
+    const bottoms = items.filter((i) => i.category === "bottom");
     const hasDuo = (f: Filter): boolean => {
       const fits = (i: ClothingItem): boolean => fitsOccasion(i, f);
-      return cleanTops.some(fits) && cleanBottoms.some(fits);
+      return tops.some(fits) && bottoms.some(fits);
     };
     return new Set(FILTERS.filter(hasDuo));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
-
-  // The worn/selected snapshot is the render source even once its pieces are
-  // dirty. If a key piece (top/bottom) has since been deleted from the closet,
-  // the outfit can no longer be reconstituted — drop it so the deck returns to
-  // normal suggestions.
-  const hasDuo = (o: Outfit): boolean =>
-    items.some((i) => i.id === o.top.id || i.id === o.bottom.id);
-  useEffect(() => {
-    if (worn && !hasDuo(worn.snapshot)) setWorn(null);
-    if (selected && !hasDuo(selected)) setSelected(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [items, worn, selected]);
 
   const mergeEdits = (base: Outfit): Outfit => {
     const o = edits[cardKeyOf(base)];
@@ -850,84 +697,14 @@ export const TodayDeck = (): React.JSX.Element => {
   };
 
   const len = deck.length;
-  // A kept outfit (post-undo) takes the front slot over the deck card; the deck
-  // sits right behind it so a swipe simply moves on to the regular suggestions.
-  const baseFront: Outfit | null = selected ?? (len ? deck[index % len] : null);
-  const front: Outfit | null = worn
-    ? worn.snapshot
-    : baseFront
-      ? mergeEdits(baseFront)
-      : null;
-  const frontKey = worn ? worn.cardKey : baseFront ? cardKeyOf(baseFront) : "";
+  const baseFront: Outfit | null = len ? deck[index % len] : null;
+  const front: Outfit | null = baseFront ? mergeEdits(baseFront) : null;
+  const frontKey = baseFront ? cardKeyOf(baseFront) : "";
   // Swiping (and its chevron/peek affordances) only makes sense when the deck
-  // holds an outfit different from the one on display — otherwise there's
-  // nothing to regenerate. After undoing a worn look the kept outfit is often
-  // the deck's only card, so guard against that rather than just `len >= 1`.
-  const hasAlternative = deck.some((d) => cardKeyOf(d) !== frontKey);
-  const swipeEnabled = !worn && hasAlternative;
-  const peekA = worn
-    ? deck[0]
-    : !hasAlternative
-      ? undefined
-      : selected
-        ? mergeEdits(deck[index % len])
-        : len > 1
-          ? mergeEdits(deck[(index + 1) % len])
-          : undefined;
-  const peekB = worn
-    ? deck[1]
-    : !hasAlternative
-      ? undefined
-      : selected
-        ? len > 1
-          ? mergeEdits(deck[(index + 1) % len])
-          : undefined
-        : len > 2
-          ? mergeEdits(deck[(index + 2) % len])
-          : undefined;
-
-  // ── Wear commit + undo ──
-  const commitWear = async (eff: Outfit, key: string): Promise<void> => {
-    const accessoryIds = (eff.accessories?.map((a) => a.id) || []).slice().sort();
-    const matching = lookbook.find(
-      (entry) =>
-        entry.topId === eff.top.id &&
-        entry.bottomId === eff.bottom.id &&
-        entry.outerwearId === eff.outerwear?.id &&
-        entry.shoesId === eff.shoes?.id &&
-        JSON.stringify([...(entry.accessoriesIds || [])].sort()) ===
-          JSON.stringify(accessoryIds),
-    );
-    if (matching) await recordWear(matching.id);
-    const recordId = await recordOutfit(
-      eff.top.id,
-      eff.bottom.id,
-      eff.outerwear?.id,
-      eff.shoes?.id,
-      eff.accessories?.map((a) => a.id),
-    );
-    await markWorn(eff.top);
-    await markWorn(eff.bottom);
-    if (eff.outerwear) await markWorn(eff.outerwear);
-    if (eff.shoes) await markWorn(eff.shoes);
-    for (const a of eff.accessories ?? []) await markWorn(a);
-    setWorn({ cardKey: key, recordId, snapshot: eff });
-  };
-
-  const undoWear = async (): Promise<void> => {
-    if (!worn) return;
-    const eff = worn.snapshot;
-    await markClean(eff.top);
-    await markClean(eff.bottom);
-    if (eff.outerwear) await markClean(eff.outerwear);
-    if (eff.shoes) await markClean(eff.shoes);
-    for (const a of eff.accessories ?? []) await markClean(a);
-    await removeOutfitRecord(worn.recordId);
-    // Keep the outfit on the deck (unworn) instead of regenerating; the user
-    // swipes to move on to fresh suggestions.
-    setSelected(eff);
-    setWorn(null);
-  };
+  // holds more than the card on display — otherwise there's nothing to move on to.
+  const swipeEnabled = len > 1;
+  const peekA = len > 1 ? mergeEdits(deck[(index + 1) % len]) : undefined;
+  const peekB = len > 2 ? mergeEdits(deck[(index + 2) % len]) : undefined;
 
   // ── Per-card secondary editing ──
   const applyEdit = (key: string, eff: Outfit, item: ClothingItem): void => {
@@ -936,8 +713,8 @@ export const TodayDeck = (): React.JSX.Element => {
       if (item.category === "outerwear") cur.outerwear = item;
       else if (item.category === "shoes") cur.shoes = item;
       else if (item.category === "accessories") {
-        // Seed from the effective outfit so a kept outfit's existing accessories
-        // (or a deck card's pinned one) survive when a new accessory is added.
+        // Seed from the effective outfit so the card's existing accessories
+        // (including a pinned one) survive when a new accessory is added.
         const existing = cur.accessories ?? eff.accessories ?? [];
         if (!existing.some((a) => a.id === item.id))
           cur.accessories = [...existing, item];
@@ -966,25 +743,22 @@ export const TodayDeck = (): React.JSX.Element => {
       )
     : [];
 
-  // ── Empty state (no clean duo for this filter) ──
+  // ── Empty state (no duo for this filter) ──
   if (!front) {
-    const cleanTops = items.filter(
-      (i) => i.category === "top" && isItemClean(i.id),
-    );
-    const cleanBottoms = items.filter(
-      (i) => i.category === "bottom" && isItemClean(i.id),
-    );
-    const hasCleanDuo = cleanTops.length > 0 && cleanBottoms.length > 0;
+    const tops = items.filter((i) => i.category === "top");
+    const bottoms = items.filter((i) => i.category === "bottom");
+    const hasDuo = tops.length > 0 && bottoms.length > 0;
     const matchesFilter = (i: ClothingItem): boolean =>
       fitsOccasion(i, filter);
     const hasFilterDuo =
-      cleanTops.some(matchesFilter) && cleanBottoms.some(matchesFilter);
-    const occasionBlocked = hasCleanDuo && !hasFilterDuo;
+      tops.some(matchesFilter) && bottoms.some(matchesFilter);
+    // The closet holds a duo, just not one for the selected occasion — a
+    // different, actionable message than "your closet is empty".
+    const occasionBlocked = hasDuo && !hasFilterDuo;
     const emptyKey = occasionBlocked ? "today.emptyOccasion" : "today.empty";
 
     return (
       <>
-        <CalendarCueRow />
         <FilterChips
           active={filter}
           onSelect={setFilter}
@@ -1020,51 +794,18 @@ export const TodayDeck = (): React.JSX.Element => {
           </div>
         </div>
         <AppFooter>
-          <div className="deck-basket-slot">
-            <BasketStrip />
-          </div>
           <NavigationBar activePage="today" />
         </AppFooter>
       </>
     );
   }
 
-  const fav = isInLookbook(
-    front.top.id,
-    front.bottom.id,
-    front.outerwear?.id,
-    front.shoes?.id,
-    front.accessories?.map((a) => a.id),
-  );
-
-  const onToggleFav = (): void => {
-    if (fav) {
-      void removeFromLookbookByOutfit(
-        front.top.id,
-        front.bottom.id,
-        front.outerwear?.id,
-        front.shoes?.id,
-        front.accessories?.map((a) => a.id),
-      );
-    } else {
-      void addToLookbook(
-        front.top.id,
-        front.bottom.id,
-        front.outerwear?.id,
-        front.shoes?.id,
-        front.accessories?.map((a) => a.id),
-      );
-    }
-  };
-
   return (
     <>
-      <CalendarCueRow />
       <FilterChips
         active={filter}
         onSelect={setFilter}
         availableFilters={availableFilters}
-        disabled={!!worn}
       />
 
       <div className="deck-lead-spacer" aria-hidden>
@@ -1088,53 +829,26 @@ export const TodayDeck = (): React.JSX.Element => {
           frontKey={frontKey}
           peekA={peekA}
           peekB={peekB}
-          worn={!!worn}
-          fav={fav}
           scale={scale}
           getImage={getImage}
           swipeEnabled={swipeEnabled}
-          onToggleFav={onToggleFav}
           onAddSlot={() => setSheetKey(frontKey)}
           onRemovePiece={(id) => removePiece(frontKey, front, id)}
           onShowMore={() => setMoreOpen(true)}
-          onWearToggle={() => (worn ? void undoWear() : void commitWear(front, frontKey))}
-          onSwiped={() => {
-            // Dismiss a kept outfit to reveal the deck; otherwise advance it.
-            if (selected) setSelected(null);
-            else setIndex((i) => i + 1);
-          }}
+          onSwiped={() => setIndex((i) => i + 1)}
         />
 
-        <div className={`deck-hint ${worn ? "worn" : ""}`}>
-          {worn ? (
-            <>
-              <FaCheckCircle />
-              <span>{t("today.hintWorn")}</span>
-              <span className="deck-hint-sub">{t("today.hintWornUndo")}</span>
-            </>
-          ) : (
-            <>
-              <FaHandPointer size={12} />
-              <span>
-                <b>{t("today.hintTap")}</b> {t("today.hintWear")}
-              </span>
-              {swipeEnabled && (
-                <>
-                  <span className="deck-hint-dot">·</span>
-                  <span>
-                    <b>{t("today.hintSwipe")}</b> {t("today.hintAnother")}
-                  </span>
-                </>
-              )}
-            </>
-          )}
-        </div>
+        {swipeEnabled && (
+          <div className="deck-hint">
+            <FaHandPointer size={12} />
+            <span>
+              <b>{t("today.hintSwipe")}</b> {t("today.hintAnother")}
+            </span>
+          </div>
+        )}
       </div>
 
       <AppFooter>
-        <div className="deck-basket-slot">
-          <BasketStrip />
-        </div>
         <NavigationBar activePage="today" />
       </AppFooter>
 

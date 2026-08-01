@@ -9,10 +9,8 @@ describe("onboarding-nav", () => {
       expect(PREV_STEP["outfit"]).toBe("add-bottom");
     });
 
-    it("maps each detour back to levelup", () => {
+    it("maps the optional detour back to levelup", () => {
       expect(PREV_STEP["add-more"]).toBe("levelup");
-      expect(PREV_STEP["calendar"]).toBe("levelup");
-      expect(PREV_STEP["notifications"]).toBe("levelup");
     });
 
     it("intentionally does not map welcome or levelup", () => {
@@ -28,10 +26,8 @@ describe("onboarding-nav", () => {
       expect(previousStep("outfit")).toBe("add-bottom");
     });
 
-    it("returns levelup for each detour", () => {
+    it("returns levelup for the optional detour", () => {
       expect(previousStep("add-more")).toBe("levelup");
-      expect(previousStep("calendar")).toBe("levelup");
-      expect(previousStep("notifications")).toBe("levelup");
     });
 
     it("returns null for welcome and levelup", () => {
@@ -47,8 +43,6 @@ describe("onboarding-nav", () => {
         "outfit",
         "levelup",
         "add-more",
-        "calendar",
-        "notifications",
       ];
       // Every step either has a back target or is one of the two hubs.
       for (const s of steps) {

@@ -11,11 +11,6 @@ vi.mock("workbox-precaching", () => ({
 vi.mock("workbox-core", () => ({
   clientsClaim: vi.fn(),
 }));
-vi.mock("./storage/sw-store", () => ({
-  getDirtySinceDay: vi.fn().mockResolvedValue(null),
-  getLastNotifiedDay: vi.fn().mockResolvedValue(null),
-  setLastNotifiedDay: vi.fn().mockResolvedValue(undefined),
-}));
 
 type MessageEvent = {
   data?: { type?: string };
@@ -23,8 +18,8 @@ type MessageEvent = {
 };
 type Listener = (event: MessageEvent) => void;
 
-// The real message event exposes waitUntil (from ExtendableEvent); the
-// CHECK_REMINDERS branch calls it, so provide a no-op stub on dispatched events.
+// The real message event exposes waitUntil (from ExtendableEvent); provide a
+// no-op stub on dispatched events so listeners can call it freely.
 const message = (data?: { type?: string }) => ({ data, waitUntil: vi.fn() });
 
 describe("sw message handler", () => {
@@ -39,9 +34,6 @@ describe("sw message handler", () => {
     vi.stubGlobal("self", {
       __WB_MANIFEST: [],
       skipWaiting,
-      registration: { showNotification: vi.fn() },
-      clients: { matchAll: vi.fn(), openWindow: vi.fn() },
-      navigator: { language: "en" },
       addEventListener: (type: string, listener: Listener) => {
         listeners[type] = listener;
       },
@@ -60,9 +52,14 @@ describe("sw message handler", () => {
   });
 
   it("does not call skipWaiting for unrelated message types", () => {
-    listeners.message(message({ type: "CHECK_REMINDERS" }));
     listeners.message(message({ type: "SOMETHING_ELSE" }));
     listeners.message(message());
     expect(skipWaiting).not.toHaveBeenCalled();
+  });
+
+  // Guards the notification removal: the SW must not re-acquire a reminder
+  // surface (a notification click target, or work scheduled on activation).
+  it("registers no listener beyond the message contract", () => {
+    expect(Object.keys(listeners)).toEqual(["message"]);
   });
 });

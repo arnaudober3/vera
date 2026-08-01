@@ -2,23 +2,12 @@ import { useState, useEffect } from "react";
 import type { Outfit } from "../models/outfit.ts";
 import { useCloset } from "./closet.ts";
 import { getSessionId } from "../storage/session.ts";
-import {
-  isWashable,
-  type ClothingItem,
-} from "../models/clothing-item.ts";
+import type { ClothingItem } from "../models/clothing-item.ts";
 import type { Color } from "../models/color.ts";
-import { getSeasonScore, type Season } from "../models/season.ts";
 import { fitsOccasion, type Occasion } from "../models/occasion.ts";
-import { getCurrentSeason } from "../services/season.ts";
-import {
-  getCachedWeather,
-  needsOuterwear,
-  temperatureToSeason,
-} from "../services/weather.ts";
 import { getSelectedOccasion } from "./occasion.ts";
 import { differenceCiede2000 } from "culori";
 import { lsGet, lsSet, outfitKey } from "../storage/local-store.ts";
-import { useOutfitHistory } from "./outfit-history.ts";
 
 // Private singleton state reused through the app
 let state: Outfit | null = null;
@@ -83,7 +72,6 @@ export const useOutfit = () => {
   // Subscribe to the singleton state
   const [outfit, setOutfit] = useState(state);
   const { items } = useCloset();
-  const { getRecencyPenalty } = useOutfitHistory();
 
   useEffect(() => {
     const listener = (s: Outfit | null) => setOutfit(s);
@@ -93,29 +81,23 @@ export const useOutfit = () => {
     };
   }, []);
 
-  // Pick the best recency-adjusted colour match for a fixed anchor, preferring a
-  // partner different from the current one whenever an alternative exists.
+  // Pick the best colour match for a fixed anchor, preferring a partner
+  // different from the current one whenever an alternative exists.
   const pickPartner = (
     anchor: ClothingItem,
     candidates: ClothingItem[],
     currentPartnerId: string | undefined,
-    effectiveSeason: Season,
   ): ClothingItem => {
     const hasAlternative = candidates.some((c) => c.id !== currentPartnerId);
     let best: ClothingItem | null = null;
     let bestScore = -1;
     for (const candidate of candidates) {
       if (hasAlternative && candidate.id === currentPartnerId) continue;
-      const baseScore = scoreColors({ a: anchor.color, b: candidate.color }) ?? 0;
-      // Candidates are already occasion-filtered by the caller; only the
-      // candidate's season is scored — never penalise the pinned anchor for
-      // being out of season.
-      const adjustedScore =
-        baseScore *
-        getRecencyPenalty([anchor.id, candidate.id]) *
-        getSeasonScore(candidate, effectiveSeason);
-      if (adjustedScore > bestScore) {
-        bestScore = adjustedScore;
+      // Candidates are already occasion-filtered by the caller, so colour is
+      // the only thing left to rank on.
+      const score = scoreColors({ a: anchor.color, b: candidate.color }) ?? 0;
+      if (score > bestScore) {
+        bestScore = score;
         best = candidate;
       }
     }
@@ -127,7 +109,6 @@ export const useOutfit = () => {
   const pickBestDuo = (
     availableTops: ClothingItem[],
     availableBottoms: ClothingItem[],
-    effectiveSeason: Season,
   ): { top: ClothingItem; bottom: ClothingItem } | null => {
     const maxAttempts = availableTops.length + availableBottoms.length;
     let bestDuo: { top: ClothingItem; bottom: ClothingItem } | null = null;
@@ -157,21 +138,12 @@ export const useOutfit = () => {
         continue;
       }
 
-      const pairScore = scoreColors({
-        a: candidate.top.color,
-        b: candidate.bottom.color,
-      });
-      const seasonScore =
-        getSeasonScore(candidate.top, effectiveSeason) *
-        getSeasonScore(candidate.bottom, effectiveSeason);
       // Both pools are already occasion-filtered, so occasion no longer scores.
-      const adjustedScore =
-        (pairScore ?? 0) *
-        getRecencyPenalty([candidate.top.id, candidate.bottom.id]) *
-        seasonScore;
+      const pairScore =
+        scoreColors({ a: candidate.top.color, b: candidate.bottom.color }) ?? 0;
 
-      if (adjustedScore > highestScore) {
-        highestScore = adjustedScore;
+      if (pairScore > highestScore) {
+        highestScore = pairScore;
         bestDuo = candidate;
       }
     }
@@ -188,31 +160,24 @@ export const useOutfit = () => {
       return null;
     };
 
-    const availableItems = items.filter((i) => i.isClean || !isWashable(i.category));
-    if (!availableItems || availableItems.length === 0) {
+    if (items.length === 0) {
       return clearAndReturn();
     }
 
-    const availableTops = availableItems.filter((i) => i.category === "top");
-    const availableBottoms = availableItems.filter((i) => i.category === "bottom");
+    const availableTops = items.filter((i) => i.category === "top");
+    const availableBottoms = items.filter((i) => i.category === "bottom");
 
     if (availableTops.length === 0 || availableBottoms.length === 0) {
       return clearAndReturn();
     }
 
     // Resolve the effective pin: an explicit id wins, otherwise reuse the persisted
-    // one. Drop the pin silently if the item is no longer available (deleted/dirty).
+    // one. Drop the pin silently if the item is no longer in the closet.
     const effectivePinnedId = pinnedId ?? state?.pinnedItemId;
     const pinned = effectivePinnedId
-      ? availableItems.find((i) => i.id === effectivePinnedId)
+      ? items.find((i) => i.id === effectivePinnedId)
       : undefined;
 
-    // Weather refines the season when available: a temperature-derived season
-    // flows through the existing season scoring. Falls back to the calendar.
-    const weather = getCachedWeather();
-    const effectiveSeason = weather
-      ? temperatureToSeason(weather.temperatureC)
-      : getCurrentSeason();
     const occasion = getSelectedOccasion();
 
     // Hard occasion filter: only clothes that suit the selected occasion are
@@ -229,30 +194,20 @@ export const useOutfit = () => {
       if (occasionBottoms.length === 0) return clearAndReturn();
       duo = {
         top: pinned,
-        bottom: pickPartner(
-          pinned,
-          occasionBottoms,
-          outfit?.bottom?.id,
-          effectiveSeason,
-        ),
+        bottom: pickPartner(pinned, occasionBottoms, outfit?.bottom?.id),
       };
     } else if (pinned?.category === "bottom") {
       // No occasion-appropriate top to pair with the pinned bottom.
       if (occasionTops.length === 0) return clearAndReturn();
       duo = {
-        top: pickPartner(
-          pinned,
-          occasionTops,
-          outfit?.top?.id,
-          effectiveSeason,
-        ),
+        top: pickPartner(pinned, occasionTops, outfit?.top?.id),
         bottom: pinned,
       };
     } else {
       // No pin (or a pinned add-on): need a full occasion-appropriate duo.
       if (occasionTops.length === 0 || occasionBottoms.length === 0)
         return clearAndReturn();
-      duo = pickBestDuo(occasionTops, occasionBottoms, effectiveSeason);
+      duo = pickBestDuo(occasionTops, occasionBottoms);
     }
 
     // Fall back to the current top/bottom only if they still fit the occasion,
@@ -277,22 +232,6 @@ export const useOutfit = () => {
       else if (pinned.category === "shoes") finalOutfit.shoes = pinned;
       else if (pinned.category === "accessories")
         finalOutfit.accessories = [pinned];
-    }
-
-    // On a cold or rainy day, suggest a layer: attach the best colour-matching
-    // outerwear if the user hasn't already pinned/added one.
-    if (weather && needsOuterwear(weather) && !finalOutfit.outerwear) {
-      // Keep the suggested layer occasion-appropriate too (no gym layer on a
-      // dinner day); skip the layer if nothing suitable is available.
-      const availableOuterwear = availableItems.filter(
-        (i) => i.category === "outerwear" && fitsOccasion(i, occasion),
-      );
-      if (availableOuterwear.length > 0) {
-        finalOutfit.outerwear = findBestMatch({
-          candidates: availableOuterwear,
-          anchor: finalOutfit.top,
-        });
-      }
     }
 
     if (pinned) {
@@ -347,45 +286,29 @@ export const useOutfit = () => {
   };
 
   // Build an ordered list of distinct candidate outfits for the deck (Today page).
-  // Reuses the same color × season × recency scoring as generateOutfit, but is
-  // deterministic and exhaustive (closets are capped at ~10 items, so the
-  // top × bottom product is tiny). The deck is local to the page: this never
-  // touches the singleton state nor calls emitChange.
+  // Reuses the same colour scoring as generateOutfit, but is deterministic and
+  // exhaustive (closets are capped at ~10 items, so the top × bottom product is
+  // tiny). The deck is local to the page: this never touches the singleton state
+  // nor calls emitChange.
   const buildDeck = (
     filter: Occasion,
     deckSize = 10,
     pinnedId?: string,
   ): Outfit[] => {
-    const availableItems = items.filter(
-      (i) => i.isClean || !isWashable(i.category),
-    );
-
     // "everyday" fits every item, so this naturally yields the unfiltered deck.
     const matchesFilter = (i: ClothingItem): boolean => fitsOccasion(i, filter);
 
-    // Resolve the active pin. Dropped silently if the item is no longer
-    // available (deleted/dirty) — mirrors generateOutfit.
-    const pinned = pinnedId
-      ? availableItems.find((i) => i.id === pinnedId)
-      : undefined;
+    // Resolve the active pin. Dropped silently if the item is no longer in the
+    // closet — mirrors generateOutfit.
+    const pinned = pinnedId ? items.find((i) => i.id === pinnedId) : undefined;
 
-    const tops = availableItems.filter(
-      (i) => i.category === "top" && matchesFilter(i),
-    );
-    const bottoms = availableItems.filter(
+    const tops = items.filter((i) => i.category === "top" && matchesFilter(i));
+    const bottoms = items.filter(
       (i) => i.category === "bottom" && matchesFilter(i),
     );
 
-    const weather = getCachedWeather();
-    const effectiveSeason = weather
-      ? temperatureToSeason(weather.temperatureC)
-      : getCurrentSeason();
-
     const duoScore = (top: ClothingItem, bottom: ClothingItem): number =>
-      (scoreColors({ a: top.color, b: bottom.color }) ?? 0) *
-      getRecencyPenalty([top.id, bottom.id]) *
-      getSeasonScore(top, effectiveSeason) *
-      getSeasonScore(bottom, effectiveSeason);
+      scoreColors({ a: top.color, b: bottom.color }) ?? 0;
 
     let ordered: { top: ClothingItem; bottom: ClothingItem }[] = [];
 
@@ -433,25 +356,11 @@ export const useOutfit = () => {
       ordered = head.map(({ top, bottom }) => ({ top, bottom }));
     }
 
-    // Outerwear suggestion mirrors generateOutfit: on a cold/rainy day attach the
-    // best colour-matching, occasion-appropriate layer to each card.
-    const availableOuterwear =
-      weather && needsOuterwear(weather)
-        ? availableItems.filter(
-            (i) => i.category === "outerwear" && matchesFilter(i),
-          )
-        : [];
-
     return ordered.slice(0, deckSize).map(({ top, bottom }) => {
       const out: Outfit = { top, bottom };
-      if (availableOuterwear.length > 0) {
-        out.outerwear = findBestMatch({
-          candidates: availableOuterwear,
-          anchor: top,
-        });
-      }
       // A pinned add-on (outerwear/shoes/accessory) locks into its slot on every
-      // card, overriding the weather-suggested layer.
+      // card. Layers are never suggested on their own — the user adds one from
+      // the card's accessory shelf.
       if (pinned && pinned.category !== "top" && pinned.category !== "bottom") {
         if (pinned.category === "outerwear") out.outerwear = pinned;
         else if (pinned.category === "shoes") out.shoes = pinned;
@@ -464,14 +373,13 @@ export const useOutfit = () => {
   const clearOutfit = async (): Promise<void> => await emitChange(null);
 
   const canGenerateOutfit = (): boolean => {
-    const availableItems = items.filter((i) => i.isClean || !isWashable(i.category));
     // Mirror generateOutfit's hard occasion filter so the regenerate control
     // reflects what can actually be produced for the selected occasion.
     const occasion = getSelectedOccasion();
-    const availableTops = availableItems.filter(
+    const availableTops = items.filter(
       (i) => i.category === "top" && fitsOccasion(i, occasion),
     );
-    const availableBottoms = availableItems.filter(
+    const availableBottoms = items.filter(
       (i) => i.category === "bottom" && fitsOccasion(i, occasion),
     );
 
@@ -484,7 +392,7 @@ export const useOutfit = () => {
     }
 
     const pinned = outfit.pinnedItemId
-      ? availableItems.find((i) => i.id === outfit.pinnedItemId)
+      ? items.find((i) => i.id === outfit.pinnedItemId)
       : undefined;
 
     // With a pinned slot, regeneration only varies the complementary slot.

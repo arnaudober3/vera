@@ -8,10 +8,9 @@ import { todayKey, lsGet, lsSet } from "../storage/local-store.ts";
 // definition rather than redeclaring them. The filter is just the active
 // occasion; "everyday" is the relaxed, fits-everything default.
 export type Filter = Occasion;
-export type WornState = { cardKey: string; recordId: string; snapshot: Outfit };
 
-// Canonical key for an outfit's top/bottom duo — identifies a deck card and the
-// worn snapshot across the deck and the favorites page.
+// Canonical key for an outfit's top/bottom duo — identifies a deck card, and
+// keys the per-card accessory edits.
 export const cardKeyOf = (o: Outfit): string => `${o.top.id}|${o.bottom.id}`;
 
 // Per-card secondary edits (added accessory/outerwear/shoes), keyed by cardKey.
@@ -23,11 +22,6 @@ type TodaySession = {
   filter: Filter;
   index: number;
   edits: Edits;
-  worn: WornState | null;
-  // An outfit kept as the deck's front card without being worn — e.g. after
-  // undoing a wear, so the chosen outfit stays put instead of regenerating.
-  // The user swipes to move on to the regular deck.
-  selected: Outfit | null;
   day: string; // YYYY-MM-DD (local day)
 };
 
@@ -39,12 +33,20 @@ const todayString = (): string => {
   return `${d.getFullYear()}-${m}-${day}`;
 };
 
+// The deck is ranked deterministically (colour match), so starting every day
+// at index 0 would surface the exact same look each morning. Seeding the index
+// from the local day rotates the entry point instead — no extra storage, and
+// the ordering itself stays stable while the user swipes through it.
+const daySeed = (day: string = todayString()): number => {
+  let h = 0;
+  for (const ch of day) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h;
+};
+
 const defaults = (): TodaySession => ({
   filter: "everyday",
-  index: 0,
+  index: daySeed(),
   edits: {},
-  worn: null,
-  selected: null,
   day: todayString(),
 });
 
@@ -66,10 +68,17 @@ const initialize = (): void => {
   const sessionId = getSessionId();
   const stored = lsGet<TodaySession>(todayKey(sessionId), defaults());
   // A stale-day load — or a filter from the pre-rename occasion set — is
-  // treated as a fresh deck (daily reset / migration).
+  // treated as a fresh deck (daily reset / migration). Same-day payloads are
+  // rebuilt field by field rather than adopted wholesale, so a legacy snapshot
+  // (which carried a worn/selected outfit) can't smuggle dropped state back in.
   state =
     stored.day === todayString() && isFilter(stored.filter)
-      ? stored
+      ? {
+          filter: stored.filter,
+          index: stored.index ?? daySeed(),
+          edits: stored.edits ?? {},
+          day: stored.day,
+        }
       : defaults();
 
   isInitialized = true;
@@ -88,9 +97,10 @@ export function useTodaySession() {
   }, []);
 
   const setFilter = (filter: Filter): void => {
-    // Changing the filter narrows the deck; reset position, per-card edits and
-    // any kept outfit atomically (they don't carry across filters).
-    emitChange({ ...state, filter, index: 0, edits: {}, selected: null });
+    // Changing the filter narrows the deck; reset position and per-card edits
+    // atomically (they don't carry across filters). The position resets to the
+    // day's seed, not 0, so the new filter's deck rotates the same way.
+    emitChange({ ...state, filter, index: daySeed(), edits: {} });
   };
 
   const setIndex = (value: number | ((prev: number) => number)): void => {
@@ -101,14 +111,6 @@ export function useTodaySession() {
   const setEdits = (value: Edits | ((prev: Edits) => Edits)): void => {
     const edits = typeof value === "function" ? value(state.edits) : value;
     emitChange({ ...state, edits });
-  };
-
-  const setWorn = (worn: WornState | null): void => {
-    emitChange({ ...state, worn });
-  };
-
-  const setSelected = (selected: Outfit | null): void => {
-    emitChange({ ...state, selected });
   };
 
   function emitChange(next: TodaySession): void {
@@ -122,12 +124,8 @@ export function useTodaySession() {
     filter: session.filter,
     index: session.index,
     edits: session.edits,
-    worn: session.worn,
-    selected: session.selected,
     setFilter,
     setIndex,
     setEdits,
-    setWorn,
-    setSelected,
   };
 }
