@@ -15,10 +15,7 @@ vi.mock("./components/toast-provider.tsx", () => ({
 }));
 vi.mock("./pages/today-page.tsx", () => ({ TodayPage: () => null }));
 vi.mock("./pages/closet-page.tsx", () => ({ ClosetPage: () => null }));
-vi.mock("./pages/lookbook-page.tsx", () => ({ LookbookPage: () => null }));
 vi.mock("./pages/onboarding.tsx", () => ({ WelcomePage: () => null }));
-vi.mock("./pages/google-callback.tsx", () => ({ GoogleCallbackPage: () => null }));
-vi.mock("./pages/notification-test.tsx", () => ({ NotificationTest: () => null }));
 vi.mock("./storage/onboarding.ts", () => ({ isOnboardingComplete: () => true }));
 vi.mock("./App.css", () => ({}));
 

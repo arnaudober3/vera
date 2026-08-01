@@ -3,13 +3,7 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FaCamera, FaCheck, FaRegImage, FaTshirt } from "react-icons/fa";
-import {
-  MdAdd,
-  MdCalendarToday,
-  MdChevronLeft,
-  MdLockOutline,
-  MdNotifications,
-} from "react-icons/md";
+import { MdAdd, MdChevronLeft } from "react-icons/md";
 import { PiPants, PiSneaker } from "react-icons/pi";
 import {
   type ClothingItemCategory,
@@ -32,14 +26,7 @@ import {
 } from "../services/image-processing.ts";
 import { colorName } from "../utils/color.ts";
 import { markOnboardingComplete } from "../storage/onboarding.ts";
-import { useCalendar } from "../hooks/calendar.ts";
-import { useNotifications } from "../hooks/notifications.ts";
-import { GoogleCalendarError } from "../services/google-calendar.ts";
 import { type Step, previousStep } from "../models/onboarding-nav.ts";
-import {
-  isNotificationSectionDone,
-  notificationCtaAction,
-} from "../models/notification-onboarding.ts";
 import "./onboarding.css";
 
 // Value-first onboarding: Promise → add a top (1/2) → add a bottom (2/2) →
@@ -86,7 +73,6 @@ export const WelcomePage = (): React.JSX.Element => {
   const [topItemId, setTopItemId] = useState<string | null>(null);
   const [bottomItemId, setBottomItemId] = useState<string | null>(null);
   const [addedMore, setAddedMore] = useState(false);
-  const [connected, setConnected] = useState(false);
 
   function finishAndExit(target: string): void {
     markOnboardingComplete();
@@ -160,10 +146,7 @@ export const WelcomePage = (): React.JSX.Element => {
       {step === "levelup" && (
         <LevelUpScreen
           addedMore={addedMore}
-          connected={connected}
           onAddPieces={() => setStep("add-more")}
-          onConnect={() => setStep("calendar")}
-          onNotifications={() => setStep("notifications")}
           onFinish={completeOnboarding}
         />
       )}
@@ -178,25 +161,6 @@ export const WelcomePage = (): React.JSX.Element => {
             setAddedMore(true);
             setStep("levelup");
           }}
-          onBack={goBack}
-          onSkip={() => setStep("levelup")}
-        />
-      )}
-
-      {step === "calendar" && (
-        <CalendarScreen
-          onConnected={() => {
-            setConnected(true);
-            setStep("levelup");
-          }}
-          onBack={goBack}
-          onSkip={() => setStep("levelup")}
-        />
-      )}
-
-      {step === "notifications" && (
-        <NotificationScreen
-          onDone={() => setStep("levelup")}
           onBack={goBack}
           onSkip={() => setStep("levelup")}
         />
@@ -582,7 +546,6 @@ const AddPieceScreen = ({
         category,
         subCategory: sub,
         color,
-        isClean: true,
         imageData: afterImage,
       };
 
@@ -1035,22 +998,14 @@ const AskCard = ({
 
 const LevelUpScreen = ({
   addedMore,
-  connected,
   onAddPieces,
-  onConnect,
-  onNotifications,
   onFinish,
 }: {
   addedMore: boolean;
-  connected: boolean;
   onAddPieces: () => void;
-  onConnect: () => void;
-  onNotifications: () => void;
   onFinish: () => void;
 }): React.JSX.Element => {
   const { t } = useTranslation();
-  const { permissionStatus } = useNotifications();
-  const notificationsDone = isNotificationSectionDone(permissionStatus);
 
   return (
     <Stage>
@@ -1078,22 +1033,6 @@ const LevelUpScreen = ({
           done={addedMore}
           onAction={onAddPieces}
         />
-        <AskCard
-          icon={<MdCalendarToday size={16} color="var(--vera-primary)" />}
-          title={t("onboarding.levelup.calTitle")}
-          body={t("onboarding.levelup.calBody")}
-          action={t("onboarding.levelup.calAction")}
-          done={connected}
-          onAction={onConnect}
-        />
-        <AskCard
-          icon={<MdNotifications size={20} color="var(--vera-primary)" />}
-          title={t("onboarding.levelup.notifTitle")}
-          body={t("onboarding.levelup.notifBody")}
-          action={t("onboarding.levelup.notifAction")}
-          done={notificationsDone}
-          onAction={onNotifications}
-        />
       </div>
 
       <div
@@ -1109,347 +1048,6 @@ const LevelUpScreen = ({
           {t("onboarding.levelup.finish")}
         </button>
         <StepDots active={4} />
-      </div>
-    </Stage>
-  );
-};
-
-// ── Screen 4b · Connect calendar (optional, post-value) ──────────
-const CalendarScreen = ({
-  onConnected,
-  onBack,
-  onSkip,
-}: {
-  onConnected: () => void;
-  onBack?: () => void;
-  onSkip: () => void;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  const { connect } = useCalendar();
-  const [connecting, setConnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const examples = [
-    { when: t("onboarding.calendar.ex1When"), what: t("onboarding.calendar.ex1What"), cue: t("onboarding.calendar.ex1Cue") },
-    { when: t("onboarding.calendar.ex2When"), what: t("onboarding.calendar.ex2What"), cue: t("onboarding.calendar.ex2Cue") },
-    { when: t("onboarding.calendar.ex3When"), what: t("onboarding.calendar.ex3What"), cue: t("onboarding.calendar.ex3Cue") },
-  ];
-
-  async function handleConnect(): Promise<void> {
-    setConnecting(true);
-    setError(null);
-    try {
-      await connect();
-      onConnected();
-    } catch (err) {
-      if (err instanceof GoogleCalendarError) {
-        console.warn("Calendar connect failed:", err.reason, err.message);
-        // Closing the popup is a deliberate cancel — let them retry, no error.
-        if (err.reason === "cancelled") return;
-        setError(
-          t(
-            err.reason === "popup_blocked"
-              ? "onboarding.calendar.popupBlocked"
-              : "onboarding.calendar.error",
-          ),
-        );
-      } else {
-        console.warn("Calendar connect failed:", err);
-        setError(t("onboarding.calendar.error"));
-      }
-    } finally {
-      setConnecting(false);
-    }
-  }
-
-  return (
-    <Stage gap={14} paddingTop={onBack ? STAGE_TOP_WITH_BACK : 56}>
-      {onBack && (
-        <BackTopLeft onClick={onBack} label={t("onboarding.back")} />
-      )}
-      <SkipTopRight onClick={onSkip} label={t("onboarding.calendar.skip")} />
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
-        <Eyebrow>
-          <MdCalendarToday size={13} color="var(--vera-primary)" />
-          {t("onboarding.addPiece.optional")}
-        </Eyebrow>
-        <SerifTitle size={30}>{t("onboarding.calendar.title")}</SerifTitle>
-        <div
-          style={{
-            color: "var(--vera-fg-muted)",
-            fontSize: 15,
-            lineHeight: 1.5,
-            marginTop: 2,
-          }}
-        >
-          {t("onboarding.calendar.subtitle")}
-        </div>
-      </div>
-
-      <div className="vera-card" style={{ padding: 6, display: "flex", flexDirection: "column" }}>
-        {examples.map((e, i) => (
-          <div
-            key={e.what}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "150px 1fr auto",
-              alignItems: "center",
-              gap: 10,
-              padding: "12px 12px",
-              borderTop: i === 0 ? "none" : "1px solid var(--vera-gray-100)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-              <span
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  background: "rgba(101,170,167,0.12)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <MdCalendarToday size={15} color="var(--vera-primary)" />
-              </span>
-              <div style={{ minWidth: 0, textAlign: "left" }}>
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "var(--vera-fg-strong)",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {e.what}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--vera-fg-muted)", whiteSpace: "nowrap" }}>
-                  {e.when}
-                </div>
-              </div>
-            </div>
-            <div style={{ display: "flex", justifyContent: "center", color: "var(--vera-gray-300)" }}>
-              <svg width="16" height="12" viewBox="0 0 20 14" fill="none" aria-hidden>
-                <path
-                  d="M1 7h17m-5-5l5 5-5 5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <span
-              style={{
-                justifySelf: "end",
-                background: "var(--vera-surface)",
-                border: "1px solid var(--vera-surface-border)",
-                borderRadius: 999,
-                padding: "5px 11px",
-                fontSize: 12,
-                fontWeight: 600,
-                color: "var(--vera-primary)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {e.cue}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 8,
-          fontSize: 13,
-          color: "var(--vera-fg-muted)",
-          lineHeight: 1.45,
-          padding: "0 4px",
-        }}
-      >
-        <MdLockOutline
-          size={14}
-          color="var(--vera-fg-subtle)"
-          style={{ marginTop: 2, flexShrink: 0 }}
-        />
-        {t("onboarding.calendar.privacy")}
-      </div>
-
-      <div
-        style={{
-          marginTop: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-          paddingBottom: 4,
-        }}
-      >
-        {error && (
-          <div
-            role="alert"
-            style={{
-              fontSize: 13,
-              color: "var(--vera-danger, #b91c1c)",
-              textAlign: "center",
-              lineHeight: 1.4,
-            }}
-          >
-            {error}
-          </div>
-        )}
-        <button
-          type="button"
-          className="vera-btn-primary"
-          onClick={() => void handleConnect()}
-          disabled={connecting}
-        >
-          <MdCalendarToday />
-          {connecting
-            ? t("onboarding.calendar.connecting")
-            : t("onboarding.calendar.connect")}
-        </button>
-      </div>
-    </Stage>
-  );
-};
-
-// ── Screen 4c · Notifications (optional) ───────────────────────
-const NotificationScreen = ({
-  onDone,
-  onBack,
-  onSkip,
-}: {
-  onDone: () => void;
-  onBack?: () => void;
-  onSkip: () => void;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  const { permissionStatus, enableDailyReminder } = useNotifications();
-  const [requesting, setRequesting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleRequest(): Promise<void> {
-    const action = notificationCtaAction(permissionStatus);
-
-    if (action === "unsupported") {
-      setError(t("onboarding.notifications.unsupported"));
-      return;
-    }
-
-    // Already denied: the browser won't re-show the native prompt, so requesting
-    // again would silently no-op and bounce straight back to the hub. Guide the
-    // user to re-enable in their browser settings instead of navigating away.
-    if (action === "blocked") {
-      setError(t("onboarding.notifications.denied"));
-      return;
-    }
-
-    setRequesting(true);
-    setError(null);
-    try {
-      await enableDailyReminder();
-      onDone();
-    } catch {
-      setError(t("onboarding.notifications.error"));
-    } finally {
-      setRequesting(false);
-    }
-  }
-
-  return (
-    <Stage gap={14} paddingTop={onBack ? STAGE_TOP_WITH_BACK : 56}>
-      {onBack && (
-        <BackTopLeft onClick={onBack} label={t("onboarding.back")} />
-      )}
-      <SkipTopRight onClick={onSkip} label={t("onboarding.notifications.skip")} />
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
-        <Eyebrow>
-          <MdNotifications size={13} color="var(--vera-primary)" />
-          {t("onboarding.addPiece.optional")}
-        </Eyebrow>
-        <SerifTitle size={30}>{t("onboarding.notifications.title")}</SerifTitle>
-        <div
-          style={{
-            color: "var(--vera-fg-muted)",
-            fontSize: 15,
-            lineHeight: 1.5,
-            marginTop: 2,
-          }}
-        >
-          {t("onboarding.notifications.subtitle")}
-        </div>
-      </div>
-
-      <div
-        className="vera-card"
-        style={{
-          padding: 24,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 16,
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 20,
-            background: "rgba(101,170,167,0.12)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <MdNotifications size={32} color="var(--vera-primary)" />
-        </div>
-        <div style={{ fontSize: 14, color: "var(--vera-fg-muted)", lineHeight: 1.5 }}>
-          {t("onboarding.notifications.body")}
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-          paddingBottom: 4,
-        }}
-      >
-        {error && (
-          <div
-            role="alert"
-            style={{
-              fontSize: 13,
-              color: "var(--vera-danger, #b91c1c)",
-              textAlign: "center",
-              lineHeight: 1.4,
-            }}
-          >
-            {error}
-          </div>
-        )}
-        <button
-          type="button"
-          className="vera-btn-primary"
-          onClick={() => void handleRequest()}
-          disabled={requesting}
-        >
-          <MdNotifications />
-          {requesting
-            ? t("onboarding.notifications.requesting")
-            : t("onboarding.notifications.cta")}
-        </button>
       </div>
     </Stage>
   );

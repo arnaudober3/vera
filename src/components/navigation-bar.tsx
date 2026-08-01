@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import "./navigation-bar.css";
 
-type Page = "today" | "closet" | "lookbook";
+type Page = "today" | "closet";
 
 interface NavigationBarData {
   activePage: Page;
@@ -31,15 +31,6 @@ export default function NavigationBar({ activePage, action }: NavigationBarData)
           aria-label={t("nav.closetAria")}
         >
           {t("nav.closet")}
-        </Link>
-
-        <Link
-          to="/lookbook"
-          className={`vera-nav-item ${activePage === "lookbook" ? "active" : ""}`}
-          aria-current={activePage === "lookbook" ? "page" : undefined}
-          aria-label={t("nav.lookbookAria")}
-        >
-          {t("nav.lookbook")}
         </Link>
       </nav>
       {action}

@@ -19,7 +19,4 @@ export const lsRemove = (key: string): void => {
 export const closetKey = (sessionId: string) =>
   `vera:clothingItems:${sessionId}`;
 export const outfitKey = (sessionId: string) => `vera:outfit:${sessionId}`;
-export const lookbookKey = (sessionId: string) =>
-  `vera:lookbook:${sessionId}`;
-export const historyKey = (sessionId: string) => `vera:history:${sessionId}`;
 export const todayKey = (sessionId: string) => `vera:today:${sessionId}`;

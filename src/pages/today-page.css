@@ -12,9 +12,8 @@
   flex-shrink: 0;
 }
 
-/* Title (date, serif italic) on the left + weather pill on the right, same row.
-   Spacing lives on the row (not the title margin) so both items share the same
-   box and the pill stays vertically centred on the title. */
+/* Header row carrying the date title. Spacing lives on the row rather than the
+   title margin, so the title's box stays clean. */
 .today-header-row {
   display: flex;
   align-items: center;
@@ -25,7 +24,7 @@
 
 .today-title {
   margin: 0;
-  font-size: 1.6875rem; /* 27px — fits beside the weather pill */
+  font-size: 1.6875rem; /* 27px */
   line-height: 1.2;
   /* vera-page-title trims the box to cap height; with overflow:hidden that clips
      the italic descenders/overshoot, so restore the full line box here. */
@@ -86,103 +85,6 @@
    see which occasion is currently applied. */
 .today-occasion-chip.active:disabled {
   opacity: 1;
-}
-
-/* ── Calendar cue row ── */
-/* A read-only pill above the filter bar showing the day's event (title + time)
-   the calendar picked. The occasion it maps to is reflected by the active chip
-   in the filter bar below. */
-.today-cal-cue-row {
-  flex-shrink: 0;
-  padding: 12px 20px 0;
-}
-
-/* Understated, informational pill (same treatment whether it carries an event
-   or the "no event today" marker) — the teal lives on the active filter chip,
-   not here. The sparkle keeps a small teal accent to read as "calendar". */
-.today-occasion-cue {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  padding: 6px 14px;
-  border-radius: var(--vera-radius-pill);
-  border: 1px solid var(--vera-surface-border);
-  background: var(--vera-surface);
-  color: var(--vera-fg-muted);
-  font-family: var(--vera-font-sans);
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-/* Sparkle + time keep their size; the title flexes and truncates. */
-.today-occasion-cue svg {
-  color: var(--vera-primary);
-  flex-shrink: 0;
-}
-
-.today-occasion-cue__title {
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.today-occasion-cue__time {
-  flex-shrink: 0;
-}
-
-/* Quiet day — same pill, neutral calendar icon (no event to accent). */
-.today-occasion-cue--muted svg {
-  color: var(--vera-fg-subtle);
-}
-
-/* ── Weather pill ── */
-.today-weather-badge {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  padding: 6px 12px;
-  border-radius: var(--vera-radius-pill);
-  border: 1px solid var(--vera-surface-border);
-  background: var(--vera-surface);
-  color: var(--vera-fg-strong);
-  font-family: var(--vera-font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.today-weather-edit {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.today-weather-input {
-  width: 72px;
-  padding: 6px 10px;
-  border-radius: var(--vera-radius-pill);
-  border: 1px solid var(--vera-surface-border);
-  background: var(--vera-surface);
-  color: var(--vera-fg-strong);
-  font-family: var(--vera-font-sans);
-  font-size: 13px;
-}
-
-.today-weather-done {
-  padding: 6px 12px;
-  border-radius: var(--vera-radius-pill);
-  border: 1px solid transparent;
-  background: var(--vera-primary);
-  color: #ffffff;
-  font-family: var(--vera-font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
 }
 
 /* ── Accessory picker sheet (reused by the deck's secondary editing) ── */

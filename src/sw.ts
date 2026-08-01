@@ -1,17 +1,6 @@
 /// <reference lib="webworker" />
 import { precacheAndRoute, cleanupOutdatedCaches } from "workbox-precaching";
 import { clientsClaim } from "workbox-core";
-import {
-  getDirtySinceDay,
-  getLastNotifiedDay,
-  setLastNotifiedDay,
-} from "./storage/sw-store";
-import {
-  formatDate,
-  getDayDiff,
-  getNotificationContent,
-  shouldNotify,
-} from "./utils/notification-logic";
 
 declare let self: ServiceWorkerGlobalScope;
 
@@ -26,79 +15,11 @@ cleanupOutdatedCaches();
 // and only calls self.skipWaiting() in response to a SKIP_WAITING message.
 clientsClaim();
 
-async function checkAndNotify() {
-  const now = new Date();
-  const lastNotified = await getLastNotifiedDay();
-
-  if (!shouldNotify(now, lastNotified)) {
-    return;
-  }
-
-  const today = formatDate(now);
-  const dirtySinceDay = await getDirtySinceDay();
-  let showLaundryHint = false;
-
-  if (dirtySinceDay) {
-    const diff = getDayDiff(today, dirtySinceDay);
-    if (diff >= 2) {
-      showLaundryHint = true;
-    }
-  }
-
-  // Determine locale
-  const content = getNotificationContent(
-    self.navigator.language || "en",
-    showLaundryHint,
-  );
-
-  await self.registration.showNotification(content.title, {
-    body: content.body,
-    icon: "/icon_192x192.png",
-    badge: "/icon_192x192.png",
-    data: {
-      url: "/",
-    },
-  });
-
-  await setLastNotifiedDay(today);
-}
-
-// Handle notification click to open/focus the app
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-
-  event.waitUntil(
-    self.clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clientList) => {
-        // Focus if an open window exists
-        for (const client of clientList) {
-          if ("navigate" in client) {
-            client.focus();
-            client.navigate(event.notification.data.url);
-          }
-        }
-        // Otherwise open a new window
-        if (self.clients.openWindow) {
-          return self.clients.openWindow(event.notification.data.url);
-        }
-      }),
-  );
-});
-
-// Trigger on message from the app
 self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "CHECK_REMINDERS") {
-    event.waitUntil(checkAndNotify());
-  }
   // The update prompt posts SKIP_WAITING when the user chooses to reload, so a
-  // waiting SW activates on demand instead of silently on the next load.
+  // waiting SW activates on demand instead of silently on the next load. This
+  // is the SW's only message contract.
   if (event.data && event.data.type === "SKIP_WAITING") {
     self.skipWaiting();
   }
-});
-
-// Also check on SW activation/restart
-self.addEventListener("activate", (event) => {
-  event.waitUntil(checkAndNotify());
 });

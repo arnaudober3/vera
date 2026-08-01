@@ -9,21 +9,17 @@ export type Step =
   | "add-bottom"
   | "outfit"
   | "levelup"
-  | "add-more"
-  | "calendar"
-  | "notifications";
+  | "add-more";
 
 // Where the top-left "Back" affordance goes for each step. Steps absent from
 // this map (welcome, levelup) show no back control: welcome is the entry point
-// and levelup is a hub whose forward action is "Finish". The optional detours
-// (add-more, calendar, notifications) each map back to levelup.
+// and levelup is a hub whose forward action is "Finish". The optional detour
+// (add-more) maps back to levelup.
 export const PREV_STEP: Partial<Record<Step, Step>> = {
   "add-top": "welcome",
   "add-bottom": "add-top",
   outfit: "add-bottom",
   "add-more": "levelup",
-  calendar: "levelup",
-  notifications: "levelup",
 };
 
 // The step to return to when Back is tapped on `step`, or null when the step has

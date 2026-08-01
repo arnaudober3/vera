@@ -3,11 +3,9 @@ import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
-import { BasketStrip } from "../components/basket-strip.tsx";
 import { AppFooter } from "../components/app-footer.tsx";
 import {
   ALL_CATEGORIES,
-  isWashable,
   type ClothingItem,
   type ClothingItemCategory,
   type CreateClothingItem,
@@ -18,7 +16,7 @@ import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
 import { useMeasuredHeight } from "../hooks/use-measured-height.ts";
-import { FaCheck, FaChevronLeft } from "react-icons/fa";
+import { FaCheck } from "react-icons/fa";
 import { BsPin, BsPinFill } from "react-icons/bs";
 import { MdAdd } from "react-icons/md";
 import { itemTint } from "../utils/color.ts";
@@ -170,7 +168,7 @@ const ItemCard = ({
           {!editMode && (
             <button
               onClick={() => pin()}
-              className={`pin-button vera-keep-opaque ${isPinned ? "active" : ""}`}
+              className={`pin-button ${isPinned ? "active" : ""}`}
               aria-label={isPinned ? t("closet.unpinAria") : t("closet.pinAria")}
               aria-pressed={isPinned}
             >
@@ -181,7 +179,7 @@ const ItemCard = ({
           {editMode && (
             <button
               onClick={() => remove(item.id)}
-              className="delete-button vera-keep-opaque"
+              className="delete-button"
               aria-label={t("closet.deleteAria")}
             >
               <IoClose size={14} />
@@ -315,17 +313,9 @@ const OnboardingToast = ({
 
 export const ClosetPage = (): React.JSX.Element => {
   const { t } = useTranslation();
-  const {
-    items: _items,
-    addClothingItem,
-    isUploadLimitReached,
-    markLaundryDone,
-  } = useCloset();
-  const items = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _items) : _items;
+  const { items, addClothingItem, isUploadLimitReached } = useCloset();
   const { saveImage } = useImage();
-  const { generateOutfit, outfit } = useOutfit();
   const location = useLocation();
-  const navigate = useNavigate();
   const justOnboarded =
     (location.state as { justOnboarded?: boolean } | null)?.justOnboarded ??
     false;
@@ -339,55 +329,24 @@ export const ClosetPage = (): React.JSX.Element => {
   const [showOnboardingToast, setShowOnboardingToast] = useState<boolean>(
     justOnboarded,
   );
-  const viewingBasket = location.pathname === "/closet/basket";
-  // Destructive edit mode only applies to the closet grid, never the basket.
-  const effectiveEdit = editMode && !viewingBasket;
-  const toggleBasketView = (): void => {
-    if (viewingBasket) {
-      navigate(-1);
-    } else {
-      navigate("/closet/basket", { state: { from: "/closet" } });
-    }
-  };
-
-  // The basket back link returns through history (navigate(-1)), so label it
-  // after wherever the user opened it from rather than always "the closet".
-  const basketFrom = (location.state as { from?: string } | null)?.from;
-  const basketBackLabel =
-    basketFrom === "/"
-      ? t("nav.today")
-      : basketFrom === "/lookbook"
-        ? t("nav.lookbook")
-        : t("closet.backToCloset");
-
   useEffect(() => {
     if (!showOnboardingToast) return;
     const timer = window.setTimeout(() => setShowOnboardingToast(false), 6000);
     return () => window.clearTimeout(timer);
   }, [showOnboardingToast]);
 
-  const dirtyItems = useMemo(
-    () => items.filter((i) => isWashable(i.category) && !i.isClean),
-    [items],
-  );
-  const dirtyCount = dirtyItems.length;
-
-  const cleanItems = useMemo(
-    () => items.filter((i) => !isWashable(i.category) || i.isClean),
-    [items],
-  );
-
   const availableCategories = useMemo(
-    () => new Set(cleanItems.map((i) => i.category)),
-    [cleanItems],
+    () => new Set(items.map((i) => i.category)),
+    [items],
   );
 
-  const displayedItems = useMemo(() => {
-    if (viewingBasket) return dirtyItems;
-    return selectedCategory
-      ? cleanItems.filter((item) => item.category === selectedCategory)
-      : cleanItems;
-  }, [viewingBasket, dirtyItems, cleanItems, selectedCategory]);
+  const displayedItems = useMemo(
+    () =>
+      selectedCategory
+        ? items.filter((item) => item.category === selectedCategory)
+        : items,
+    [items, selectedCategory],
+  );
 
   async function addItem(item: CreateClothingItem): Promise<void> {
     const newItem = await addClothingItem(item);
@@ -400,24 +359,14 @@ export const ClosetPage = (): React.JSX.Element => {
     }
   }
 
-  async function onWash(): Promise<void> {
-    await markLaundryDone();
-    if (viewingBasket) navigate(-1);
-    if (!outfit) {
-      await generateOutfit();
-    }
-  }
-
-  const showAddTile = !viewingBasket && !effectiveEdit && !isUploadLimitReached();
+  const showAddTile = !editMode && !isUploadLimitReached();
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden relative">
       <div className="mx-auto max-w-4xl px-5 pt-3.5 w-full shrink-0">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="vera-dressing-title">
-            {viewingBasket ? t("closet.basketTitle") : t("closet.title")}
-          </h2>
-          {!viewingBasket && items.length > 0 && (
+          <h2 className="vera-dressing-title">{t("closet.title")}</h2>
+          {items.length > 0 && (
             <button
               type="button"
               onClick={() => setEditMode((v) => !v)}
@@ -449,26 +398,13 @@ export const ClosetPage = (): React.JSX.Element => {
         </div>
       )}
 
-      {viewingBasket ? (
-        <div className="vera-back-link-bar mx-auto max-w-4xl w-full shrink-0">
-          <button
-            type="button"
-            onClick={toggleBasketView}
-            className="vera-back-link"
-          >
-            <FaChevronLeft />
-            {basketBackLabel}
-          </button>
-        </div>
-      ) : (
-        <div className="shrink-0">
-          <CategoryFilterBar
-            selectedCategory={selectedCategory}
-            onCategorySelected={setSelectedCategory}
-            availableCategories={availableCategories}
-          />
-        </div>
-      )}
+      <div className="shrink-0">
+        <CategoryFilterBar
+          selectedCategory={selectedCategory}
+          onCategorySelected={setSelectedCategory}
+          availableCategories={availableCategories}
+        />
+      </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col relative">
         <div
@@ -476,26 +412,7 @@ export const ClosetPage = (): React.JSX.Element => {
           style={{ paddingBottom: footerHeight + 12 }}
         >
           <div className="vera-dressing-sub">
-            <span>
-              {viewingBasket ? (
-                <>
-                  {t("closet.basketSection")} ·{" "}
-                  <span className="vera-dressing-sub__basket">{dirtyCount}</span>
-                </>
-              ) : (
-                <>
-                  {t("closet.available", { count: cleanItems.length })}
-                  {items.length > 0 && (
-                    <>
-                      {" · "}
-                      <span className="vera-dressing-sub__basket">
-                        {t("closet.basketCountInline", { count: dirtyCount })}
-                      </span>
-                    </>
-                  )}
-                </>
-              )}
-            </span>
+            <span>{t("closet.available", { count: items.length })}</span>
             <span className="vera-dressing-sub__rule" aria-hidden />
           </div>
           <div className="rounded-2xl">
@@ -507,7 +424,7 @@ export const ClosetPage = (): React.JSX.Element => {
                 />
               )}
               {displayedItems.map((item) => (
-                <ItemCard key={item.id} item={item} editMode={effectiveEdit} />
+                <ItemCard key={item.id} item={item} editMode={editMode} />
               ))}
             </div>
           </div>
@@ -516,13 +433,6 @@ export const ClosetPage = (): React.JSX.Element => {
 
       <div ref={footerRef} className="absolute inset-x-0 bottom-0 z-10">
         <AppFooter>
-          <BasketStrip
-            dirtyCount={dirtyCount}
-            viewingBasket={viewingBasket}
-            onTap={toggleBasketView}
-            onWash={() => void onWash()}
-          />
-
           <NavigationBar activePage="closet" />
         </AppFooter>
       </div>

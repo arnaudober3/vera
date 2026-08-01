@@ -2,6 +2,53 @@ import { describe, it, expect } from "vitest";
 import en from "./locales/en.json";
 import fr from "./locales/fr.json";
 
+// Every leaf path in a locale bundle, e.g. "today.empty.title".
+const keyPaths = (value: unknown, prefix = ""): string[] => {
+  if (typeof value !== "object" || value === null) return [prefix];
+  return Object.entries(value).flatMap(([k, v]) =>
+    keyPaths(v, prefix ? `${prefix}.${k}` : k),
+  );
+};
+
+// Nothing in the build fails on a key that exists in one locale only — it just
+// falls back to English at runtime, in front of a French user. Trimming the
+// bundles by hand is exactly when that happens, so it gets a test.
+describe("locale parity", () => {
+  it("exposes the same key paths in both locales", () => {
+    expect(keyPaths(fr).sort()).toEqual(keyPaths(en).sort());
+  });
+
+  it("has no empty string anywhere", () => {
+    for (const bundle of [en, fr]) {
+      for (const path of keyPaths(bundle)) {
+        const value = path
+          .split(".")
+          .reduce<unknown>((acc, k) => (acc as Record<string, unknown>)[k], bundle);
+        expect(typeof value, path).toBe("string");
+        expect((value as string).length, path).toBeGreaterThan(0);
+      }
+    }
+  });
+});
+
+// Guards the clean-up: these blocks belonged to the removed notifications,
+// calendar, lookbook and laundry features and must not creep back in.
+describe("removed feature keys", () => {
+  it("no longer carries the lookbook, basket, calendar or date blocks", () => {
+    for (const bundle of [en, fr]) {
+      for (const block of ["lookbook", "basket", "calendarCallback", "date"]) {
+        expect(bundle).not.toHaveProperty(block);
+      }
+      expect(bundle.nav).not.toHaveProperty("lookbook");
+      expect(bundle.onboarding).not.toHaveProperty("calendar");
+      expect(bundle.onboarding).not.toHaveProperty("notifications");
+      for (const key of ["wearingBadge", "hintWorn", "heartAddAria", "weather"]) {
+        expect(bundle.today).not.toHaveProperty(key);
+      }
+    }
+  });
+});
+
 // Guards the onboarding back-navigation label so it resolves in both locales
 // (no i18next missing-key fallback) and stays at the same path across languages.
 describe("onboarding locale keys", () => {

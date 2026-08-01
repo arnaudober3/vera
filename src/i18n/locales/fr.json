@@ -2,10 +2,8 @@
   "nav": {
     "today": "Aujourd'hui",
     "closet": "Dressing",
-    "lookbook": "Lookbook",
     "todayAria": "Ouvrir la page d'accueil – Suggestions de tenue du jour",
-    "closetAria": "Ouvrir la page du dressing",
-    "lookbookAria": "Ouvrir la page du lookbook"
+    "closetAria": "Ouvrir la page du dressing"
   },
   "common": {
     "close": "Fermer",
@@ -90,52 +88,16 @@
       "top": "Haut",
       "bottom": "Bas",
       "body": "C'est tout le principe. Ajoutez quelques pièces de plus et Vera vous compose une tenue fraîche chaque matin.",
-      "cta": "Je porte ça"
+      "cta": "Ça me plaît"
     },
     "levelup": {
       "title": "Envie que Vera en fasse encore plus ?",
-      "subtitle": "Les deux peuvent attendre — votre dressing fonctionne déjà.",
+      "subtitle": "Ça peut attendre — votre dressing fonctionne déjà.",
       "addTitle": "Ajoutez quelques pièces de plus",
       "addBody": "Plus Vera en sait, plus elle peut composer de tenues.",
       "addAction": "Ajouter des pièces",
-      "calTitle": "Connectez votre agenda",
-      "calBody": "Vera vous habille selon votre journée — réunions, sport, dîner.",
-      "calAction": "Connecter",
-      "notifTitle": "Notifications de tenue",
-      "notifBody": "Vera vous envoie une suggestion de tenue chaque matin selon votre journée.",
-      "notifAction": "Activer",
       "done": "Terminé",
       "finish": "Aller à mon dressing"
-    },
-    "calendar": {
-      "title": "Habillez-vous pour ce qui vous attend.",
-      "subtitle": "Connectez Google Agenda et Vera lit votre journée, puis adapte votre tenue en conséquence.",
-      "ex1When": "Demain, 9:00",
-      "ex1What": "Présentation client",
-      "ex1Cue": "Formel",
-      "ex2When": "Mer, 18:30",
-      "ex2What": "Foot à cinq",
-      "ex2Cue": "Sport",
-      "ex3When": "Ven, 20:00",
-      "ex3What": "Dîner dehors",
-      "ex3Cue": "Chic",
-      "privacy": "Vera lit uniquement les titres et horaires de vos événements — jamais leur contenu — et ne les conserve jamais.",
-      "connect": "Connecter Google Agenda",
-      "connecting": "Connexion…",
-      "skip": "Passer",
-      "error": "Impossible de connecter votre agenda. Veuillez réessayer.",
-      "popupBlocked": "Votre navigateur a bloqué la fenêtre de connexion. Autorisez les pop-ups — ou ouvrez l'app dans votre navigateur — puis réessayez."
-    },
-    "notifications": {
-      "title": "Un nouveau look, chaque matin.",
-      "subtitle": "Recevez une notification quotidienne avec votre tenue du matin, pour passer moins de temps devant le miroir.",
-      "body": "Vera n'envoie qu'une notification par jour, généralement juste avant votre réveil.",
-      "cta": "Activer les notifications",
-      "requesting": "Activation…",
-      "skip": "Passer",
-      "denied": "Les notifications sont bloquées. Vous pouvez les activer dans les réglages de votre navigateur.",
-      "unsupported": "Votre navigateur ne prend pas en charge les notifications.",
-      "error": "Une erreur est survenue. Veuillez réessayer."
     }
   },
   "today": {
@@ -147,22 +109,14 @@
     "accessoriesLabel": "Accessoires",
     "addAnotherAria": "Ajouter un autre article",
     "removeAria": "Retirer {{name}}",
-    "swipeToWear": "Glisser pour porter",
     "regenerateAria": "Régénérer la tenue",
     "unpinAria": "Détacher cet article",
     "sheetTitle": "Ajouter un accessoire",
     "sheetEmpty": "Rien à ajouter, ton dressing n'a pas encore d'articles supplémentaires.",
     "sheetAdded": "ajouté",
-    "heartAddAria": "Ajouter au lookbook",
-    "heartRemoveAria": "Retirer du lookbook",
     "occasionLabel": "Occasion",
-    "wearingBadge": "Porté aujourd'hui",
-    "hintTap": "Tape",
-    "hintWear": "pour porter",
     "hintSwipe": "Glisse",
     "hintAnother": "pour une autre",
-    "hintWorn": "Porté aujourd'hui",
-    "hintWornUndo": "· tape pour annuler",
     "occasion": {
       "everyday": "Quotidien",
       "work": "Travail",
@@ -170,23 +124,13 @@
       "dinner": "Dîner",
       "date-night": "Soirée"
     },
-    "calendar": {
-      "cueFallback": "Rien de prévu aujourd'hui"
-    },
-    "weather": {
-      "setManual": "Définir la météo",
-      "manualPrompt": "Temp °C",
-      "done": "OK",
-      "rainHint": "Pluie en vue — on a ajouté une couche.",
-      "unavailable": "Météo indisponible"
-    },
     "empty": {
       "title": "Aucune tenue pour le moment.",
-      "subtitle": "Ajoute des vêtements ou fais une lessive pour composer une tenue."
+      "subtitle": "Ajoute un haut et un bas et Vera te compose une tenue."
     },
     "emptyOccasion": {
       "title": "Rien pour cette occasion.",
-      "subtitle": "Aucun vêtement propre ne convient à cette occasion — change d'occasion ou fais une lessive."
+      "subtitle": "Rien dans ton dressing ne convient à cette occasion — change d'occasion ou ajoute une pièce."
     }
   },
   "closet": {
@@ -200,9 +144,6 @@
     "pinAria": "Épingler à la tenue du jour",
     "unpinAria": "Retirer l'épingle de la tenue du jour",
     "pinNoMatch": "Impossible de composer une tenue autour de cet article pour le moment.",
-    "basketHeroItems_one": "{{count}} article en attente",
-    "basketHeroItems_other": "{{count}} articles en attente",
-    "basketHeroSub": "Portés depuis ta dernière lessive",
     "onboardingToastDismissAria": "Ignorer",
     "onboardingToastTitle": "Tout est prêt.",
     "onboardingToastSub": "Touche + à tout moment pour en ajouter d'autres. Reviens demain matin sur Aujourd'hui.",
@@ -211,58 +152,9 @@
     "emptyButton": "Ajouter un article",
     "available_one": "{{count}} disponible",
     "available_other": "{{count}} disponibles",
-    "basketCountInline": "{{count}} au panier",
-    "basketViewItems_one": "{{count}} article porté",
-    "basketViewItems_other": "{{count}} articles portés",
-    "basketViewSub": "à laver",
-    "basketSection": "Articles à laver",
     "edit": "Modifier",
     "editDone": "OK",
-    "backToCloset": "Tout le dressing",
-    "addTile": "Ajouter une pièce",
-    "basketTitle": "Mon panier"
-  },
-  "lookbook": {
-    "title": "Mon lookbook",
-    "filter": {
-      "all": "Tout",
-      "ready": "Prêt",
-      "recent": "Récent",
-      "worn": "Plus portés"
-    },
-    "sectionReady": "Prêt à porter",
-    "sectionDirty": "En lessive",
-    "pieces_one": "{{count}} pièce",
-    "pieces_other": "{{count}} pièces",
-    "wornCount": "porté {{count}}×",
-    "renameAria": "Renommer la tenue",
-    "renameTitle": "Renommer la tenue",
-    "renamePrompt": "Nomme cette tenue",
-    "removeAria": "Retirer du lookbook",
-    "removeConfirm": "Retirer cette tenue de ton lookbook ?",
-    "wearCta": "Je porte ça",
-    "inWash": "En lessive",
-    "defaultName": "Tenue · {{date}}",
-    "empty": {
-      "title": "Ton lookbook est vide.",
-      "subtitle": "Enregistre les tenues que tu adores depuis la page Aujourd'hui !",
-      "button": "Ma tenue du jour"
-    }
-  },
-  "basket": {
-    "fullAlt": "Panier plein",
-    "emptyAlt": "Panier vide",
-    "viewingAria": "Le panier est affiché — touche pour revenir",
-    "tapAria_one": "{{count}} article dans le panier — touche pour voir",
-    "tapAria_other": "{{count}} articles dans le panier — touche pour voir",
-    "viewingTitle": "Panier affiché",
-    "viewingSub": "Touche pour revenir",
-    "countTitle_one": "{{count}} article dans le panier",
-    "countTitle_other": "{{count}} articles dans le panier",
-    "countSub": "Touche pour voir le linge sale",
-    "washAria": "Marquer tous les articles portés comme propres",
-    "washTitle": "Marquer tous les articles portés comme propres",
-    "wash": "Laver"
+    "addTile": "Ajouter une pièce"
   },
   "upload": {
     "title": "Ajouter un article",
@@ -278,21 +170,6 @@
     "errorEnterName": "Entre un nom.",
     "errorSelectCategory": "Sélectionne une catégorie.",
     "errorRemoveBg": "Échec de la suppression du fond de l'image."
-  },
-  "date": {
-    "future": "à l'avenir",
-    "today": "aujourd'hui",
-    "yesterday": "hier",
-    "daysAgo": "il y a {{count}} jours",
-    "lastWeek": "la semaine dernière",
-    "weeksAgo": "il y a {{count}} semaines",
-    "monthAgo": "il y a un mois",
-    "monthsAgo": "il y a {{count}} mois",
-    "yearAgo": "il y a un an",
-    "yearsAgo": "il y a {{count}} ans"
-  },
-  "calendarCallback": {
-    "close": "Tu peux fermer cette fenêtre."
   },
   "update": {
     "title": "Une nouvelle version de Vera est prête.",
