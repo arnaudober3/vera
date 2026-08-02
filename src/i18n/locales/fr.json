@@ -56,7 +56,6 @@
       "skip": "Explorer"
     },
     "addPiece": {
-      "optional": "Optionnel",
       "openCamera": "Ouvrir l'appareil photo",
       "choosePhotos": "Choisir une photo",
       "snapHint": "Prenez une photo ou choisissez-en une",
@@ -75,29 +74,7 @@
         "title": "Maintenant un bas.",
         "hint": "Encore un et Vera les assemble en une tenue.",
         "next": "Voir ma tenue"
-      },
-      "more": {
-        "title": "Ajoutez une autre pièce.",
-        "hint": "Une paire de chaussures, une veste — n'importe quoi. Plus de pièces, plus de tenues.",
-        "next": "Ajouter au dressing"
       }
-    },
-    "outfit": {
-      "eyebrow": "Deux pièces ajoutées",
-      "title": "Voici votre première tenue.",
-      "top": "Haut",
-      "bottom": "Bas",
-      "body": "C'est tout le principe. Ajoutez quelques pièces de plus et Vera vous compose une tenue fraîche chaque matin.",
-      "cta": "Ça me plaît"
-    },
-    "levelup": {
-      "title": "Envie que Vera en fasse encore plus ?",
-      "subtitle": "Ça peut attendre — votre dressing fonctionne déjà.",
-      "addTitle": "Ajoutez quelques pièces de plus",
-      "addBody": "Plus Vera en sait, plus elle peut composer de tenues.",
-      "addAction": "Ajouter des pièces",
-      "done": "Terminé",
-      "finish": "Aller à mon dressing"
     }
   },
   "today": {
@@ -144,9 +121,6 @@
     "pinAria": "Épingler à la tenue du jour",
     "unpinAria": "Retirer l'épingle de la tenue du jour",
     "pinNoMatch": "Impossible de composer une tenue autour de cet article pour le moment.",
-    "onboardingToastDismissAria": "Ignorer",
-    "onboardingToastTitle": "Tout est prêt.",
-    "onboardingToastSub": "Touche + à tout moment pour en ajouter d'autres. Reviens demain matin sur Aujourd'hui.",
     "emptyTitle": "Aucun article trouvé.",
     "emptySubtitle": "Essaie un autre filtre ou ajoute un nouvel article !",
     "emptyButton": "Ajouter un article",

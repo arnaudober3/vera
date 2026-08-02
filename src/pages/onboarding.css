@@ -30,19 +30,6 @@
   padding: var(--vera-space-3);
 }
 
-.vera-onboarding .vera-input {
-  width: 100%;
-  font-family: inherit;
-}
-
-.vera-eyebrow {
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: var(--vera-text-xs);
-  font-weight: 600;
-  color: var(--vera-fg-muted);
-}
-
 .vera-skip-link {
   background: transparent;
   border: 0;

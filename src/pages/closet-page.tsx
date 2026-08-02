@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
@@ -16,7 +16,6 @@ import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
 import { useOutfit } from "../hooks/outfit.ts";
 import { useMeasuredHeight } from "../hooks/use-measured-height.ts";
-import { FaCheck } from "react-icons/fa";
 import { BsPin, BsPinFill } from "react-icons/bs";
 import { MdAdd } from "react-icons/md";
 import { itemTint } from "../utils/color.ts";
@@ -259,66 +258,10 @@ const AddItemTile = ({
   );
 };
 
-const OnboardingToast = ({
-  onDismiss,
-}: {
-  onDismiss: () => void;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  return (
-  <button
-    type="button"
-    onClick={onDismiss}
-    aria-label={t("closet.onboardingToastDismissAria")}
-    style={{
-      width: "100%",
-      textAlign: "left",
-      background: "#ffffff",
-      border: "1px solid #e3ebec",
-      borderRadius: 16,
-      padding: 14,
-      display: "flex",
-      gap: 12,
-      alignItems: "center",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
-      cursor: "pointer",
-    }}
-  >
-    <div
-      style={{
-        width: 36,
-        height: 36,
-        borderRadius: 999,
-        background: "#65aaa7",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#fff",
-        flexShrink: 0,
-      }}
-    >
-      <FaCheck size={14} />
-    </div>
-    <div style={{ flex: 1 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: "#000" }}>
-        {t("closet.onboardingToastTitle")}
-      </div>
-      <div style={{ fontSize: 12, color: "#6a7282", marginTop: 2 }}>
-        {t("closet.onboardingToastSub")}
-      </div>
-    </div>
-  </button>
-  );
-};
-
 export const ClosetPage = (): React.JSX.Element => {
   const { t } = useTranslation();
   const { items, addClothingItem, isUploadLimitReached } = useCloset();
   const { saveImage } = useImage();
-  const location = useLocation();
-  const justOnboarded =
-    (location.state as { justOnboarded?: boolean } | null)?.justOnboarded ??
-    false;
   // The footer floats over the scroll area; reserve its measured height as bottom
   // padding so the last cards can scroll clear of the nav pill.
   const [footerRef, footerHeight] = useMeasuredHeight();
@@ -326,14 +269,6 @@ export const ClosetPage = (): React.JSX.Element => {
     useState<ClothingItemCategory | null>(null);
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [showOnboardingToast, setShowOnboardingToast] = useState<boolean>(
-    justOnboarded,
-  );
-  useEffect(() => {
-    if (!showOnboardingToast) return;
-    const timer = window.setTimeout(() => setShowOnboardingToast(false), 6000);
-    return () => window.clearTimeout(timer);
-  }, [showOnboardingToast]);
 
   const availableCategories = useMemo(
     () => new Set(items.map((i) => i.category)),
@@ -377,26 +312,6 @@ export const ClosetPage = (): React.JSX.Element => {
           )}
         </div>
       </div>
-
-      {showOnboardingToast && (
-        // Float above the nav dock, matching the error toast's placement
-        // (.vera-toast): fixed to the phone frame — its transform makes it the
-        // containing block, so ClosetPage's overflow-hidden never clips it.
-        <div
-          style={{
-            position: "fixed",
-            left: 16,
-            right: 16,
-            bottom: "calc(env(safe-area-inset-bottom) + 92px)",
-            maxWidth: 360,
-            margin: "0 auto",
-            zIndex: 200,
-            animation: "veraToastUp 0.32s var(--vera-ease) both",
-          }}
-        >
-          <OnboardingToast onDismiss={() => setShowOnboardingToast(false)} />
-        </div>
-      )}
 
       <div className="shrink-0">
         <CategoryFilterBar

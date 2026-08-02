@@ -56,7 +56,6 @@
       "skip": "Look around"
     },
     "addPiece": {
-      "optional": "Optional",
       "openCamera": "Open camera",
       "choosePhotos": "Choose from photos",
       "snapHint": "Snap it or pick a photo",
@@ -75,29 +74,7 @@
         "title": "Now a bottom.",
         "hint": "One more and Vera puts them together into an outfit.",
         "next": "See my outfit"
-      },
-      "more": {
-        "title": "Add another piece.",
-        "hint": "A pair of shoes, a jacket — anything. More pieces, more outfits.",
-        "next": "Add to closet"
       }
-    },
-    "outfit": {
-      "eyebrow": "Two pieces in",
-      "title": "Here's your first outfit.",
-      "top": "Top",
-      "bottom": "Bottom",
-      "body": "That's the whole idea. Add a few more pieces and Vera mixes a fresh outfit for you every morning.",
-      "cta": "Looks good"
-    },
-    "levelup": {
-      "title": "Want Vera to do even more?",
-      "subtitle": "It can wait — your closet already works.",
-      "addTitle": "Add a few more pieces",
-      "addBody": "The more Vera knows, the more outfits it can put together.",
-      "addAction": "Add pieces",
-      "done": "Done",
-      "finish": "Go to my closet"
     }
   },
   "today": {
@@ -144,9 +121,6 @@
     "pinAria": "Pin to today's outfit",
     "unpinAria": "Unpin from today's outfit",
     "pinNoMatch": "Can't build an outfit around this item right now.",
-    "onboardingToastDismissAria": "Dismiss",
-    "onboardingToastTitle": "You're set up.",
-    "onboardingToastSub": "Tap + any time to add more. Check Today tomorrow morning.",
     "emptyTitle": "No items found.",
     "emptySubtitle": "Try selecting a different filter or add a new item!",
     "emptyButton": "Add an item",

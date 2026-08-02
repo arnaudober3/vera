@@ -47,6 +47,26 @@ describe("removed feature keys", () => {
       }
     }
   });
+
+  // The onboarding was cut back to welcome → add a top → add a bottom → Today.
+  // These blocks belonged to the removed first-outfit reveal, the level-up hub
+  // and its optional extra-piece detour, plus the closet's just-onboarded toast.
+  it("no longer carries the outfit reveal, level-up or onboarding toast blocks", () => {
+    for (const bundle of [en, fr]) {
+      for (const block of ["outfit", "levelup"]) {
+        expect(bundle.onboarding).not.toHaveProperty(block);
+      }
+      expect(bundle.onboarding.addPiece).not.toHaveProperty("more");
+      expect(bundle.onboarding.addPiece).not.toHaveProperty("optional");
+      for (const key of [
+        "onboardingToastTitle",
+        "onboardingToastSub",
+        "onboardingToastDismissAria",
+      ]) {
+        expect(bundle.closet).not.toHaveProperty(key);
+      }
+    }
+  });
 });
 
 // Guards the onboarding back-navigation label so it resolves in both locales
