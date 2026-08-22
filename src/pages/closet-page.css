@@ -3,7 +3,7 @@
    title identically; top spacing comes from the container (pt-3.5 = 14px) and
    nowrap keeps it on one line next to the edit toggle. */
 .vera-dressing-title {
-  font-family: var(--vera-font-display);
+  font-family: var(--vera-font-display), sans-serif;
   font-style: italic;
   font-weight: 400;
   font-size: 1.6875rem; /* 27px — matches the shared page title */
@@ -23,7 +23,7 @@
   align-items: center;
   gap: 10px;
   padding: 10px 4px 8px;
-  font-family: var(--vera-font-sans);
+  font-family: var(--vera-font-sans), sans-serif;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
@@ -42,7 +42,7 @@
   border: 0;
   background: transparent;
   cursor: pointer;
-  font-family: var(--vera-font-sans);
+  font-family: var(--vera-font-sans), sans-serif;
   font-size: 14px;
   font-weight: 600;
   padding: 4px 2px;
@@ -100,7 +100,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-align: center;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: -0.005em;
@@ -116,7 +116,7 @@
 .vera-item-name-edit {
   width: 100%;
   text-align: center;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: -0.005em;
@@ -133,34 +133,6 @@
 }
 
 /* ── Per-card actions (sit inside the tinted tray) ──────────────── */
-.pin-button {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  border-radius: calc(infinity * 1px);
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(2px);
-  color: var(--vera-gray-400);
-  cursor: pointer;
-  transition: color var(--vera-duration) var(--vera-ease);
-
-  &:hover {
-    color: var(--vera-primary);
-  }
-}
-
-.pin-button.active {
-  background: transparent;
-  backdrop-filter: none;
-  color: var(--vera-primary);
-}
-
 .delete-button {
   position: absolute;
   top: 6px;
@@ -192,7 +164,7 @@
   gap: 8px;
   align-items: center;
   justify-content: center;
-  border: 1.5px dashed var(--vera-gray-300);
+  border: 1px dashed var(--vera-gray-300);
   border-radius: var(--vera-radius-lg);
   background: rgba(255, 255, 255, 0.4);
   cursor: pointer;

@@ -67,6 +67,34 @@ describe("removed feature keys", () => {
       }
     }
   });
+
+  // The Today deck dropped per-card accessory editing and closet pinning: an
+  // outfit is now just a top + bottom, matched to the occasion and (optionally)
+  // up to two picked colours.
+  it("no longer carries the accessory shelf or pin keys", () => {
+    for (const bundle of [en, fr]) {
+      for (const key of [
+        "topLabel",
+        "bottomLabel",
+        "addAccessory",
+        "addShort",
+        "moreLabel",
+        "accessoriesLabel",
+        "addAnotherAria",
+        "removeAria",
+        "regenerateAria",
+        "unpinAria",
+        "sheetTitle",
+        "sheetEmpty",
+        "sheetAdded",
+      ]) {
+        expect(bundle.today).not.toHaveProperty(key);
+      }
+      for (const key of ["pinAria", "unpinAria", "pinNoMatch"]) {
+        expect(bundle.closet).not.toHaveProperty(key);
+      }
+    }
+  });
 });
 
 // Guards the onboarding back-navigation label so it resolves in both locales

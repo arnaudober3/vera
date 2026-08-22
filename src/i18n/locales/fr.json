@@ -78,20 +78,8 @@
     }
   },
   "today": {
-    "topLabel": "Haut",
-    "bottomLabel": "Bas",
-    "addAccessory": "Ajouter un accessoire",
-    "addShort": "Ajouter",
-    "moreLabel": "de plus",
-    "accessoriesLabel": "Accessoires",
-    "addAnotherAria": "Ajouter un autre article",
-    "removeAria": "Retirer {{name}}",
-    "regenerateAria": "Régénérer la tenue",
-    "unpinAria": "Détacher cet article",
-    "sheetTitle": "Ajouter un accessoire",
-    "sheetEmpty": "Rien à ajouter, ton dressing n'a pas encore d'articles supplémentaires.",
-    "sheetAdded": "ajouté",
     "occasionLabel": "Occasion",
+    "colorLabel": "Couleurs",
     "hintSwipe": "Glisse",
     "hintAnother": "pour une autre",
     "occasion": {
@@ -108,6 +96,10 @@
     "emptyOccasion": {
       "title": "Rien pour cette occasion.",
       "subtitle": "Rien dans ton dressing ne convient à cette occasion — change d'occasion ou ajoute une pièce."
+    },
+    "emptyColors": {
+      "title": "Rien dans ces couleurs.",
+      "subtitle": "Rien dans ton dressing ne correspond à ce choix de couleurs — essaie-en une autre ou efface ta sélection."
     }
   },
   "closet": {
@@ -118,9 +110,6 @@
     "deleteAria": "Supprimer l'article",
     "renameAria": "Renommer l'article",
     "deleteConfirm": "Es-tu sûr·e de vouloir supprimer cet article ?",
-    "pinAria": "Épingler à la tenue du jour",
-    "unpinAria": "Retirer l'épingle de la tenue du jour",
-    "pinNoMatch": "Impossible de composer une tenue autour de cet article pour le moment.",
     "emptyTitle": "Aucun article trouvé.",
     "emptySubtitle": "Essaie un autre filtre ou ajoute un nouvel article !",
     "emptyButton": "Ajouter un article",

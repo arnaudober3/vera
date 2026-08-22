@@ -78,20 +78,8 @@
     }
   },
   "today": {
-    "topLabel": "Top",
-    "bottomLabel": "Bottom",
-    "addAccessory": "Add an accessory",
-    "addShort": "Add",
-    "moreLabel": "more",
-    "accessoriesLabel": "Accessories",
-    "addAnotherAria": "Add another item",
-    "removeAria": "Remove {{name}}",
-    "regenerateAria": "Regenerate the outfit",
-    "unpinAria": "Unpin this item",
-    "sheetTitle": "Add an accessory",
-    "sheetEmpty": "Nothing to add, your closet doesn't have any extra items yet.",
-    "sheetAdded": "added",
     "occasionLabel": "Occasion",
+    "colorLabel": "Colours",
     "hintSwipe": "Swipe",
     "hintAnother": "for another",
     "occasion": {
@@ -108,6 +96,10 @@
     "emptyOccasion": {
       "title": "Nothing for this occasion.",
       "subtitle": "Nothing in your closet fits this occasion — pick another one or add a piece."
+    },
+    "emptyColors": {
+      "title": "Nothing in these colours.",
+      "subtitle": "Nothing in your closet matches this colour pick — try another one or clear it."
     }
   },
   "closet": {
@@ -118,9 +110,6 @@
     "deleteAria": "Delete item",
     "renameAria": "Rename item",
     "deleteConfirm": "Are you sure you want to delete this item?",
-    "pinAria": "Pin to today's outfit",
-    "unpinAria": "Unpin from today's outfit",
-    "pinNoMatch": "Can't build an outfit around this item right now.",
     "emptyTitle": "No items found.",
     "emptySubtitle": "Try selecting a different filter or add a new item!",
     "emptyButton": "Add an item",
