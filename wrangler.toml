@@ -1,8 +1,6 @@
 # Cloudflare Pages config. `pages_build_output_dir` lets `wrangler pages dev`
-# and `wrangler pages deploy` find the built SPA without a path argument, and
-# `compatibility_date` pins the Workers runtime used by the functions/ Pages
-# Functions (the Google Calendar OAuth backend). The functions only use standard
-# fetch/crypto, so no compatibility flags are needed.
+# and `wrangler pages deploy` find the built SPA without a path argument. The
+# app is fully static — there are no Pages Functions.
 name = "vera"
 compatibility_date = "2024-11-06"
 pages_build_output_dir = "./dist"

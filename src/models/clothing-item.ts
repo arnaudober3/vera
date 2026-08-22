@@ -7,12 +7,6 @@ export type ClothingItemCategory =
   | "shoes"
   | "accessories";
 
-export const WASHABLE_CATEGORIES: ClothingItemCategory[] = ["top", "bottom"];
-
-export const isWashable = (category: ClothingItemCategory): boolean => {
-  return WASHABLE_CATEGORIES.includes(category);
-};
-
 export type ClothingItemSubCategory =
   | "t-shirt"
   | "shirt"
@@ -119,7 +113,6 @@ export type ClothingItem = {
   category: ClothingItemCategory;
   subCategory?: ClothingItemSubCategory;
   color: Color;
-  isClean: boolean;
   imageId?: string;
 };
 

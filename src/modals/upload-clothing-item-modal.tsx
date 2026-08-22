@@ -134,7 +134,6 @@ export default function UploadClothingItemModal({
         category: resolvedCategory,
         subCategory: resolvedSubCategory,
         color: await extractDominantColor(imageData),
-        isClean: true,
         imageData,
       };
       await onSave(item);

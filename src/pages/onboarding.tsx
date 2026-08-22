@@ -3,14 +3,8 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { FaCamera, FaCheck, FaRegImage, FaTshirt } from "react-icons/fa";
-import {
-  MdAdd,
-  MdCalendarToday,
-  MdChevronLeft,
-  MdLockOutline,
-  MdNotifications,
-} from "react-icons/md";
-import { PiPants, PiSneaker } from "react-icons/pi";
+import { MdChevronLeft } from "react-icons/md";
+import { PiPants } from "react-icons/pi";
 import {
   type ClothingItemCategory,
   type CreateClothingItem,
@@ -32,42 +26,28 @@ import {
 } from "../services/image-processing.ts";
 import { colorName } from "../utils/color.ts";
 import { markOnboardingComplete } from "../storage/onboarding.ts";
-import { useCalendar } from "../hooks/calendar.ts";
-import { useNotifications } from "../hooks/notifications.ts";
-import { GoogleCalendarError } from "../services/google-calendar.ts";
 import { type Step, previousStep } from "../models/onboarding-nav.ts";
-import {
-  isNotificationSectionDone,
-  notificationCtaAction,
-} from "../models/notification-onboarding.ts";
 import "./onboarding.css";
 
-// Value-first onboarding: Promise → add a top (1/2) → add a bottom (2/2) →
-// your first outfit (the "aha") → optional level-up asks → exit to the closet.
+// Value-first onboarding: Promise → add a top (1/2) → add a bottom (2/2) → exit
+// to Today, where the real deck shows the outfit for the chosen occasion.
 // Background removal happens inline on the capture card; everything is skippable.
 // The Step union and back-navigation targets live in ../models/onboarding-nav.ts.
 
 // The kind of piece a capture screen handles — drives the glyph, colour and the
 // default category when classification is unavailable.
-type PieceKind = "top" | "bottom" | "shoes";
+type PieceKind = "top" | "bottom";
 
 const KIND_CATEGORY: Record<PieceKind, ClothingItemCategory> = {
   top: "top",
   bottom: "bottom",
-  shoes: "shoes",
 };
-
-// Debug mode (VITE_ENABLE_DEBUG=true): "Add my first piece" skips the two
-// capture steps and jumps straight to the first-outfit screen so the later
-// screens can be reviewed without snapping photos. Off in normal builds.
-const DEBUG = import.meta.env.VITE_ENABLE_DEBUG === "true";
 
 const capitalize = (s: string): string =>
   s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 
-// The five dots shown across the core path (welcome → add-top → add-bottom →
-// outfit → levelup). The optional detours (add-more, calendar) show no dots.
-const DOT_TOTAL = 5;
+// One dot per screen of the flow (welcome → add-top → add-bottom).
+const DOT_TOTAL = 3;
 
 // Stage top padding for screens that render the top-left Back control. The
 // Back/Skip controls sit at top: 52 and are ~34px tall, so the (left-aligned)
@@ -79,40 +59,33 @@ export const WelcomePage = (): React.JSX.Element => {
   const navigate = useNavigate();
 
   const [step, setStep] = useState<Step>("welcome");
-  const [topImage, setTopImage] = useState<string | null>(null);
-  const [bottomImage, setBottomImage] = useState<string | null>(null);
-  // The closet ids saved for each linear capture slot, so going back and
-  // re-capturing replaces the earlier piece instead of duplicating it.
+  // The closet id saved for the top, so going back from the bottom step and
+  // re-capturing replaces the earlier piece instead of duplicating it. The
+  // bottom needs no equivalent: saving it exits the flow, so its capture screen
+  // can never be revisited.
   const [topItemId, setTopItemId] = useState<string | null>(null);
-  const [bottomItemId, setBottomItemId] = useState<string | null>(null);
-  const [addedMore, setAddedMore] = useState(false);
-  const [connected, setConnected] = useState(false);
 
-  function finishAndExit(target: string): void {
+  // The one and only way out — whether the user finished the two captures or
+  // skipped. Lands on Today, where the deck builds the outfit for the chosen
+  // occasion; the closet stays a tap away in the footer nav.
+  function finishAndExit(): void {
     markOnboardingComplete();
-    navigate(target, { replace: true });
+    navigate("/", { replace: true });
   }
 
-  // Navigate to the current step's back target. No-op on steps without one
-  // (welcome, levelup), which render no back control in the first place.
+  // Navigate to the current step's back target. No-op on welcome, which renders
+  // no back control in the first place.
   function goBack(): void {
     const prev = previousStep(step);
     if (prev) setStep(prev);
-  }
-
-  // Final exit once the user is done — lands on the closet with the
-  // just-onboarded flag so it can welcome the freshly-added pieces.
-  function completeOnboarding(): void {
-    markOnboardingComplete();
-    navigate("/closet", { state: { justOnboarded: true }, replace: true });
   }
 
   return (
     <div className="vera-onboarding">
       {step === "welcome" && (
         <WelcomeScreen
-          onNext={() => setStep(DEBUG ? "outfit" : "add-top")}
-          onSkip={() => finishAndExit("/closet")}
+          onNext={() => setStep("add-top")}
+          onSkip={finishAndExit}
         />
       )}
 
@@ -122,13 +95,12 @@ export const WelcomePage = (): React.JSX.Element => {
           kind="top"
           dotIndex={1}
           existingItemId={topItemId}
-          onComplete={(image, itemId) => {
-            setTopImage(image);
+          onComplete={(itemId) => {
             setTopItemId(itemId);
             setStep("add-bottom");
           }}
           onBack={goBack}
-          onSkip={() => finishAndExit("/closet")}
+          onSkip={finishAndExit}
         />
       )}
 
@@ -137,68 +109,9 @@ export const WelcomePage = (): React.JSX.Element => {
           key="add-bottom"
           kind="bottom"
           dotIndex={2}
-          existingItemId={bottomItemId}
-          onComplete={(image, itemId) => {
-            setBottomImage(image);
-            setBottomItemId(itemId);
-            setStep("outfit");
-          }}
+          onComplete={finishAndExit}
           onBack={goBack}
-          onSkip={() => finishAndExit("/closet")}
-        />
-      )}
-
-      {step === "outfit" && (
-        <OutfitScreen
-          topImage={topImage}
-          bottomImage={bottomImage}
-          onNext={() => setStep("levelup")}
-          onBack={goBack}
-        />
-      )}
-
-      {step === "levelup" && (
-        <LevelUpScreen
-          addedMore={addedMore}
-          connected={connected}
-          onAddPieces={() => setStep("add-more")}
-          onConnect={() => setStep("calendar")}
-          onNotifications={() => setStep("notifications")}
-          onFinish={completeOnboarding}
-        />
-      )}
-
-      {step === "add-more" && (
-        <AddPieceScreen
-          key="add-more"
-          kind="shoes"
-          dotIndex={null}
-          optional
-          onComplete={() => {
-            setAddedMore(true);
-            setStep("levelup");
-          }}
-          onBack={goBack}
-          onSkip={() => setStep("levelup")}
-        />
-      )}
-
-      {step === "calendar" && (
-        <CalendarScreen
-          onConnected={() => {
-            setConnected(true);
-            setStep("levelup");
-          }}
-          onBack={goBack}
-          onSkip={() => setStep("levelup")}
-        />
-      )}
-
-      {step === "notifications" && (
-        <NotificationScreen
-          onDone={() => setStep("levelup")}
-          onBack={goBack}
-          onSkip={() => setStep("levelup")}
+          onSkip={finishAndExit}
         />
       )}
     </div>
@@ -434,14 +347,15 @@ const CornerBrackets = (): React.JSX.Element => {
   );
 };
 
-const kindGlyph = (kind: PieceKind, size: number, color: string) => {
-  if (kind === "bottom") return <PiPants size={size} color={color} />;
-  if (kind === "shoes") return <PiSneaker size={size} color={color} />;
-  return <FaTshirt size={size} color={color} />;
-};
+const kindGlyph = (kind: PieceKind, size: number, color: string) =>
+  kind === "bottom" ? (
+    <PiPants size={size} color={color} />
+  ) : (
+    <FaTshirt size={size} color={color} />
+  );
 
 const kindColor = (kind: PieceKind): string =>
-  kind === "bottom" ? "#3a4a63" : kind === "shoes" ? "#5a4a3a" : "#365f8e";
+  kind === "bottom" ? "#3a4a63" : "#365f8e";
 
 // ── Screen 0 · Promise ───────────────────────────────────────────
 const WelcomeScreen = ({
@@ -488,25 +402,23 @@ const WelcomeScreen = ({
   );
 };
 
-// ── Screens 1, 2 & "more" · Add a piece (inline background removal) ──
+// ── Screens 1 & 2 · Add a piece (inline background removal) ──
 type Phase = "empty" | "removing" | "done";
 
 const AddPieceScreen = ({
   kind,
   dotIndex,
-  optional = false,
   existingItemId = null,
   onComplete,
   onBack,
   onSkip,
 }: {
   kind: PieceKind;
-  dotIndex: number | null;
-  optional?: boolean;
-  // Id previously saved for this slot, replaced on the next save. Null/omitted
-  // for the additive add-more slot, which never replaces.
+  dotIndex: number;
+  // Id previously saved for this slot, replaced on the next save. Omitted for a
+  // slot the user can never come back to.
   existingItemId?: string | null;
-  onComplete: (image: string, itemId: string) => void;
+  onComplete: (itemId: string) => void;
   onBack?: () => void;
   onSkip: () => void;
 }): React.JSX.Element => {
@@ -582,7 +494,6 @@ const AddPieceScreen = ({
         category,
         subCategory: sub,
         color,
-        isClean: true,
         imageData: afterImage,
       };
 
@@ -599,13 +510,13 @@ const AddPieceScreen = ({
 
       const saved = await addClothingItem(item);
       await saveImage({ id: saved.imageId || saved.id, imageData: afterImage });
-      onComplete(afterImage, saved.id);
+      onComplete(saved.id);
     } finally {
       setSaving(false);
     }
   }
 
-  const c = `onboarding.addPiece.${kind === "bottom" ? "bottom" : kind === "shoes" ? "more" : "top"}`;
+  const c = `onboarding.addPiece.${kind}`;
 
   return (
     <Stage paddingTop={onBack ? STAGE_TOP_WITH_BACK : 56}>
@@ -619,9 +530,7 @@ const AddPieceScreen = ({
       <SkipTopRight onClick={onSkip} label={t("onboarding.addPiece.skip")} />
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
-        <Eyebrow>
-          {optional ? t("onboarding.addPiece.optional") : t(`${c}.step`)}
-        </Eyebrow>
+        <Eyebrow>{t(`${c}.step`)}</Eyebrow>
         <SerifTitle>{t(`${c}.title`)}</SerifTitle>
         <div
           style={{
@@ -808,7 +717,7 @@ const AddPieceScreen = ({
             {saving ? t("common.saving") : t(`${c}.next`)}
           </button>
         )}
-        {dotIndex == null ? null : <StepDots active={dotIndex} />}
+        <StepDots active={dotIndex} />
       </div>
 
       <input
@@ -826,631 +735,6 @@ const AddPieceScreen = ({
         style={{ display: "none" }}
         onChange={(e) => void handleFileSelected(e.target.files?.[0])}
       />
-    </Stage>
-  );
-};
-
-// ── Screen 3 · Your first outfit (the "aha") ─────────────────────
-const PieceTile = ({
-  image,
-  kind,
-}: {
-  image: string | null;
-  kind: PieceKind;
-}): React.JSX.Element => (
-  <div
-    style={{
-      width: "100%",
-      aspectRatio: "1 / 1",
-      borderRadius: 10,
-      background: "#fff",
-      border: "1px solid var(--vera-surface-border)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
-    }}
-  >
-    {image ? (
-      <img
-        src={image}
-        alt=""
-        style={{ maxWidth: "85%", maxHeight: "85%", objectFit: "contain" }}
-      />
-    ) : (
-      kindGlyph(kind, 56, kindColor(kind))
-    )}
-  </div>
-);
-
-const OutfitScreen = ({
-  topImage,
-  bottomImage,
-  onNext,
-  onBack,
-}: {
-  topImage: string | null;
-  bottomImage: string | null;
-  onNext: () => void;
-  onBack?: () => void;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  const [shown, setShown] = useState(false);
-  React.useEffect(() => {
-    const id = setTimeout(() => setShown(true), 60);
-    return () => clearTimeout(id);
-  }, []);
-
-  return (
-    <Stage paddingTop={onBack ? STAGE_TOP_WITH_BACK : 56}>
-      {onBack && (
-        <BackTopLeft onClick={onBack} label={t("onboarding.back")} />
-      )}
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "0 4px" }}>
-        <Eyebrow>
-          <FaCheck size={11} color="var(--vera-primary)" />
-          {t("onboarding.outfit.eyebrow")}
-        </Eyebrow>
-        <SerifTitle size={32}>{t("onboarding.outfit.title")}</SerifTitle>
-      </div>
-
-      <div
-        className="vera-card"
-        style={{
-          padding: 14,
-          display: "flex",
-          flexDirection: "column",
-          opacity: shown ? 1 : 0,
-          transform: shown ? "translateY(0) scale(1)" : "translateY(10px) scale(0.98)",
-          transition:
-            "opacity 420ms var(--vera-ease), transform 420ms var(--vera-ease)",
-        }}
-      >
-        <div style={{ display: "flex", gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <PieceTile image={topImage} kind="top" />
-          </div>
-          <div style={{ flex: 1 }}>
-            <PieceTile image={bottomImage} kind="bottom" />
-          </div>
-        </div>
-        <div style={{ display: "flex", marginTop: 10 }}>
-          <span style={{ flex: 1, textAlign: "center", fontSize: 12, color: "var(--vera-fg-muted)" }}>
-            {t("onboarding.outfit.top")}
-          </span>
-          <span style={{ flex: 1, textAlign: "center", fontSize: 12, color: "var(--vera-fg-muted)" }}>
-            {t("onboarding.outfit.bottom")}
-          </span>
-        </div>
-      </div>
-
-      <div
-        style={{
-          textAlign: "center",
-          color: "var(--vera-fg-muted)",
-          fontSize: 14,
-          lineHeight: 1.5,
-          padding: "0 10px",
-        }}
-      >
-        {t("onboarding.outfit.body")}
-      </div>
-
-      <div
-        style={{
-          marginTop: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          paddingBottom: 4,
-        }}
-      >
-        <button type="button" className="vera-btn-primary" onClick={onNext}>
-          {t("onboarding.outfit.cta")}
-        </button>
-        <StepDots active={3} />
-      </div>
-    </Stage>
-  );
-};
-
-// ── Screen 4 · Level up (costly asks, only now that value landed) ─
-const AskCard = ({
-  icon,
-  title,
-  body,
-  action,
-  onAction,
-  done,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  body: string;
-  action: string;
-  onAction: () => void;
-  done: boolean;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  return (
-    <div
-      className="vera-card"
-      style={{ padding: 16, display: "flex", gap: 14, alignItems: "flex-start", textAlign: "left" }}
-    >
-      <div
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 12,
-          background: "rgba(101,170,167,0.12)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          flexShrink: 0,
-        }}
-      >
-        {icon}
-      </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 15, fontWeight: 600, color: "var(--vera-fg-strong)" }}>
-          {title}
-        </div>
-        <div style={{ fontSize: 13, color: "var(--vera-fg-muted)", lineHeight: 1.45, marginTop: 3 }}>
-          {body}
-        </div>
-        {done ? (
-          <div
-            style={{
-              marginTop: 12,
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 6,
-              color: "var(--vera-primary)",
-              fontSize: 14,
-              fontWeight: 600,
-            }}
-          >
-            <FaCheck size={12} /> {t("onboarding.levelup.done")}
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={onAction}
-            className="vera-btn-secondary"
-            style={{
-              marginTop: 12,
-              padding: "8px 18px",
-              fontSize: 14,
-              fontWeight: 600,
-              color: "var(--vera-primary)",
-              width: "auto",
-            }}
-          >
-            {action}
-          </button>
-        )}
-      </div>
-    </div>
-  );
-};
-
-const LevelUpScreen = ({
-  addedMore,
-  connected,
-  onAddPieces,
-  onConnect,
-  onNotifications,
-  onFinish,
-}: {
-  addedMore: boolean;
-  connected: boolean;
-  onAddPieces: () => void;
-  onConnect: () => void;
-  onNotifications: () => void;
-  onFinish: () => void;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  const { permissionStatus } = useNotifications();
-  const notificationsDone = isNotificationSectionDone(permissionStatus);
-
-  return (
-    <Stage>
-      <div style={{ display: "flex", flexDirection: "column", gap: 6, padding: "0 4px" }}>
-        <Eyebrow>{t("onboarding.addPiece.optional")}</Eyebrow>
-        <SerifTitle size={30}>{t("onboarding.levelup.title")}</SerifTitle>
-        <div
-          style={{
-            color: "var(--vera-fg-muted)",
-            fontSize: 15,
-            lineHeight: 1.5,
-            marginTop: 2,
-          }}
-        >
-          {t("onboarding.levelup.subtitle")}
-        </div>
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <AskCard
-          icon={<MdAdd size={20} color="var(--vera-primary)" />}
-          title={t("onboarding.levelup.addTitle")}
-          body={t("onboarding.levelup.addBody")}
-          action={t("onboarding.levelup.addAction")}
-          done={addedMore}
-          onAction={onAddPieces}
-        />
-        <AskCard
-          icon={<MdCalendarToday size={16} color="var(--vera-primary)" />}
-          title={t("onboarding.levelup.calTitle")}
-          body={t("onboarding.levelup.calBody")}
-          action={t("onboarding.levelup.calAction")}
-          done={connected}
-          onAction={onConnect}
-        />
-        <AskCard
-          icon={<MdNotifications size={20} color="var(--vera-primary)" />}
-          title={t("onboarding.levelup.notifTitle")}
-          body={t("onboarding.levelup.notifBody")}
-          action={t("onboarding.levelup.notifAction")}
-          done={notificationsDone}
-          onAction={onNotifications}
-        />
-      </div>
-
-      <div
-        style={{
-          marginTop: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 10,
-          paddingBottom: 4,
-        }}
-      >
-        <button type="button" className="vera-btn-primary" onClick={onFinish}>
-          {t("onboarding.levelup.finish")}
-        </button>
-        <StepDots active={4} />
-      </div>
-    </Stage>
-  );
-};
-
-// ── Screen 4b · Connect calendar (optional, post-value) ──────────
-const CalendarScreen = ({
-  onConnected,
-  onBack,
-  onSkip,
-}: {
-  onConnected: () => void;
-  onBack?: () => void;
-  onSkip: () => void;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  const { connect } = useCalendar();
-  const [connecting, setConnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const examples = [
-    { when: t("onboarding.calendar.ex1When"), what: t("onboarding.calendar.ex1What"), cue: t("onboarding.calendar.ex1Cue") },
-    { when: t("onboarding.calendar.ex2When"), what: t("onboarding.calendar.ex2What"), cue: t("onboarding.calendar.ex2Cue") },
-    { when: t("onboarding.calendar.ex3When"), what: t("onboarding.calendar.ex3What"), cue: t("onboarding.calendar.ex3Cue") },
-  ];
-
-  async function handleConnect(): Promise<void> {
-    setConnecting(true);
-    setError(null);
-    try {
-      await connect();
-      onConnected();
-    } catch (err) {
-      if (err instanceof GoogleCalendarError) {
-        console.warn("Calendar connect failed:", err.reason, err.message);
-        // Closing the popup is a deliberate cancel — let them retry, no error.
-        if (err.reason === "cancelled") return;
-        setError(
-          t(
-            err.reason === "popup_blocked"
-              ? "onboarding.calendar.popupBlocked"
-              : "onboarding.calendar.error",
-          ),
-        );
-      } else {
-        console.warn("Calendar connect failed:", err);
-        setError(t("onboarding.calendar.error"));
-      }
-    } finally {
-      setConnecting(false);
-    }
-  }
-
-  return (
-    <Stage gap={14} paddingTop={onBack ? STAGE_TOP_WITH_BACK : 56}>
-      {onBack && (
-        <BackTopLeft onClick={onBack} label={t("onboarding.back")} />
-      )}
-      <SkipTopRight onClick={onSkip} label={t("onboarding.calendar.skip")} />
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
-        <Eyebrow>
-          <MdCalendarToday size={13} color="var(--vera-primary)" />
-          {t("onboarding.addPiece.optional")}
-        </Eyebrow>
-        <SerifTitle size={30}>{t("onboarding.calendar.title")}</SerifTitle>
-        <div
-          style={{
-            color: "var(--vera-fg-muted)",
-            fontSize: 15,
-            lineHeight: 1.5,
-            marginTop: 2,
-          }}
-        >
-          {t("onboarding.calendar.subtitle")}
-        </div>
-      </div>
-
-      <div className="vera-card" style={{ padding: 6, display: "flex", flexDirection: "column" }}>
-        {examples.map((e, i) => (
-          <div
-            key={e.what}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "150px 1fr auto",
-              alignItems: "center",
-              gap: 10,
-              padding: "12px 12px",
-              borderTop: i === 0 ? "none" : "1px solid var(--vera-gray-100)",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
-              <span
-                style={{
-                  width: 34,
-                  height: 34,
-                  borderRadius: 10,
-                  background: "rgba(101,170,167,0.12)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                }}
-              >
-                <MdCalendarToday size={15} color="var(--vera-primary)" />
-              </span>
-              <div style={{ minWidth: 0, textAlign: "left" }}>
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 600,
-                    color: "var(--vera-fg-strong)",
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                  }}
-                >
-                  {e.what}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--vera-fg-muted)", whiteSpace: "nowrap" }}>
-                  {e.when}
-                </div>
-              </div>
-            </div>
-            <div style={{ display: "flex", justifyContent: "center", color: "var(--vera-gray-300)" }}>
-              <svg width="16" height="12" viewBox="0 0 20 14" fill="none" aria-hidden>
-                <path
-                  d="M1 7h17m-5-5l5 5-5 5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </div>
-            <span
-              style={{
-                justifySelf: "end",
-                background: "var(--vera-surface)",
-                border: "1px solid var(--vera-surface-border)",
-                borderRadius: 999,
-                padding: "5px 11px",
-                fontSize: 12,
-                fontWeight: 600,
-                color: "var(--vera-primary)",
-                whiteSpace: "nowrap",
-              }}
-            >
-              {e.cue}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-start",
-          gap: 8,
-          fontSize: 13,
-          color: "var(--vera-fg-muted)",
-          lineHeight: 1.45,
-          padding: "0 4px",
-        }}
-      >
-        <MdLockOutline
-          size={14}
-          color="var(--vera-fg-subtle)"
-          style={{ marginTop: 2, flexShrink: 0 }}
-        />
-        {t("onboarding.calendar.privacy")}
-      </div>
-
-      <div
-        style={{
-          marginTop: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-          paddingBottom: 4,
-        }}
-      >
-        {error && (
-          <div
-            role="alert"
-            style={{
-              fontSize: 13,
-              color: "var(--vera-danger, #b91c1c)",
-              textAlign: "center",
-              lineHeight: 1.4,
-            }}
-          >
-            {error}
-          </div>
-        )}
-        <button
-          type="button"
-          className="vera-btn-primary"
-          onClick={() => void handleConnect()}
-          disabled={connecting}
-        >
-          <MdCalendarToday />
-          {connecting
-            ? t("onboarding.calendar.connecting")
-            : t("onboarding.calendar.connect")}
-        </button>
-      </div>
-    </Stage>
-  );
-};
-
-// ── Screen 4c · Notifications (optional) ───────────────────────
-const NotificationScreen = ({
-  onDone,
-  onBack,
-  onSkip,
-}: {
-  onDone: () => void;
-  onBack?: () => void;
-  onSkip: () => void;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  const { permissionStatus, enableDailyReminder } = useNotifications();
-  const [requesting, setRequesting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleRequest(): Promise<void> {
-    const action = notificationCtaAction(permissionStatus);
-
-    if (action === "unsupported") {
-      setError(t("onboarding.notifications.unsupported"));
-      return;
-    }
-
-    // Already denied: the browser won't re-show the native prompt, so requesting
-    // again would silently no-op and bounce straight back to the hub. Guide the
-    // user to re-enable in their browser settings instead of navigating away.
-    if (action === "blocked") {
-      setError(t("onboarding.notifications.denied"));
-      return;
-    }
-
-    setRequesting(true);
-    setError(null);
-    try {
-      await enableDailyReminder();
-      onDone();
-    } catch {
-      setError(t("onboarding.notifications.error"));
-    } finally {
-      setRequesting(false);
-    }
-  }
-
-  return (
-    <Stage gap={14} paddingTop={onBack ? STAGE_TOP_WITH_BACK : 56}>
-      {onBack && (
-        <BackTopLeft onClick={onBack} label={t("onboarding.back")} />
-      )}
-      <SkipTopRight onClick={onSkip} label={t("onboarding.notifications.skip")} />
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, padding: "0 4px" }}>
-        <Eyebrow>
-          <MdNotifications size={13} color="var(--vera-primary)" />
-          {t("onboarding.addPiece.optional")}
-        </Eyebrow>
-        <SerifTitle size={30}>{t("onboarding.notifications.title")}</SerifTitle>
-        <div
-          style={{
-            color: "var(--vera-fg-muted)",
-            fontSize: 15,
-            lineHeight: 1.5,
-            marginTop: 2,
-          }}
-        >
-          {t("onboarding.notifications.subtitle")}
-        </div>
-      </div>
-
-      <div
-        className="vera-card"
-        style={{
-          padding: 24,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          gap: 16,
-          textAlign: "center",
-        }}
-      >
-        <div
-          style={{
-            width: 64,
-            height: 64,
-            borderRadius: 20,
-            background: "rgba(101,170,167,0.12)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <MdNotifications size={32} color="var(--vera-primary)" />
-        </div>
-        <div style={{ fontSize: 14, color: "var(--vera-fg-muted)", lineHeight: 1.5 }}>
-          {t("onboarding.notifications.body")}
-        </div>
-      </div>
-
-      <div
-        style={{
-          marginTop: "auto",
-          display: "flex",
-          flexDirection: "column",
-          gap: 12,
-          paddingBottom: 4,
-        }}
-      >
-        {error && (
-          <div
-            role="alert"
-            style={{
-              fontSize: 13,
-              color: "var(--vera-danger, #b91c1c)",
-              textAlign: "center",
-              lineHeight: 1.4,
-            }}
-          >
-            {error}
-          </div>
-        )}
-        <button
-          type="button"
-          className="vera-btn-primary"
-          onClick={() => void handleRequest()}
-          disabled={requesting}
-        >
-          <MdNotifications />
-          {requesting
-            ? t("onboarding.notifications.requesting")
-            : t("onboarding.notifications.cta")}
-        </button>
-      </div>
     </Stage>
   );
 };

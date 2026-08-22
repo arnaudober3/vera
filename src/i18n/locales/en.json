@@ -2,10 +2,8 @@
   "nav": {
     "today": "Today",
     "closet": "Closet",
-    "lookbook": "Lookbook",
     "todayAria": "Open home page - Today's outfit suggestions",
-    "closetAria": "Open closet page",
-    "lookbookAria": "Open lookbook page"
+    "closetAria": "Open closet page"
   },
   "common": {
     "close": "Close",
@@ -58,7 +56,6 @@
       "skip": "Look around"
     },
     "addPiece": {
-      "optional": "Optional",
       "openCamera": "Open camera",
       "choosePhotos": "Choose from photos",
       "snapHint": "Snap it or pick a photo",
@@ -77,92 +74,14 @@
         "title": "Now a bottom.",
         "hint": "One more and Vera puts them together into an outfit.",
         "next": "See my outfit"
-      },
-      "more": {
-        "title": "Add another piece.",
-        "hint": "A pair of shoes, a jacket — anything. More pieces, more outfits.",
-        "next": "Add to closet"
       }
-    },
-    "outfit": {
-      "eyebrow": "Two pieces in",
-      "title": "Here's your first outfit.",
-      "top": "Top",
-      "bottom": "Bottom",
-      "body": "That's the whole idea. Add a few more pieces and Vera mixes a fresh outfit for you every morning.",
-      "cta": "I'm wearing this"
-    },
-    "levelup": {
-      "title": "Want Vera to do even more?",
-      "subtitle": "Both can wait — your closet already works.",
-      "addTitle": "Add a few more pieces",
-      "addBody": "The more Vera knows, the more outfits it can put together.",
-      "addAction": "Add pieces",
-      "calTitle": "Connect your calendar",
-      "calBody": "Vera dresses you for what's ahead — meetings, gym, dinner out.",
-      "calAction": "Connect",
-      "notifTitle": "Daily outfit notifications",
-      "notifBody": "Vera pokes you each morning with a fresh outfit idea based on your day.",
-      "notifAction": "Enable",
-      "done": "Done",
-      "finish": "Go to my closet"
-    },
-    "calendar": {
-      "title": "Dress for what's ahead.",
-      "subtitle": "Connect Google Calendar and Vera reads your day, then leans your outfit to match.",
-      "ex1When": "Tomorrow, 9:00",
-      "ex1What": "Client pitch",
-      "ex1Cue": "Formal",
-      "ex2When": "Wed, 18:30",
-      "ex2What": "Five-a-side",
-      "ex2Cue": "Sport",
-      "ex3When": "Fri, 20:00",
-      "ex3What": "Dinner out",
-      "ex3Cue": "Smart",
-      "privacy": "Vera only reads your event titles and times — never their contents — and never stores them.",
-      "connect": "Connect Google Calendar",
-      "connecting": "Connecting…",
-      "skip": "Skip",
-      "error": "Couldn't connect your calendar. Please try again.",
-      "popupBlocked": "Your browser blocked the sign-in window. Allow popups — or open the app in your browser — and try again."
-    },
-    "notifications": {
-      "title": "A fresh look, every morning.",
-      "subtitle": "Get a daily notification with your morning outfit, so you can spend less time in front of the mirror.",
-      "body": "Vera only sends one notification a day, usually just before you wake up.",
-      "cta": "Enable notifications",
-      "requesting": "Enabling…",
-      "skip": "Skip",
-      "denied": "Notifications are blocked. You can enable them in your browser settings.",
-      "unsupported": "Your browser doesn't support notifications.",
-      "error": "Something went wrong. Please try again."
     }
   },
   "today": {
-    "topLabel": "Top",
-    "bottomLabel": "Bottom",
-    "addAccessory": "Add an accessory",
-    "addShort": "Add",
-    "moreLabel": "more",
-    "accessoriesLabel": "Accessories",
-    "addAnotherAria": "Add another item",
-    "removeAria": "Remove {{name}}",
-    "swipeToWear": "Swipe to wear",
-    "regenerateAria": "Regenerate the outfit",
-    "unpinAria": "Unpin this item",
-    "sheetTitle": "Add an accessory",
-    "sheetEmpty": "Nothing to add, your closet doesn't have any extra items yet.",
-    "sheetAdded": "added",
-    "heartAddAria": "Add to lookbook",
-    "heartRemoveAria": "Remove from lookbook",
     "occasionLabel": "Occasion",
-    "wearingBadge": "Wearing today",
-    "hintTap": "Tap",
-    "hintWear": "to wear",
+    "colorLabel": "Colours",
     "hintSwipe": "Swipe",
     "hintAnother": "for another",
-    "hintWorn": "Wearing this today",
-    "hintWornUndo": "· tap to undo",
     "occasion": {
       "everyday": "Everyday",
       "work": "Work",
@@ -170,23 +89,17 @@
       "dinner": "Dinner",
       "date-night": "Date night"
     },
-    "calendar": {
-      "cueFallback": "Nothing on today"
-    },
-    "weather": {
-      "setManual": "Set weather",
-      "manualPrompt": "Temp °C",
-      "done": "Done",
-      "rainHint": "Rain about — we've added a layer.",
-      "unavailable": "Weather unavailable"
-    },
     "empty": {
       "title": "No outfit right now.",
-      "subtitle": "Add some clothes or do a laundry run to put an outfit together."
+      "subtitle": "Add a top and a bottom and Vera will put an outfit together."
     },
     "emptyOccasion": {
       "title": "Nothing for this occasion.",
-      "subtitle": "No clean clothes fit this occasion — pick another occasion or do laundry."
+      "subtitle": "Nothing in your closet fits this occasion — pick another one or add a piece."
+    },
+    "emptyColors": {
+      "title": "Nothing in these colours.",
+      "subtitle": "Nothing in your closet matches this colour pick — try another one or clear it."
     }
   },
   "closet": {
@@ -197,72 +110,14 @@
     "deleteAria": "Delete item",
     "renameAria": "Rename item",
     "deleteConfirm": "Are you sure you want to delete this item?",
-    "pinAria": "Pin to today's outfit",
-    "unpinAria": "Unpin from today's outfit",
-    "pinNoMatch": "Can't build an outfit around this item right now.",
-    "basketHeroItems_one": "{{count}} item waiting",
-    "basketHeroItems_other": "{{count}} items waiting",
-    "basketHeroSub": "Worn since your last wash",
-    "onboardingToastDismissAria": "Dismiss",
-    "onboardingToastTitle": "You're set up.",
-    "onboardingToastSub": "Tap + any time to add more. Check Today tomorrow morning.",
     "emptyTitle": "No items found.",
     "emptySubtitle": "Try selecting a different filter or add a new item!",
     "emptyButton": "Add an item",
     "available_one": "{{count}} available",
     "available_other": "{{count}} available",
-    "basketCountInline": "{{count}} in the basket",
-    "basketViewItems_one": "{{count}} item worn",
-    "basketViewItems_other": "{{count}} items worn",
-    "basketViewSub": "to wash",
-    "basketSection": "Items to wash",
     "edit": "Edit",
     "editDone": "Done",
-    "backToCloset": "All my closet",
-    "addTile": "Add a piece",
-    "basketTitle": "The basket"
-  },
-  "lookbook": {
-    "title": "My lookbook",
-    "filter": {
-      "all": "All",
-      "ready": "Ready",
-      "recent": "Recent",
-      "worn": "Most worn"
-    },
-    "sectionReady": "Ready to wear",
-    "sectionDirty": "In the wash",
-    "pieces_one": "{{count}} piece",
-    "pieces_other": "{{count}} pieces",
-    "wornCount": "worn {{count}}×",
-    "renameAria": "Rename outfit",
-    "renameTitle": "Rename outfit",
-    "renamePrompt": "Name this outfit",
-    "removeAria": "Remove from lookbook",
-    "removeConfirm": "Remove this outfit from your lookbook?",
-    "wearCta": "I'm wearing this",
-    "inWash": "In the wash",
-    "defaultName": "Outfit · {{date}}",
-    "empty": {
-      "title": "Your lookbook is empty.",
-      "subtitle": "Save outfits you love from the today page!",
-      "button": "My today's outfit"
-    }
-  },
-  "basket": {
-    "fullAlt": "Full basket",
-    "emptyAlt": "Empty basket",
-    "viewingAria": "Showing the basket — tap to go back",
-    "tapAria_one": "{{count}} item in the basket — tap to view",
-    "tapAria_other": "{{count}} items in the basket — tap to view",
-    "viewingTitle": "Showing the basket",
-    "viewingSub": "Tap to go back",
-    "countTitle_one": "{{count}} item in the basket",
-    "countTitle_other": "{{count}} items in the basket",
-    "countSub": "Tap to see the laundry",
-    "washAria": "Mark all worn items as clean",
-    "washTitle": "Mark all worn items as clean",
-    "wash": "Wash"
+    "addTile": "Add a piece"
   },
   "upload": {
     "title": "Add item",
@@ -279,19 +134,8 @@
     "errorSelectCategory": "Please select a category.",
     "errorRemoveBg": "Failed to remove the background from the image."
   },
-  "date": {
-    "future": "in the future",
-    "today": "today",
-    "yesterday": "yesterday",
-    "daysAgo": "{{count}} days ago",
-    "lastWeek": "last week",
-    "weeksAgo": "{{count}} weeks ago",
-    "monthAgo": "a month ago",
-    "monthsAgo": "{{count}} months ago",
-    "yearAgo": "a year ago",
-    "yearsAgo": "{{count}} years ago"
-  },
-  "calendarCallback": {
-    "close": "You can close this window."
+  "update": {
+    "title": "A new version of Vera is ready.",
+    "reload": "Reload"
   }
 }

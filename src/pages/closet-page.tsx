@@ -1,13 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
-import { BasketStrip } from "../components/basket-strip.tsx";
 import { AppFooter } from "../components/app-footer.tsx";
 import {
   ALL_CATEGORIES,
-  isWashable,
   type ClothingItem,
   type ClothingItemCategory,
   type CreateClothingItem,
@@ -16,13 +13,9 @@ import UploadClothingItemModal from "../modals/upload-clothing-item-modal.tsx";
 import * as React from "react";
 import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
-import { useOutfit } from "../hooks/outfit.ts";
 import { useMeasuredHeight } from "../hooks/use-measured-height.ts";
-import { FaCheck, FaChevronLeft } from "react-icons/fa";
-import { BsPin, BsPinFill } from "react-icons/bs";
 import { MdAdd } from "react-icons/md";
 import { itemTint } from "../utils/color.ts";
-import { useToast } from "../components/toast-context.ts";
 import "./closet-page.css";
 
 const CategoryFilterBar = ({
@@ -82,15 +75,12 @@ const ItemCard = ({
 }: {
   item: ClothingItem;
   editMode: boolean;
+  key?: unknown;
 }): React.JSX.Element => {
   const { t } = useTranslation();
   const { getImage, removeImage } = useImage();
   const { removeClothingItem, renameClothingItem } = useCloset();
-  const { outfit, clearOutfit, pinItem, unpinItem } = useOutfit();
-  const navigate = useNavigate();
-  const { showToast } = useToast();
 
-  const isPinned = outfit?.pinnedItemId === item.id;
   const trayBackground = itemTint(item.color);
 
   const [isRenaming, setIsRenaming] = useState(false);
@@ -126,37 +116,11 @@ const ItemCard = ({
       if (item.imageId) {
         await removeImage(item.imageId);
       }
-
-      if (
-        item.id === outfit?.top.id ||
-        item.id === outfit?.bottom.id ||
-        item.id === outfit?.pinnedItemId
-      ) {
-        await clearOutfit();
-      }
-    }
-  }
-
-  async function pin(): Promise<void> {
-    // Tapping an already-pinned item releases the lock (and stays on the closet);
-    // otherwise pin it into today's outfit and jump to the Today page.
-    if (isPinned) {
-      await unpinItem();
-      return;
-    }
-    const result = await pinItem(item);
-    if (result) {
-      navigate("/");
-    } else {
-      showToast(t("closet.pinNoMatch"));
     }
   }
 
   return (
-    <div
-      className="h-full min-w-0"
-      style={{ aspectRatio: "1 / 1.05" }}
-    >
+    <div className="h-full min-w-0" style={{ aspectRatio: "1 / 1.05" }}>
       <div className="vera-item-card">
         {/* tinted tray — the cutout photo floats on a soft tint of its own colour */}
         <div className="vera-item-tray" style={{ background: trayBackground }}>
@@ -167,21 +131,10 @@ const ItemCard = ({
             loading="lazy"
           />
 
-          {!editMode && (
-            <button
-              onClick={() => pin()}
-              className={`pin-button vera-keep-opaque ${isPinned ? "active" : ""}`}
-              aria-label={isPinned ? t("closet.unpinAria") : t("closet.pinAria")}
-              aria-pressed={isPinned}
-            >
-              {isPinned ? <BsPinFill size={14} /> : <BsPin size={14} />}
-            </button>
-          )}
-
           {editMode && (
             <button
               onClick={() => remove(item.id)}
-              className="delete-button vera-keep-opaque"
+              className="delete-button"
               aria-label={t("closet.deleteAria")}
             >
               <IoClose size={14} />
@@ -201,7 +154,7 @@ const ItemCard = ({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  commitRename();
+                  void commitRename();
                 } else if (e.key === "Escape") {
                   e.preventDefault();
                   cancelRename();
@@ -261,74 +214,10 @@ const AddItemTile = ({
   );
 };
 
-const OnboardingToast = ({
-  onDismiss,
-}: {
-  onDismiss: () => void;
-}): React.JSX.Element => {
-  const { t } = useTranslation();
-  return (
-  <button
-    type="button"
-    onClick={onDismiss}
-    aria-label={t("closet.onboardingToastDismissAria")}
-    style={{
-      width: "100%",
-      textAlign: "left",
-      background: "#ffffff",
-      border: "1px solid #e3ebec",
-      borderRadius: 16,
-      padding: 14,
-      display: "flex",
-      gap: 12,
-      alignItems: "center",
-      boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
-      cursor: "pointer",
-    }}
-  >
-    <div
-      style={{
-        width: 36,
-        height: 36,
-        borderRadius: 999,
-        background: "#65aaa7",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "#fff",
-        flexShrink: 0,
-      }}
-    >
-      <FaCheck size={14} />
-    </div>
-    <div style={{ flex: 1 }}>
-      <div style={{ fontSize: 14, fontWeight: 600, color: "#000" }}>
-        {t("closet.onboardingToastTitle")}
-      </div>
-      <div style={{ fontSize: 12, color: "#6a7282", marginTop: 2 }}>
-        {t("closet.onboardingToastSub")}
-      </div>
-    </div>
-  </button>
-  );
-};
-
 export const ClosetPage = (): React.JSX.Element => {
   const { t } = useTranslation();
-  const {
-    items: _items,
-    addClothingItem,
-    isUploadLimitReached,
-    markLaundryDone,
-  } = useCloset();
-  const items = import.meta.env.VITE_ENABLE_DEBUG === "true" ? ([] as typeof _items) : _items;
+  const { items, addClothingItem, isUploadLimitReached } = useCloset();
   const { saveImage } = useImage();
-  const { generateOutfit, outfit } = useOutfit();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const justOnboarded =
-    (location.state as { justOnboarded?: boolean } | null)?.justOnboarded ??
-    false;
   // The footer floats over the scroll area; reserve its measured height as bottom
   // padding so the last cards can scroll clear of the nav pill.
   const [footerRef, footerHeight] = useMeasuredHeight();
@@ -336,58 +225,19 @@ export const ClosetPage = (): React.JSX.Element => {
     useState<ClothingItemCategory | null>(null);
   const [showUploadModal, setShowUploadModal] = useState<boolean>(false);
   const [editMode, setEditMode] = useState<boolean>(false);
-  const [showOnboardingToast, setShowOnboardingToast] = useState<boolean>(
-    justOnboarded,
-  );
-  const viewingBasket = location.pathname === "/closet/basket";
-  // Destructive edit mode only applies to the closet grid, never the basket.
-  const effectiveEdit = editMode && !viewingBasket;
-  const toggleBasketView = (): void => {
-    if (viewingBasket) {
-      navigate(-1);
-    } else {
-      navigate("/closet/basket", { state: { from: "/closet" } });
-    }
-  };
-
-  // The basket back link returns through history (navigate(-1)), so label it
-  // after wherever the user opened it from rather than always "the closet".
-  const basketFrom = (location.state as { from?: string } | null)?.from;
-  const basketBackLabel =
-    basketFrom === "/"
-      ? t("nav.today")
-      : basketFrom === "/lookbook"
-        ? t("nav.lookbook")
-        : t("closet.backToCloset");
-
-  useEffect(() => {
-    if (!showOnboardingToast) return;
-    const timer = window.setTimeout(() => setShowOnboardingToast(false), 6000);
-    return () => window.clearTimeout(timer);
-  }, [showOnboardingToast]);
-
-  const dirtyItems = useMemo(
-    () => items.filter((i) => isWashable(i.category) && !i.isClean),
-    [items],
-  );
-  const dirtyCount = dirtyItems.length;
-
-  const cleanItems = useMemo(
-    () => items.filter((i) => !isWashable(i.category) || i.isClean),
-    [items],
-  );
 
   const availableCategories = useMemo(
-    () => new Set(cleanItems.map((i) => i.category)),
-    [cleanItems],
+    () => new Set(items.map((i) => i.category)),
+    [items],
   );
 
-  const displayedItems = useMemo(() => {
-    if (viewingBasket) return dirtyItems;
-    return selectedCategory
-      ? cleanItems.filter((item) => item.category === selectedCategory)
-      : cleanItems;
-  }, [viewingBasket, dirtyItems, cleanItems, selectedCategory]);
+  const displayedItems = useMemo(
+    () =>
+      selectedCategory
+        ? items.filter((item) => item.category === selectedCategory)
+        : items,
+    [items, selectedCategory],
+  );
 
   async function addItem(item: CreateClothingItem): Promise<void> {
     const newItem = await addClothingItem(item);
@@ -400,24 +250,14 @@ export const ClosetPage = (): React.JSX.Element => {
     }
   }
 
-  async function onWash(): Promise<void> {
-    await markLaundryDone();
-    if (viewingBasket) navigate(-1);
-    if (!outfit) {
-      await generateOutfit();
-    }
-  }
-
-  const showAddTile = !viewingBasket && !effectiveEdit && !isUploadLimitReached();
+  const showAddTile = !editMode && !isUploadLimitReached();
 
   return (
     <div className="flex flex-col flex-1 min-h-0 overflow-hidden relative">
       <div className="mx-auto max-w-4xl px-5 pt-3.5 w-full shrink-0">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="vera-dressing-title">
-            {viewingBasket ? t("closet.basketTitle") : t("closet.title")}
-          </h2>
-          {!viewingBasket && items.length > 0 && (
+          <h2 className="vera-dressing-title">{t("closet.title")}</h2>
+          {items.length > 0 && (
             <button
               type="button"
               onClick={() => setEditMode((v) => !v)}
@@ -429,46 +269,13 @@ export const ClosetPage = (): React.JSX.Element => {
         </div>
       </div>
 
-      {showOnboardingToast && (
-        // Float above the nav dock, matching the error toast's placement
-        // (.vera-toast): fixed to the phone frame — its transform makes it the
-        // containing block, so ClosetPage's overflow-hidden never clips it.
-        <div
-          style={{
-            position: "fixed",
-            left: 16,
-            right: 16,
-            bottom: "calc(env(safe-area-inset-bottom) + 92px)",
-            maxWidth: 360,
-            margin: "0 auto",
-            zIndex: 200,
-            animation: "veraToastUp 0.32s var(--vera-ease) both",
-          }}
-        >
-          <OnboardingToast onDismiss={() => setShowOnboardingToast(false)} />
-        </div>
-      )}
-
-      {viewingBasket ? (
-        <div className="vera-back-link-bar mx-auto max-w-4xl w-full shrink-0">
-          <button
-            type="button"
-            onClick={toggleBasketView}
-            className="vera-back-link"
-          >
-            <FaChevronLeft />
-            {basketBackLabel}
-          </button>
-        </div>
-      ) : (
-        <div className="shrink-0">
-          <CategoryFilterBar
-            selectedCategory={selectedCategory}
-            onCategorySelected={setSelectedCategory}
-            availableCategories={availableCategories}
-          />
-        </div>
-      )}
+      <div className="shrink-0">
+        <CategoryFilterBar
+          selectedCategory={selectedCategory}
+          onCategorySelected={setSelectedCategory}
+          availableCategories={availableCategories}
+        />
+      </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col relative">
         <div
@@ -476,26 +283,7 @@ export const ClosetPage = (): React.JSX.Element => {
           style={{ paddingBottom: footerHeight + 12 }}
         >
           <div className="vera-dressing-sub">
-            <span>
-              {viewingBasket ? (
-                <>
-                  {t("closet.basketSection")} ·{" "}
-                  <span className="vera-dressing-sub__basket">{dirtyCount}</span>
-                </>
-              ) : (
-                <>
-                  {t("closet.available", { count: cleanItems.length })}
-                  {items.length > 0 && (
-                    <>
-                      {" · "}
-                      <span className="vera-dressing-sub__basket">
-                        {t("closet.basketCountInline", { count: dirtyCount })}
-                      </span>
-                    </>
-                  )}
-                </>
-              )}
-            </span>
+            <span>{t("closet.available", { count: items.length })}</span>
             <span className="vera-dressing-sub__rule" aria-hidden />
           </div>
           <div className="rounded-2xl">
@@ -507,7 +295,7 @@ export const ClosetPage = (): React.JSX.Element => {
                 />
               )}
               {displayedItems.map((item) => (
-                <ItemCard key={item.id} item={item} editMode={effectiveEdit} />
+                <ItemCard key={item.id} item={item} editMode={editMode} />
               ))}
             </div>
           </div>
@@ -516,13 +304,6 @@ export const ClosetPage = (): React.JSX.Element => {
 
       <div ref={footerRef} className="absolute inset-x-0 bottom-0 z-10">
         <AppFooter>
-          <BasketStrip
-            dirtyCount={dirtyCount}
-            viewingBasket={viewingBasket}
-            onTap={toggleBasketView}
-            onWash={() => void onWash()}
-          />
-
           <NavigationBar activePage="closet" />
         </AppFooter>
       </div>

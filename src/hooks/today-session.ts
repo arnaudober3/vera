@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Outfit } from "../models/outfit.ts";
 import { ALL_OCCASIONS, type Occasion } from "../models/occasion.ts";
+import { NAMED_COLORS } from "../utils/color.ts";
 import { getSessionId } from "../storage/session.ts";
 import { todayKey, lsGet, lsSet } from "../storage/local-store.ts";
 
@@ -8,26 +9,20 @@ import { todayKey, lsGet, lsSet } from "../storage/local-store.ts";
 // definition rather than redeclaring them. The filter is just the active
 // occasion; "everyday" is the relaxed, fits-everything default.
 export type Filter = Occasion;
-export type WornState = { cardKey: string; recordId: string; snapshot: Outfit };
 
-// Canonical key for an outfit's top/bottom duo — identifies a deck card and the
-// worn snapshot across the deck and the favorites page.
+// Canonical key for an outfit's top/bottom duo — identifies a deck card, used
+// as its React key so the swipe animation restarts on a new card.
 export const cardKeyOf = (o: Outfit): string => `${o.top.id}|${o.bottom.id}`;
 
-// Per-card secondary edits (added accessory/outerwear/shoes), keyed by cardKey.
-type Edits = Record<string, Partial<Outfit>>;
+// Up to two colours narrow the deck alongside the occasion.
+const MAX_COLORS = 2;
 
 // The ephemeral working state of the Today deck. Persisted so it survives the
 // route-level unmount/remount of TodayDeck, and reset on a new calendar day.
 type TodaySession = {
   filter: Filter;
+  colors: string[];
   index: number;
-  edits: Edits;
-  worn: WornState | null;
-  // An outfit kept as the deck's front card without being worn — e.g. after
-  // undoing a wear, so the chosen outfit stays put instead of regenerating.
-  // The user swipes to move on to the regular deck.
-  selected: Outfit | null;
   day: string; // YYYY-MM-DD (local day)
 };
 
@@ -39,12 +34,20 @@ const todayString = (): string => {
   return `${d.getFullYear()}-${m}-${day}`;
 };
 
+// The deck is ranked deterministically (colour match), so starting every day
+// at index 0 would surface the exact same look each morning. Seeding the index
+// from the local day rotates the entry point instead — no extra storage, and
+// the ordering itself stays stable while the user swipes through it.
+const daySeed = (day: string = todayString()): number => {
+  let h = 0;
+  for (const ch of day) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h;
+};
+
 const defaults = (): TodaySession => ({
   filter: "everyday",
-  index: 0,
-  edits: {},
-  worn: null,
-  selected: null,
+  colors: [],
+  index: daySeed(),
   day: todayString(),
 });
 
@@ -52,6 +55,12 @@ const defaults = (): TodaySession => ({
 // "casual"/… values), which are no longer valid Filters.
 const isFilter = (value: unknown): value is Filter =>
   ALL_OCCASIONS.includes(value as Occasion);
+
+const isColorName = (value: unknown): value is string =>
+  typeof value === "string" && NAMED_COLORS.some((c) => c.name === value);
+
+const sanitizeColors = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter(isColorName).slice(0, MAX_COLORS) : [];
 
 // Private singleton state reused through the app
 let state: TodaySession = defaults();
@@ -66,10 +75,17 @@ const initialize = (): void => {
   const sessionId = getSessionId();
   const stored = lsGet<TodaySession>(todayKey(sessionId), defaults());
   // A stale-day load — or a filter from the pre-rename occasion set — is
-  // treated as a fresh deck (daily reset / migration).
+  // treated as a fresh deck (daily reset / migration). Same-day payloads are
+  // rebuilt field by field rather than adopted wholesale, so a legacy snapshot
+  // can't smuggle dropped state (like the old per-card edits) back in.
   state =
     stored.day === todayString() && isFilter(stored.filter)
-      ? stored
+      ? {
+          filter: stored.filter,
+          colors: sanitizeColors(stored.colors),
+          index: stored.index ?? daySeed(),
+          day: stored.day,
+        }
       : defaults();
 
   isInitialized = true;
@@ -88,27 +104,27 @@ export function useTodaySession() {
   }, []);
 
   const setFilter = (filter: Filter): void => {
-    // Changing the filter narrows the deck; reset position, per-card edits and
-    // any kept outfit atomically (they don't carry across filters).
-    emitChange({ ...state, filter, index: 0, edits: {}, selected: null });
+    // Changing the filter narrows the deck; reset position so the new filter's
+    // deck rotates the same way as a fresh day.
+    emitChange({ ...state, filter, index: daySeed() });
+  };
+
+  // Toggling a colour on/off narrows the deck the same way changing the filter
+  // does. Picking a third colour drops the oldest pick — a rolling window of
+  // two, so the control never needs an explicit "clear".
+  const toggleColor = (name: string): void => {
+    const has = state.colors.includes(name);
+    const colors = has
+      ? state.colors.filter((c) => c !== name)
+      : state.colors.length >= MAX_COLORS
+        ? [state.colors[1], name]
+        : [...state.colors, name];
+    emitChange({ ...state, colors, index: daySeed() });
   };
 
   const setIndex = (value: number | ((prev: number) => number)): void => {
     const index = typeof value === "function" ? value(state.index) : value;
     emitChange({ ...state, index });
-  };
-
-  const setEdits = (value: Edits | ((prev: Edits) => Edits)): void => {
-    const edits = typeof value === "function" ? value(state.edits) : value;
-    emitChange({ ...state, edits });
-  };
-
-  const setWorn = (worn: WornState | null): void => {
-    emitChange({ ...state, worn });
-  };
-
-  const setSelected = (selected: Outfit | null): void => {
-    emitChange({ ...state, selected });
   };
 
   function emitChange(next: TodaySession): void {
@@ -120,14 +136,10 @@ export function useTodaySession() {
 
   return {
     filter: session.filter,
+    colors: session.colors,
     index: session.index,
-    edits: session.edits,
-    worn: session.worn,
-    selected: session.selected,
     setFilter,
+    toggleColor,
     setIndex,
-    setEdits,
-    setWorn,
-    setSelected,
   };
 }

@@ -93,10 +93,6 @@
   transition: border-color 0.2s var(--vera-ease);
 }
 
-.deck-card.worn {
-  border: 1.5px solid var(--vera-primary);
-}
-
 /* Empty card — same shell (and border) as a deck card, message centred in
    place of the well. */
 .deck-empty-body {
@@ -139,126 +135,18 @@
   margin: 0;
   text-align: center;
   color: var(--vera-fg-muted);
-  font-family: var(--vera-font-sans);
+  font-family: var(--vera-font-sans), sans-serif;
   font-size: 12px;
   font-weight: 600;
-}
-
-/* CTA reuses the deck-hint text style (like "Tap to wear"), as a button. */
-.deck-empty-hint {
-  height: auto;
-  background: none;
-  border: 0;
-  padding: 0;
-  cursor: pointer;
-  font-family: var(--vera-font-sans);
-}
-
-.deck-empty-hint:hover {
-  color: var(--vera-primary);
-}
-
-/* Top chrome — tall enough that the heart always clears the items below. */
-.deck-card-chrome {
-  position: relative;
-  height: 46px;
-  flex-shrink: 0;
-}
-
-.deck-worn-badge {
-  position: absolute;
-  left: 0;
-  top: 3px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--vera-primary);
-  color: #fff;
-  border-radius: 9999px;
-  padding: 5px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.3);
-}
-
-.deck-heart {
-  position: absolute;
-  right: 0;
-  top: 0;
-  width: 32px;
-  height: 32px;
-  border-radius: 9999px;
-  background: var(--vera-gray-50);
-  border: 1px solid var(--vera-surface-border);
-  color: var(--vera-fg-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 13px;
-  cursor: pointer;
-  transition:
-    background var(--vera-duration) var(--vera-ease),
-    color var(--vera-duration) var(--vera-ease),
-    border-color var(--vera-duration) var(--vera-ease);
-}
-
-.deck-heart.active {
-  background: var(--vera-primary);
-  border-color: transparent;
-  color: #fff;
-}
-
-/* Compact "Add" card at the end of the accessory shelf. */
-/* Matches the "+N more" card — same dashed-gray tile. */
-.deck-shelf-add {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  padding: 6px 5px 5px;
-  border-radius: 12px;
-  border: 1px dashed var(--vera-gray-300);
-  background: var(--vera-gray-50);
-  color: var(--vera-fg-subtle);
-  font-family: var(--vera-font-sans);
-  cursor: pointer;
-  overflow: hidden;
-  transition:
-    background var(--vera-duration) var(--vera-ease),
-    color var(--vera-duration) var(--vera-ease);
-}
-
-.deck-shelf-add:hover {
-  background: var(--vera-gray-100);
-  color: var(--vera-fg-default);
-}
-
-.deck-shelf-add svg {
-  color: var(--vera-fg-muted);
-}
-
-.deck-shelf-add span {
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
 }
 
 /* ── Collage well ── */
 .deck-well-wrap {
   flex: 1;
   display: flex;
-  /* no shelf → centre the garments in the card body */
   align-items: center;
   justify-content: center;
   min-height: 0;
-}
-
-/* With a shelf below, top-align the garments so they fill the upper card. */
-.deck-well-wrap--shelf {
-  align-items: flex-start;
 }
 
 .deck-well {
@@ -324,159 +212,6 @@
   color: var(--vera-fg-strong);
 }
 
-/* Small accessory tile: drop the fixed 2.5em reservation so the name hugs its
-   text (still up to two lines) and the photo keeps more of the tiny tile. */
-.deck-tile--compact .deck-tile-name {
-  height: auto;
-}
-
-.deck-tile-remove {
-  position: absolute;
-  top: 4px;
-  right: 4px;
-  z-index: 2;
-  width: 20px;
-  height: 20px;
-  border-radius: 9999px;
-  border: 1px solid var(--vera-surface-border);
-  background: var(--vera-surface);
-  color: var(--vera-fg-muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  cursor: pointer;
-}
-
-/* ── Accessory shelf ── */
-/* Anchored along the bottom of the card: a small label, then a row of tiles —
-   one per accessory, every one visible. */
-.deck-shelf {
-  flex-shrink: 0;
-  margin-top: 6px;
-}
-
-.deck-shelf-label {
-  margin-bottom: 6px;
-  padding-left: 2px;
-  font-size: 8.5px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--vera-fg-subtle);
-}
-
-/* Always three equal-width columns, so every card matches regardless of how
-   many are present or the screen size. */
-.deck-shelf-row {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-  align-items: stretch;
-}
-
-/* Shared height so the tile, Add and "+N more" cards always match. */
-.deck-shelf-tile,
-.deck-shelf-add,
-.deck-shelf-overflow {
-  height: 78px;
-}
-
-.deck-shelf-tile {
-  position: relative;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px 5px 5px;
-  border-radius: 12px;
-  background: var(--vera-surface);
-  border: 1px solid var(--vera-surface-border);
-  overflow: hidden;
-}
-
-/* Tinted tray the cutout photo floats in — fills the tile width at a fixed
-   height, so widening the tile widens the thumbnail without growing the shelf. */
-.deck-shelf-tray {
-  width: 100%;
-  height: 52px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.deck-shelf-tray img {
-  max-width: 80%;
-  max-height: 80%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-}
-
-.deck-shelf-name {
-  font-size: 9.5px;
-  font-weight: 600;
-  line-height: 1.05;
-  letter-spacing: -0.01em;
-  text-align: center;
-  color: var(--vera-fg-strong);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Smaller remove button on the compact shelf tiles. */
-.deck-shelf-tile .deck-tile-remove {
-  top: 3px;
-  right: 3px;
-  width: 16px;
-  height: 16px;
-  font-size: 8px;
-}
-
-/* Final-slot "+N more" card — a tappable dashed tile that opens the read-only
-   list of every accessory on the look. */
-.deck-shelf-overflow {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 6px 5px 5px;
-  border-radius: 12px;
-  background: var(--vera-gray-50);
-  border: 1px dashed var(--vera-gray-300);
-  overflow: hidden;
-  cursor: pointer;
-  font-family: var(--vera-font-sans);
-  transition: background var(--vera-duration) var(--vera-ease);
-}
-
-.deck-shelf-overflow:hover {
-  background: var(--vera-gray-100);
-}
-
-.deck-shelf-overflow-count {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.02em;
-  color: var(--vera-fg-muted);
-}
-
-.deck-shelf-overflow-more {
-  margin-top: 2px;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--vera-fg-subtle);
-}
-
 /* ── Swipe hint chevrons ── */
 .deck-chevron {
   position: absolute;
@@ -496,17 +231,6 @@
   right: 6px;
 }
 
-/* Reserve the basket-strip's footprint even when it's empty, so the deck region
-   keeps a constant height — the deck sits in the same spot whether or not there's
-   laundry, instead of jumping when worn items fill the basket. Matches the
-   basket-strip's min-height (App.css .vera-basket-strip). */
-.deck-basket-slot {
-  min-height: 80px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
 /* ── Hint / status line ── */
 .deck-hint {
   flex-shrink: 0;
@@ -516,28 +240,14 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font-size: 13.5px;
+  font-size: 13px;
   text-align: center;
   color: var(--vera-fg-muted);
   font-weight: 500;
   transition: color 0.2s var(--vera-ease);
 }
 
-.deck-hint.worn {
-  color: var(--vera-primary);
-  font-weight: 600;
-}
-
 .deck-hint b {
   color: var(--vera-fg-default);
   font-weight: 600;
-}
-
-.deck-hint-sub {
-  color: var(--vera-fg-subtle);
-  font-weight: 500;
-}
-
-.deck-hint-dot {
-  color: var(--vera-gray-300);
 }
