@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import type { Outfit } from "../models/outfit.ts";
 import { ALL_OCCASIONS, type Occasion } from "../models/occasion.ts";
+import { NAMED_COLORS } from "../utils/color.ts";
 import { getSessionId } from "../storage/session.ts";
 import { todayKey, lsGet, lsSet } from "../storage/local-store.ts";
 
@@ -9,19 +10,19 @@ import { todayKey, lsGet, lsSet } from "../storage/local-store.ts";
 // occasion; "everyday" is the relaxed, fits-everything default.
 export type Filter = Occasion;
 
-// Canonical key for an outfit's top/bottom duo — identifies a deck card, and
-// keys the per-card accessory edits.
+// Canonical key for an outfit's top/bottom duo — identifies a deck card, used
+// as its React key so the swipe animation restarts on a new card.
 export const cardKeyOf = (o: Outfit): string => `${o.top.id}|${o.bottom.id}`;
 
-// Per-card secondary edits (added accessory/outerwear/shoes), keyed by cardKey.
-type Edits = Record<string, Partial<Outfit>>;
+// Up to two colours narrow the deck alongside the occasion.
+const MAX_COLORS = 2;
 
 // The ephemeral working state of the Today deck. Persisted so it survives the
 // route-level unmount/remount of TodayDeck, and reset on a new calendar day.
 type TodaySession = {
   filter: Filter;
+  colors: string[];
   index: number;
-  edits: Edits;
   day: string; // YYYY-MM-DD (local day)
 };
 
@@ -45,8 +46,8 @@ const daySeed = (day: string = todayString()): number => {
 
 const defaults = (): TodaySession => ({
   filter: "everyday",
+  colors: [],
   index: daySeed(),
-  edits: {},
   day: todayString(),
 });
 
@@ -54,6 +55,12 @@ const defaults = (): TodaySession => ({
 // "casual"/… values), which are no longer valid Filters.
 const isFilter = (value: unknown): value is Filter =>
   ALL_OCCASIONS.includes(value as Occasion);
+
+const isColorName = (value: unknown): value is string =>
+  typeof value === "string" && NAMED_COLORS.some((c) => c.name === value);
+
+const sanitizeColors = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter(isColorName).slice(0, MAX_COLORS) : [];
 
 // Private singleton state reused through the app
 let state: TodaySession = defaults();
@@ -70,13 +77,13 @@ const initialize = (): void => {
   // A stale-day load — or a filter from the pre-rename occasion set — is
   // treated as a fresh deck (daily reset / migration). Same-day payloads are
   // rebuilt field by field rather than adopted wholesale, so a legacy snapshot
-  // (which carried a worn/selected outfit) can't smuggle dropped state back in.
+  // can't smuggle dropped state (like the old per-card edits) back in.
   state =
     stored.day === todayString() && isFilter(stored.filter)
       ? {
           filter: stored.filter,
+          colors: sanitizeColors(stored.colors),
           index: stored.index ?? daySeed(),
-          edits: stored.edits ?? {},
           day: stored.day,
         }
       : defaults();
@@ -97,20 +104,27 @@ export function useTodaySession() {
   }, []);
 
   const setFilter = (filter: Filter): void => {
-    // Changing the filter narrows the deck; reset position and per-card edits
-    // atomically (they don't carry across filters). The position resets to the
-    // day's seed, not 0, so the new filter's deck rotates the same way.
-    emitChange({ ...state, filter, index: daySeed(), edits: {} });
+    // Changing the filter narrows the deck; reset position so the new filter's
+    // deck rotates the same way as a fresh day.
+    emitChange({ ...state, filter, index: daySeed() });
+  };
+
+  // Toggling a colour on/off narrows the deck the same way changing the filter
+  // does. Picking a third colour drops the oldest pick — a rolling window of
+  // two, so the control never needs an explicit "clear".
+  const toggleColor = (name: string): void => {
+    const has = state.colors.includes(name);
+    const colors = has
+      ? state.colors.filter((c) => c !== name)
+      : state.colors.length >= MAX_COLORS
+        ? [state.colors[1], name]
+        : [...state.colors, name];
+    emitChange({ ...state, colors, index: daySeed() });
   };
 
   const setIndex = (value: number | ((prev: number) => number)): void => {
     const index = typeof value === "function" ? value(state.index) : value;
     emitChange({ ...state, index });
-  };
-
-  const setEdits = (value: Edits | ((prev: Edits) => Edits)): void => {
-    const edits = typeof value === "function" ? value(state.edits) : value;
-    emitChange({ ...state, edits });
   };
 
   function emitChange(next: TodaySession): void {
@@ -122,10 +136,10 @@ export function useTodaySession() {
 
   return {
     filter: session.filter,
+    colors: session.colors,
     index: session.index,
-    edits: session.edits,
     setFilter,
+    toggleColor,
     setIndex,
-    setEdits,
   };
 }

@@ -62,14 +62,14 @@ describe("local data cleanup", () => {
     ).toBeNull();
     expect(localStorage.getItem("vera:today:session_b")).toBeNull();
     expect(localStorage.getItem("vera:weather:session_b")).toBeNull();
+    expect(localStorage.getItem("vera:outfit:session_b")).toBeNull();
+    expect(localStorage.getItem("vera:occasion:session_b")).toBeNull();
   });
 
   it("leaves the closet and the rest of the app's state intact", async () => {
     await load();
 
     expect(localStorage.getItem("session_id")).toBe("session_b");
-    expect(localStorage.getItem("vera:outfit:session_b")).not.toBeNull();
-    expect(localStorage.getItem("vera:occasion:session_b")).not.toBeNull();
     expect(localStorage.getItem("vera:onboardingComplete:session_b")).toBe("true");
 
     const items = JSON.parse(
@@ -98,7 +98,7 @@ describe("local data cleanup", () => {
 
   it("is a no-op once the version stamp is set", async () => {
     const mod = await load();
-    expect(localStorage.getItem("vera:cleanupVersion")).toBe("2");
+    expect(localStorage.getItem("vera:cleanupVersion")).toBe("3");
 
     // Re-seeding then re-running must leave the legacy keys alone: the stamp
     // short-circuits the sweep, so it can't fight a future feature's keys.
@@ -112,13 +112,15 @@ describe("local data cleanup", () => {
 
   it("still sweeps a browser already stamped at an older version", async () => {
     // A user who ran the v1 build carries the stamp but never had the weather
-    // key swept — bumping LATEST has to re-run the sweep for them.
+    // or pin-related keys swept — bumping LATEST has to re-run the sweep for them.
     localStorage.setItem("vera:cleanupVersion", "1");
 
     await load();
 
     expect(localStorage.getItem("vera:weather:session_b")).toBeNull();
-    expect(localStorage.getItem("vera:cleanupVersion")).toBe("2");
+    expect(localStorage.getItem("vera:outfit:session_b")).toBeNull();
+    expect(localStorage.getItem("vera:occasion:session_b")).toBeNull();
+    expect(localStorage.getItem("vera:cleanupVersion")).toBe("3");
     expect(localStorage.getItem("vera:clothingItems:session_b")).not.toBeNull();
   });
 

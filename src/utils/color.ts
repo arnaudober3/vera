@@ -1,9 +1,13 @@
 import { differenceCiede2000 } from "culori";
 
+export type NamedColor = { name: string; hex: string };
+
 // A small curated palette of garment-friendly colour names. Auto-naming a piece
 // picks the perceptually-closest entry (CIEDE2000) so "#2a3550" reads as "Navy"
 // rather than a raw hex. Uses the same culori distance as the outfit matcher.
-const NAMED_COLORS: { name: string; hex: string }[] = [
+// Also doubles as the Today page's colour-filter swatches, so picking "Yellow"
+// there matches exactly the items Vera would name "Yellow".
+export const NAMED_COLORS: NamedColor[] = [
   { name: "White", hex: "#ffffff" },
   { name: "Cream", hex: "#f3ead7" },
   { name: "Beige", hex: "#d9c8a9" },
@@ -27,31 +31,48 @@ const NAMED_COLORS: { name: string; hex: string }[] = [
 ];
 
 /**
- * Closest human-readable colour name for a hex value, used to auto-name newly
- * added garments (e.g. "#2a3550" → "Navy"). Returns "" for an unparseable input
- * so callers can fall back gracefully.
+ * Closest palette entry to a hex value (CIEDE2000). Undefined for an
+ * unparseable input so callers can fall back gracefully.
  */
-export function colorName(hex: string): string {
+export function nearestNamedColor(hex: string): NamedColor | undefined {
   const distance = differenceCiede2000();
-  let best = "";
+  let best: NamedColor | undefined;
   let bestScore = Infinity;
   for (const entry of NAMED_COLORS) {
     const d = distance(hex, entry.hex);
     if (typeof d === "number" && d < bestScore) {
       bestScore = d;
-      best = entry.name;
+      best = entry;
     }
   }
   return best;
 }
 
-export function isDarkColor(hex: string): boolean {
-  const h = hex.replace("#", "");
-  if (h.length !== 6) return false;
-  const r = parseInt(h.slice(0, 2), 16);
-  const g = parseInt(h.slice(2, 4), 16);
-  const b = parseInt(h.slice(4, 6), 16);
-  return (0.299 * r + 0.587 * g + 0.114 * b) / 255 < 0.5;
+/**
+ * Closest human-readable colour name for a hex value, used to auto-name newly
+ * added garments (e.g. "#2a3550" → "Navy"). Returns "" for an unparseable input.
+ */
+export function colorName(hex: string): string {
+  return nearestNamedColor(hex)?.name ?? "";
+}
+
+// Distance (CIEDE2000) below which a garment's real, photo-extracted colour
+// counts as matching a picked palette swatch — see matchesPaletteColor.
+const COLOR_MATCH_THRESHOLD = 15;
+
+/**
+ * Whether a colour is close enough to a named palette swatch to count as that
+ * colour for the Today page's colour filter. Deliberately distance-based
+ * rather than "is this swatch the single nearest of all 20" — a pale, photo-
+ * extracted yellow can sit slightly closer to "Beige" than to "Yellow" while
+ * still plainly being a yellow the wearer would pick "Yellow" for, so bucket
+ * equality would silently drop it from the deck.
+ */
+export function matchesPaletteColor(hex: string, name: string): boolean {
+  const target = NAMED_COLORS.find((c) => c.name === name);
+  if (!target) return false;
+  const d = differenceCiede2000()(hex, target.hex);
+  return typeof d === "number" && !Number.isNaN(d) && d <= COLOR_MATCH_THRESHOLD;
 }
 
 /**

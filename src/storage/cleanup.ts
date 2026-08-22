@@ -8,7 +8,7 @@
 // before any of them reads localStorage.
 
 const VERSION_KEY = "vera:cleanupVersion";
-const LATEST = 2;
+const LATEST = 3;
 
 // Keys written by the removed lookbook, outfit-history, calendar, notification
 // and weather features. Matched by prefix rather than rebuilt from the current
@@ -23,16 +23,11 @@ export const LEGACY_PREFIXES = [
   "vera:today:",
   // Cached (or manually entered) weather reading — v2.
   "vera:weather:",
-];
-
-// Everything the app still reads. Listed explicitly so the sweep's blast radius
-// is reviewable at a glance (and testable).
-export const KEEP_PREFIXES = [
-  "session_id",
-  "vera:clothingItems:",
+  // The Today page dropped per-item pinning and its own "worn outfit" snapshot
+  // (it now builds the deck live from the closet + occasion + colours), and the
+  // standalone occasion singleton it replaced was already dead weight — v3.
   "vera:outfit:",
   "vera:occasion:",
-  "vera:onboardingComplete:",
 ];
 
 // IndexedDB database backing the removed service-worker reminders. Distinct

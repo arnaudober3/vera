@@ -12,11 +12,6 @@ export const lsSet = <T>(key: string, value: T): void => {
   localStorage.setItem(key, JSON.stringify(value));
 };
 
-export const lsRemove = (key: string): void => {
-  localStorage.removeItem(key);
-};
-
 export const closetKey = (sessionId: string) =>
   `vera:clothingItems:${sessionId}`;
-export const outfitKey = (sessionId: string) => `vera:outfit:${sessionId}`;
 export const todayKey = (sessionId: string) => `vera:today:${sessionId}`;

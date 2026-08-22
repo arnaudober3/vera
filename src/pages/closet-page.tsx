@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
 import { useCloset } from "../hooks/closet.ts";
 import NavigationBar from "../components/navigation-bar.tsx";
@@ -14,12 +13,9 @@ import UploadClothingItemModal from "../modals/upload-clothing-item-modal.tsx";
 import * as React from "react";
 import { useImage } from "../hooks/image.ts";
 import { IoClose } from "react-icons/io5";
-import { useOutfit } from "../hooks/outfit.ts";
 import { useMeasuredHeight } from "../hooks/use-measured-height.ts";
-import { BsPin, BsPinFill } from "react-icons/bs";
 import { MdAdd } from "react-icons/md";
 import { itemTint } from "../utils/color.ts";
-import { useToast } from "../components/toast-context.ts";
 import "./closet-page.css";
 
 const CategoryFilterBar = ({
@@ -79,15 +75,12 @@ const ItemCard = ({
 }: {
   item: ClothingItem;
   editMode: boolean;
+  key?: unknown;
 }): React.JSX.Element => {
   const { t } = useTranslation();
   const { getImage, removeImage } = useImage();
   const { removeClothingItem, renameClothingItem } = useCloset();
-  const { outfit, clearOutfit, pinItem, unpinItem } = useOutfit();
-  const navigate = useNavigate();
-  const { showToast } = useToast();
 
-  const isPinned = outfit?.pinnedItemId === item.id;
   const trayBackground = itemTint(item.color);
 
   const [isRenaming, setIsRenaming] = useState(false);
@@ -123,37 +116,11 @@ const ItemCard = ({
       if (item.imageId) {
         await removeImage(item.imageId);
       }
-
-      if (
-        item.id === outfit?.top.id ||
-        item.id === outfit?.bottom.id ||
-        item.id === outfit?.pinnedItemId
-      ) {
-        await clearOutfit();
-      }
-    }
-  }
-
-  async function pin(): Promise<void> {
-    // Tapping an already-pinned item releases the lock (and stays on the closet);
-    // otherwise pin it into today's outfit and jump to the Today page.
-    if (isPinned) {
-      await unpinItem();
-      return;
-    }
-    const result = await pinItem(item);
-    if (result) {
-      navigate("/");
-    } else {
-      showToast(t("closet.pinNoMatch"));
     }
   }
 
   return (
-    <div
-      className="h-full min-w-0"
-      style={{ aspectRatio: "1 / 1.05" }}
-    >
+    <div className="h-full min-w-0" style={{ aspectRatio: "1 / 1.05" }}>
       <div className="vera-item-card">
         {/* tinted tray — the cutout photo floats on a soft tint of its own colour */}
         <div className="vera-item-tray" style={{ background: trayBackground }}>
@@ -163,17 +130,6 @@ const ItemCard = ({
             className="vera-item-photo"
             loading="lazy"
           />
-
-          {!editMode && (
-            <button
-              onClick={() => pin()}
-              className={`pin-button ${isPinned ? "active" : ""}`}
-              aria-label={isPinned ? t("closet.unpinAria") : t("closet.pinAria")}
-              aria-pressed={isPinned}
-            >
-              {isPinned ? <BsPinFill size={14} /> : <BsPin size={14} />}
-            </button>
-          )}
 
           {editMode && (
             <button
@@ -198,7 +154,7 @@ const ItemCard = ({
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  commitRename();
+                  void commitRename();
                 } else if (e.key === "Escape") {
                   e.preventDefault();
                   cancelRename();

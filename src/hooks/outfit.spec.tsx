@@ -40,6 +40,7 @@ const SESSION = "session_test";
 const loadDeck = async (
   items: StoredItem[],
   filter: Occasion = "everyday",
+  colors: string[] = [],
 ): Promise<Outfit[]> => {
   localStorage.clear();
   localStorage.setItem("session_id", SESSION);
@@ -50,7 +51,7 @@ const loadDeck = async (
 
   let deck: Outfit[] = [];
   const Probe = (): null => {
-    deck = useOutfit().buildDeck(filter);
+    deck = useOutfit().buildDeck(filter, colors);
     return null;
   };
 
@@ -129,5 +130,83 @@ describe("buildDeck", () => {
     const deck = await loadDeck([item("top1", "top", [10, 10, 10])]);
 
     expect(deck).toEqual([]);
+  });
+
+  // culori's rgb mode is normalised 0-1 (unlike the 0-255 tuples the other
+  // cases use for relative distance only), so exact palette-bucket assertions
+  // need normalised triples.
+  const rgb01 = (r: number, g: number, b: number): [number, number, number] => [
+    r / 255,
+    g / 255,
+    b / 255,
+  ];
+
+  it("with one picked colour, keeps a duo where only one piece matches it", async () => {
+    // "White" is picked; the top is white but the bottom is unrelated ("Green")
+    // — the duo must still show up, with the bottom free to be anything.
+    const deck = await loadDeck(
+      [
+        item("whiteTop", "top", rgb01(255, 255, 255)), // "White"
+        item("greenBottom", "bottom", rgb01(63, 125, 79)), // "Green"
+      ],
+      "everyday",
+      ["White"],
+    );
+
+    expect(deck).toHaveLength(1);
+    expect(deck[0].top.id).toBe("whiteTop");
+    expect(deck[0].bottom.id).toBe("greenBottom");
+  });
+
+  it("with one picked colour, drops a duo where neither piece matches it", async () => {
+    const deck = await loadDeck(
+      [
+        item("greenTop", "top", rgb01(63, 125, 79)), // "Green"
+        item("greenBottom", "bottom", rgb01(63, 125, 79)), // "Green"
+      ],
+      "everyday",
+      ["White"],
+    );
+
+    expect(deck).toEqual([]);
+  });
+
+  it("with two picked colours, requires every piece to be one of them", async () => {
+    const items = [
+      item("yellowTop", "top", rgb01(232, 196, 77)), // "Yellow"
+      item("greenTop", "top", rgb01(63, 125, 79)), // "Green" — matches neither pick
+      item("yellowBottom", "bottom", rgb01(232, 196, 77)), // "Yellow"
+      item("burgundyBottom", "bottom", rgb01(110, 31, 46)), // "Burgundy"
+      item("greenBottom", "bottom", rgb01(63, 125, 79)), // "Green" — matches neither pick
+    ];
+
+    const deck = await loadDeck(items, "everyday", ["Yellow", "Burgundy"]);
+
+    // yellowTop pairs with either yellowBottom or burgundyBottom (both picked
+    // colours); greenTop and greenBottom never appear — green was never picked.
+    expect(deck).toHaveLength(2);
+    for (const outfit of deck) {
+      expect(outfit.top.id).toBe("yellowTop");
+      expect(["yellowBottom", "burgundyBottom"]).toContain(outfit.bottom.id);
+    }
+  });
+
+  it("still finds a single picked colour on a duo whose exact hue sits closer to a different swatch", async () => {
+    // "#f0e0a0" is a real garment yellow whose nearest of the 20 named swatches
+    // is actually "Beige" (9.8 away), with "Yellow" a close second (11.4 away).
+    // A bucket-equality match would drop it from a "Yellow" pick entirely; the
+    // colour filter has to work on closeness to the picked swatch instead.
+    const deck = await loadDeck(
+      [
+        item("paleYellowTop", "top", rgb01(0xf0, 0xe0, 0xa0)),
+        item("greenBottom", "bottom", rgb01(63, 125, 79)),
+      ],
+      "everyday",
+      ["Yellow"],
+    );
+
+    expect(deck).toHaveLength(1);
+    expect(deck[0].top.id).toBe("paleYellowTop");
+    expect(deck[0].bottom.id).toBe("greenBottom");
   });
 });
