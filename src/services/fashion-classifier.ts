@@ -4,38 +4,138 @@ import {
   type ClothingItemSubCategory,
   subCategoryToCategory,
 } from "../models/clothing-item.ts";
+import type { Color } from "../models/color.ts";
+import { NAMED_COLORS } from "../utils/color.ts";
+import { flattenOnBackground } from "./image-processing.ts";
 
 export interface ClassificationResult {
   subCategory: ClothingItemSubCategory;
   category: ClothingItemCategory;
+  color?: Color;
 }
 
-const validSubCategories = ALL_SUBCATEGORIES;
+const promptLabels = ALL_SUBCATEGORIES.map((sc) => sc.replace(/_/g, " "));
 
-// The model often replies with everyday synonyms rather than our exact labels.
-// We resolve these BEFORE the generic substring match so, e.g., "track pants"
-// maps to joggers instead of falling through to the earlier "pants" label.
-// Ordered most-specific first.
+// Order matters: first match wins ("oxford shirt" → shirt, "denim jacket" → jacket).
 const SUBCATEGORY_SYNONYMS: {
   match: RegExp;
   subCategory: ClothingItemSubCategory;
 }[] = [
-  { match: /jogg|sweat ?pant|track ?pant|sweatpant/, subCategory: "joggers" },
-  { match: /chino|trouser|slack/, subCategory: "pants" },
-  { match: /denim/, subCategory: "jeans" },
-  { match: /\btee\b|t[- ]?shirt/, subCategory: "t-shirt" },
-  { match: /pullover|jumper|knit/, subCategory: "sweater" },
-  { match: /trainer|plimsoll/, subCategory: "sneakers" },
+  { match: /\btee\b|\bt[- ]?shirt/, subCategory: "t-shirt" },
+  { match: /jogg|sweat ?pant|track ?pant/, subCategory: "joggers" },
+  {
+    match: /parka|puffer|trench|overcoat|peacoat|raincoat|\bcoat\b/,
+    subCategory: "coat",
+  },
+  {
+    match: /blazer|bomber|windbreaker|anorak|gilet|\bjacket\b/,
+    subCategory: "jacket",
+  },
+  { match: /hood|zip[- ]?up/, subCategory: "hoodie" },
+  {
+    match: /sweat(er|shirt)|crew ?neck|cardigan|pullover|jumper|knit|turtleneck/,
+    subCategory: "sweater",
+  },
+  {
+    match: /polo|blouse|button[- ]?(up|down)|flannel|\bshirt\b/,
+    subCategory: "shirt",
+  },
+  { match: /\btank\b|camisole|\bcrop\b|\btop\b/, subCategory: "t-shirt" },
+  { match: /\bshorts?\b(?![- ]?sleeve)/, subCategory: "shorts" },
+  { match: /chino|trouser|slack|legging|\bpant\b/, subCategory: "pants" },
+  { match: /denim|\bjean\b/, subCategory: "jeans" },
+  { match: /sneaker|trainer|plimsoll/, subCategory: "sneakers" },
+  { match: /\bboots?\b|bootie/, subCategory: "boots" },
+  { match: /sandal|flip[- ]?flop/, subCategory: "sandals" },
+  {
+    match: /dress ?shoe|loafer|oxford|derby|brogue|\bheels?\b|\bpumps?\b/,
+    subCategory: "dress_shoes",
+  },
+  { match: /handbag|backpack|\btote\b|purse/, subCategory: "bag" },
+  { match: /\bcap\b|beanie/, subCategory: "hat" },
+  // "earrings" contains "ring".
+  { match: /earring|\bstuds?\b|hoops?\b/, subCategory: "earring" },
 ];
 
-const resolveSubCategory = (
-  reply: string,
+export const resolveSubCategory = (
+  text: string,
 ): ClothingItemSubCategory | undefined => {
-  // Prefer a synonym hit (handles multi-word, natural replies) ...
+  const reply = text.trim().toLowerCase().replace(/_/g, " ");
+  const exact = ALL_SUBCATEGORIES.find(
+    (sc) => reply === sc.replace(/_/g, " "),
+  );
+  if (exact) return exact;
   const synonym = SUBCATEGORY_SYNONYMS.find((s) => s.match.test(reply));
   if (synonym) return synonym.subCategory;
-  // ... otherwise fall back to an exact or substring match on a known label.
-  return validSubCategories.find((sc) => reply === sc || reply.includes(sc));
+  return ALL_SUBCATEGORIES.find((sc) => reply.includes(sc.replace(/_/g, " ")));
+};
+
+const COLOR_SYNONYMS: { match: RegExp; name: string }[] = [
+  { match: /navy|dark blue|midnight|indigo/, name: "Navy" },
+  { match: /sky|baby blue|pale blue|powder blue/, name: "Light blue" },
+  { match: /dark grey|anthracite|graphite/, name: "Charcoal" },
+  { match: /off[- ]?white|ivory|ecru|eggshell/, name: "Cream" },
+  { match: /army|khaki green|olive/, name: "Olive" },
+  { match: /khaki|sand|stone|taupe/, name: "Beige" },
+  { match: /camel|cognac/, name: "Tan" },
+  { match: /mustard|gold|lemon/, name: "Yellow" },
+  { match: /maroon|wine|bordeaux|oxblood/, name: "Burgundy" },
+  { match: /turquoise|petrol/, name: "Teal" },
+  { match: /mint|emerald|forest|sage/, name: "Green" },
+  { match: /lavender|lilac|violet|plum/, name: "Purple" },
+  { match: /rose|blush|fuchsia|magenta/, name: "Pink" },
+  { match: /rust|terracotta|coral|peach/, name: "Orange" },
+  { match: /chocolate|espresso|coffee/, name: "Brown" },
+  { match: /denim|cobalt|royal/, name: "Blue" },
+];
+
+const PALETTE_BY_LENGTH = [...NAMED_COLORS].sort(
+  (a, b) => b.name.length - a.name.length,
+);
+
+export const resolveColorName = (text: string): Color | undefined => {
+  const value = text.trim().toLowerCase().replace(/gray/g, "grey");
+  if (!value) return undefined;
+  const exact = NAMED_COLORS.find((c) => c.name.toLowerCase() === value);
+  if (exact) return exact.hex as Color;
+  const synonym = COLOR_SYNONYMS.find((s) => s.match.test(value));
+  if (synonym) {
+    return NAMED_COLORS.find((c) => c.name === synonym.name)?.hex as Color;
+  }
+  const contained = PALETTE_BY_LENGTH.find((c) =>
+    value.includes(c.name.toLowerCase()),
+  );
+  return contained?.hex as Color | undefined;
+};
+
+export const parseClassificationReply = (
+  reply: string,
+): ClassificationResult => {
+  let typeText = reply;
+  let colorText = "";
+
+  const jsonMatch = reply.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    try {
+      const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+      const type = parsed.type ?? parsed.label ?? parsed.category;
+      if (typeof type === "string") typeText = type;
+      if (typeof parsed.color === "string") colorText = parsed.color;
+    } catch {
+      /* not JSON: parse the reply as a bare label */
+    }
+  }
+
+  const subCategory = resolveSubCategory(typeText);
+  if (!subCategory) {
+    throw new Error(`Unrecognized classification: "${reply}"`);
+  }
+
+  return {
+    subCategory,
+    category: subCategoryToCategory[subCategory],
+    color: resolveColorName(colorText),
+  };
 };
 
 const HF_BASE_URL = import.meta.env.DEV
@@ -51,8 +151,10 @@ class FashionClassifierService {
       throw new Error("Hugging Face API key is not configured.");
     }
 
-    const base64 = await this.blobToBase64(imageBlob);
-    const mimeType = imageBlob.type || "image/png";
+    // Transparent pixels can be decoded as black, hiding dark garments.
+    const flattened = await flattenOnBackground(imageBlob);
+    const base64 = await this.blobToBase64(flattened);
+    const mimeType = flattened.type || "image/png";
 
     const response = await fetch(this.chatUrl, {
       method: "POST",
@@ -75,15 +177,20 @@ class FashionClassifierService {
               {
                 type: "text",
                 text:
-                  `Classify this clothing item into exactly one of these labels: ${validSubCategories.join(", ")}.\n` +
-                  `Guidance for trousers: use "joggers" for athletic/sweat/track pants with an elastic or drawstring waist and cuffs; ` +
+                  `This is a photo of a single clothing item on a plain grey background (the background is not part of the item).\n` +
+                  `1. "type": classify the item into exactly one of these labels: ${promptLabels.join(", ")}.\n` +
+                  `   Polo shirts and blouses are "shirt"; sweatshirts and cardigans are "sweater"; tank tops are "t-shirt".\n` +
+                  `   For trousers: use "joggers" for athletic/sweat/track pants with an elastic or drawstring waist and cuffs; ` +
                   `use "pants" only for tailored trousers, chinos or dress pants; use "jeans" for denim.\n` +
-                  `Reply with only the label, nothing else.`,
+                  `2. "color": the main fabric colour, picked from exactly one of: ${NAMED_COLORS.map((c) => c.name).join(", ")}.\n` +
+                  `   Ignore logos, prints, shadows and lighting — a white tee in shade is still "White", dark navy is "Navy", not "Black".\n` +
+                  `Reply with only a JSON object like {"type": "shirt", "color": "Yellow"} and nothing else.`,
               },
             ],
           },
         ],
-        max_tokens: 20,
+        max_tokens: 60,
+        temperature: 0,
       }),
     });
 
@@ -96,23 +203,19 @@ class FashionClassifierService {
     }
 
     const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content?.trim().toLowerCase();
+    const reply: string | undefined =
+      data.choices?.[0]?.message?.content?.trim();
 
     if (!reply) {
       throw new Error("No classification result returned.");
     }
 
-    // Match the reply against valid sub-categories (synonyms first)
-    const matched = resolveSubCategory(reply);
-
-    if (!matched) {
-      throw new Error(`Unrecognized classification: "${reply}"`);
+    try {
+      return parseClassificationReply(reply);
+    } catch (error) {
+      console.warn("Fashion classifier reply could not be parsed:", reply);
+      throw error;
     }
-
-    return {
-      subCategory: matched,
-      category: subCategoryToCategory[matched],
-    };
   }
 
   private blobToBase64(blob: Blob): Promise<string> {

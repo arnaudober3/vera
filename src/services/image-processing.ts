@@ -2,6 +2,7 @@ import type { Color } from "../models/color.ts";
 
 const MAX_IMAGE_SIZE = 256;
 const COMPRESSION_QUALITY = 0.5;
+const OPAQUE_ALPHA_THRESHOLD = 200;
 
 const componentToHexadecimal = (c: number): string =>
   c.toString(16).padStart(2, "0");
@@ -90,7 +91,7 @@ export const extractDominantColor = async (dataUrl: string): Promise<Color> => {
     count = 0;
 
   for (let i = 0; i < data.length; i += 4) {
-    if (data[i + 3] < 16) {
+    if (data[i + 3] < OPAQUE_ALPHA_THRESHOLD) {
       continue;
     }
 
@@ -147,7 +148,38 @@ export const processImageToBase64 = async (file: File): Promise<string> => {
   return trimmedCanvas.toDataURL("image/png", COMPRESSION_QUALITY);
 };
 
-export const dataURLToBlob = (dataUrl: string): Blob => {
+export const flattenOnBackground = async (
+  blob: Blob,
+  background = "#808080",
+): Promise<Blob> => {
+  const url = URL.createObjectURL(blob);
+  try {
+    const image: HTMLImageElement = await new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = url;
+    });
+
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth || image.width;
+    canvas.height = image.naturalHeight || image.height;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return blob;
+
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0);
+
+    return await new Promise<Blob>((resolve) =>
+      canvas.toBlob((result) => resolve(result ?? blob), "image/png"),
+    );
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+};
+
+export const dataURLToBlob =(dataUrl: string): Blob => {
   const arr = dataUrl.split(",");
   const mime = arr[0].match(/:(.*?);/)?.[1];
   const bstr = atob(arr[1]);

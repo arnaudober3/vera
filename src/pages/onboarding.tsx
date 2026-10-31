@@ -487,7 +487,8 @@ const AddPieceScreen = ({
       const category: ClothingItemCategory = sub
         ? subCategoryToCategory[sub]
         : KIND_CATEGORY[kind];
-      const color = await extractDominantColor(afterImage);
+      const color =
+        classification?.color ?? (await extractDominantColor(afterImage));
 
       const item: CreateClothingItem = {
         name: buildName(category, color),
